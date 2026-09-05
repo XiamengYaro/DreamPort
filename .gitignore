@@ -1,0 +1,41 @@
+# ---- Java / Maven ----
+target/
+*.class
+*.jar
+!**/maven-wrapper*.jar
+.mvn/timing.properties
+
+# ---- Node / 前端 ----
+node_modules/
+dist/
+frontend/dist/
+*.local
+npm-debug.log*
+
+# ---- IDE ----
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.settings/
+.classpath
+.project
+
+# ---- macOS ----
+.DS_Store
+._*
+
+# ---- 本地密钥与环境（禁止提交）----
+application-local.yml
+application-local.yaml
+*.local.yml
+.env
+.env.*
+*.pem
+*.key
+
+# ---- 日志与临时文件 ----
+logs/
+*.log
+*.tmp
