@@ -18,7 +18,7 @@
     <!-- 消息列表 -->
     <div ref="chatContainer" class="h-64 overflow-y-auto mb-4 p-3 bg-stone-800/50 rounded-xl border border-stone-700">
       <div v-if="messages.length === 0" class="text-center text-stone-500 py-8">
-        <div class="text-4xl mb-2">💬</div>
+        <AppIcon name="chat-bubble" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
         <div>暂无消息</div>
       </div>
       <div v-for="(msg, index) in messages" :key="index" class="mb-2">

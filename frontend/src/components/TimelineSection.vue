@@ -36,7 +36,7 @@
             <div v-if="index % 2 === 0" class="flex items-center gap-8">
               <div class="flex-1 card p-6 card-hover group card-container">
                 <div class="flex items-center gap-2 mb-3">
-                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400">{{ getTypeTag(event.type) }}</span>
+                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400 inline-flex items-center gap-1"><AppIcon :name="getTypeIcon(event.type)" class="w-3.5 h-3.5" />{{ getTypeTag(event.type) }}</span>
                   <span class="text-stone-500 text-sm">{{ event.date }}</span>
                 </div>
                 <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
@@ -49,7 +49,7 @@
             <div v-else class="flex items-center gap-8 flex-row-reverse">
               <div class="flex-1 card p-6 card-hover group card-container">
                 <div class="flex items-center gap-2 mb-3">
-                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400">{{ getTypeTag(event.type) }}</span>
+                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400 inline-flex items-center gap-1"><AppIcon :name="getTypeIcon(event.type)" class="w-3.5 h-3.5" />{{ getTypeTag(event.type) }}</span>
                   <span class="text-stone-500 text-sm">{{ event.date }}</span>
                 </div>
                 <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
@@ -62,7 +62,7 @@
         
         <!-- 空状态 -->
         <div v-if="filteredTimeline.length === 0" class="text-center py-12">
-          <div class="text-4xl mb-3">📝</div>
+          <AppIcon name="document-text" class="w-10 h-10 mx-auto mb-3 text-stone-500" />
           <div class="text-stone-500">暂无相关内容</div>
         </div>
       </div>
@@ -97,15 +97,15 @@ const timelineTypes = [
 
 // 类型标签映射
 const typeLabels: Record<string, string> = {
-  announcement: '📢',
-  event: '🏆',
-  milestone: '🎉'
+  announcement: 'megaphone',
+  event: 'trophy',
+  milestone: 'sparkles'
 }
 
 // 获取类型标签
 const getTypeTag = (type?: string) => {
   if (!type) return '其他'
-  const label = typeLabels[type] || '📋'
+  const icon = typeIcons[type] || 'document-text'
   return `${label} ${formatType(type)}`
 }
 

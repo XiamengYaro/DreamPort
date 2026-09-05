@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 
 const emit = defineEmits<{ (e: 'changed'): void }>()
 
@@ -24,10 +25,10 @@ const loading = ref(false)
 const expanded = ref<Set<number>>(new Set())
 
 const TYPE_META: Record<string, { label: string; icon: string }> = {
-  single_choice: { label: '单选题', icon: '◉' },
-  multiple_choice: { label: '多选题', icon: '☑' },
-  fill_blank: { label: '填空题', icon: '▔' },
-  essay: { label: '问答题', icon: '¶' }
+  single_choice: { label: '单选题', icon: 'dot-circle' },
+  multiple_choice: { label: '多选题', icon: 'check-square' },
+  fill_blank: { label: '填空题', icon: 'minus' },
+  essay: { label: '问答题', icon: 'pencil' }
 }
 const typeLabel = (t: string) => TYPE_META[t]?.label ?? t
 const typeIcon = (t: string) => TYPE_META[t]?.icon ?? '?'
@@ -144,7 +145,7 @@ const saveWithState = async (q: BankQuestion, i: number) => {
       :class="expanded.has(i) ? 'border-orange-500/40' : 'border-stone-700/60 hover:border-stone-600'">
       <!-- 卡片头：题型 + 操作 -->
       <div class="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-stone-700/40" :class="expanded.has(i) ? '' : 'pb-3'">
-        <span class="text-lg text-orange-400" :title="typeLabel(q.type)">{{ typeIcon(q.type) }}</span>
+        <AppIcon :name="typeIcon(q.type)" class="w-5 h-5 text-orange-400" :title="typeLabel(q.type)" />
         <select v-model="q.type" @change="onTypeChange(q)"
           class="text-xs bg-stone-900/60 border border-stone-700 rounded-lg px-2 py-1 text-stone-300">
           <option value="single_choice">单选题</option>
@@ -161,7 +162,7 @@ const saveWithState = async (q: BankQuestion, i: number) => {
           <button @click="toggleExpand(i)" :title="expanded.has(i) ? '收起' : '展开'"
             class="p-1.5 text-stone-400 hover:text-white transition-all">{{ expanded.has(i) ? '▴' : '▾' }}</button>
           <button @click="removeCard(q, i)" title="删除"
-            class="p-1.5 text-rose-400 hover:text-rose-300 transition-all">✕</button>
+            class="p-1.5 text-rose-400 hover:text-rose-300 transition-all"><AppIcon name="x-mark" class="w-4 h-4" /></button>
         </div>
       </div>
 
@@ -183,7 +184,7 @@ const saveWithState = async (q: BankQuestion, i: number) => {
                 <input v-model.number="opt.score" type="number" class="w-16 bg-stone-900/60 border border-stone-700 rounded-lg px-2 py-1 text-xs text-white text-center" title="该选项分值" />
                 <span class="text-xs text-stone-500">分</span>
               </div>
-              <button @click="removeOption(q, oi)" class="text-stone-500 hover:text-rose-400 text-sm px-1">✕</button>
+              <button @click="removeOption(q, oi)" class="text-stone-500 hover:text-rose-400 text-sm px-1"><AppIcon name="x-mark" class="w-3.5 h-3.5" /></button>
             </div>
             <button @click="addOption(q)" class="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1 pl-1">＋ 添加选项</button>
           </div>
@@ -237,8 +238,8 @@ const saveWithState = async (q: BankQuestion, i: number) => {
     <div class="flex justify-center gap-2 py-2">
       <button v-for="t in ['single_choice', 'multiple_choice', 'fill_blank', 'essay']" :key="t"
         @click="addQuestion(t)" :title="typeLabel(t)"
-        class="w-11 h-11 rounded-full bg-stone-800 border-2 border-dashed border-stone-600 text-stone-400 hover:text-orange-400 hover:border-orange-500/50 transition-all text-lg">
-        {{ typeIcon(t) }}
+        class="w-11 h-11 rounded-full bg-stone-800 border-2 border-dashed border-stone-600 text-stone-400 hover:text-orange-400 hover:border-orange-500/50 transition-all flex items-center justify-center">
+        <AppIcon :name="typeIcon(t)" class="w-5 h-5" />
       </button>
     </div>
   </div>

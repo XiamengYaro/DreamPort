@@ -5,7 +5,7 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div v-for="feature in features" :key="feature.title"
           class="card p-6 card-hover">
-          <div class="text-4xl mb-4" v-html="feature.icon"></div>
+          <div class="mb-4 flex justify-center text-orange-400"><AppIcon :name="feature.icon" class="w-10 h-10" /></div>
           <h3 class="text-xl font-semibold text-white mb-2">{{ feature.title }}</h3>
           <p class="text-stone-400">{{ feature.description }}</p>
         </div>

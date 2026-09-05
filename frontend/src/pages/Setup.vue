@@ -2,6 +2,7 @@
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 
 const router = useRouter()
 const checking = ref(true)
@@ -94,7 +95,7 @@ const submit = async () => {
       <div v-if="checking" class="card p-8 text-center text-stone-300">检测中…</div>
 
       <div v-else-if="done" class="card p-8 text-center space-y-4">
-        <div class="text-4xl">🎉</div>
+        <AppIcon name="check-circle" class="w-14 h-14 mx-auto text-green-400" />
         <div class="text-lg font-semibold text-white">初始化完成</div>
         <div class="text-sm text-stone-300">{{ doneMessage }}</div>
         <router-link to="/login" class="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-all">
@@ -134,13 +135,13 @@ const submit = async () => {
             <button @click="mode = 'fresh'"
               class="p-4 rounded-xl border text-left transition-all"
               :class="mode === 'fresh' ? 'border-orange-500/50 bg-orange-500/10' : 'border-stone-700 hover:border-stone-600'">
-              <div class="text-white font-medium text-sm">✨ 全新部署</div>
+              <div class="text-white font-medium text-sm flex items-center gap-1.5"><AppIcon name="sparkles" class="w-4 h-4" /> 全新部署</div>
               <div class="text-xs text-stone-400 mt-1">从零开始，不导入历史数据</div>
             </button>
             <button @click="mode = 'import'"
               class="p-4 rounded-xl border text-left transition-all"
               :class="mode === 'import' ? 'border-orange-500/50 bg-orange-500/10' : 'border-stone-700 hover:border-stone-600'">
-              <div class="text-white font-medium text-sm">📦 导入旧版数据库</div>
+              <div class="text-white font-medium text-sm flex items-center gap-1.5"><AppIcon name="archive-box" class="w-4 h-4" /> 导入旧版数据库</div>
               <div class="text-xs text-stone-400 mt-1">上传旧版 XMWhitelist 的 .sql 导出</div>
             </button>
           </div>

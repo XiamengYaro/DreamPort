@@ -27,7 +27,7 @@
 
       <!-- 错误 -->
       <div v-else class="card p-12 text-center text-stone-500">
-        <div class="text-4xl mb-4">❌</div>
+        <AppIcon name="x-circle" class="w-12 h-12 mx-auto mb-4 text-rose-400" />
         <div>文档加载失败</div>
       </div>
     </div>

@@ -12,7 +12,7 @@
 
       <!-- 玩家不存在 -->
       <div v-else-if="!profile" class="text-center py-12 text-stone-500">
-        <div class="text-4xl mb-2">😢</div>
+        <AppIcon name="user" class="w-12 h-12 mx-auto mb-2 text-stone-500" />
         <div>玩家不存在</div>
         <router-link to="/players" class="text-orange-400 hover:text-orange-300 mt-4 inline-block">返回玩家列表</router-link>
       </div>
@@ -92,6 +92,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 
 const route = useRoute()
 const loading = ref(false)

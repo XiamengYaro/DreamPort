@@ -64,14 +64,14 @@
             <!-- 数据行 -->
             <div class="grid grid-cols-2 gap-4 mb-4">
               <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
-                <span class="text-2xl">💰</span>
+                <AppIcon name="banknote" class="w-6 h-6" />
                 <div>
                   <div class="text-xl font-bold text-orange-400">{{ formatBalance(playerData.balance) }}</div>
                   <div class="text-xs text-stone-400">硬币</div>
                 </div>
               </div>
               <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
-                <span class="text-2xl">⏱</span>
+                <AppIcon name="clock" class="w-6 h-6" />
                 <div>
                   <div class="text-xl font-bold text-orange-400">{{ formatPlaytime(playerData.timePlayed) }}</div>
                   <div class="text-xs text-stone-400">在线时长</div>
@@ -80,7 +80,7 @@
             </div>
             <!-- 上次登录 -->
             <div class="flex items-center gap-2 text-stone-400 text-sm">
-              <span>📅</span>
+              <AppIcon name="calendar" class="w-4 h-4" />
               <span>上次登录：{{ formatLastLogin(playerData.lastLogin) }}</span>
             </div>
           </div>
@@ -307,6 +307,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
 

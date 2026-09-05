@@ -64,9 +64,9 @@ public class DefaultContentSeeder implements ApplicationRunner {
                 Map.of("image", "/bg.webp", "title", "共建温馨小镇", "subtitle", "与伙伴们一起探索与建造"),
                 Map.of("image", "/bg.jpg", "title", "公平公正的游戏环境", "subtitle", "纯净生存 · 无付费特权")));
         portal.put("features", List.of(
-                Map.of("icon", "🏡", "title", "温馨社区", "description", "友好的玩家氛围，管理团队在线响应"),
-                Map.of("icon", "⚙️", "title", "红石与生存", "description", "支持红石机器与生电玩法，公共机器共享"),
-                Map.of("icon", "🛡️", "title", "纯净公平", "description", "无付费特权，反作弊保障，领地保护")));
+                Map.of("icon", "home", "title", "温馨社区", "description", "友好的玩家氛围，管理团队在线响应"),
+                Map.of("icon", "bolt", "title", "红石与生存", "description", "支持红石机器与生电玩法，公共机器共享"),
+                Map.of("icon", "shield", "title", "纯净公平", "description", "无付费特权，反作弊保障，领地保护")));
         portal.put("team", List.of(
                 Map.of("name", "Xia_Meng_", "role", "服主"),
                 Map.of("name", "管理员招募中", "role", "管理员")));

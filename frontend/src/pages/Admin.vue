@@ -8,7 +8,7 @@
         </div>
         <label class="flex items-center gap-2 text-sm cursor-pointer select-none"
           :class="maintenanceEnabled ? 'text-rose-300' : 'text-stone-400'">
-          🚧 维护模式
+          <AppIcon name="wrench" class="w-4 h-4" /> 维护模式
           <input type="checkbox" v-model="maintenanceEnabled" @change="toggleMaintenance" class="accent-rose-500 w-4 h-4" />
         </label>
       </div>
@@ -19,7 +19,7 @@
         <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
           class="flex-1 min-w-fit shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm transition-all duration-200"
           :class="activeTab === m.key ? 'bg-orange-500/15 text-orange-400 font-medium' : 'text-stone-400 hover:text-white hover:bg-white/5'">
-          <span>{{ m.icon }}</span><span>{{ m.label }}</span>
+          <AppIcon :name="m.icon" class="w-4 h-4" /><span>{{ m.label }}</span>
         </button>
       </div>
 
@@ -439,7 +439,7 @@
       <div v-if="activeTab === 'appeals' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">申诉管理</h3>
         <div v-if="appeals.length === 0" class="text-center py-12 text-stone-500">
-          <div class="text-4xl mb-2">📭</div>
+          <AppIcon name="envelope" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
           <div>暂无申诉</div>
         </div>
         <div v-else class="space-y-4">
@@ -471,9 +471,9 @@
       <QuestionBankEditor @changed="loadQuestionnaires" />
 
       <div class="card p-6">
-        <h3 class="text-lg font-semibold text-white mb-4">📋 问卷历史</h3>
+        <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><AppIcon name="document-text" class="w-5 h-5" /> 问卷历史</h3>
         <div v-if="questionnaires.length === 0" class="text-center py-12 text-stone-500">
-          <div class="text-4xl mb-2">📝</div>
+          <AppIcon name="pencil-square" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
           <div>暂无问卷记录</div>
         </div>
         <div v-else class="overflow-x-auto">
@@ -501,14 +501,14 @@
       <!-- 验证页面配置 Tab -->
       <div v-if="activeTab === 'migration' && !loading" class="card p-6 space-y-6">
         <div>
-          <h3 class="text-lg font-semibold text-white mb-2">📦 旧版数据迁移</h3>
+          <h3 class="text-lg font-semibold text-white mb-2 flex items-center gap-2"><AppIcon name="archive-box" class="w-5 h-5" /> 旧版数据迁移</h3>
           <p class="text-sm text-stone-400">
             上传旧版 XMWhitelist 的 MySQL 导出文件（mysqldump 生成的 <code>.sql</code>），
             系统将自动导入 9 张旧表（用户/审计/邀请/通知/进服记录/申诉/村谱/公共机器）并转换为新数据结构。
           </p>
         </div>
         <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-300">
-          ⚠️ 仅当系统内尚无用户数据时可执行导入（幂等保护）；旧密码将原样保留，玩家可继续用旧密码登录。
+          <span class="inline-flex items-center gap-1.5"><AppIcon name="warning" class="w-4 h-4" /> 仅当系统内尚无用户数据时可执行导入（幂等保护）；旧密码将原样保留，玩家可继续用旧密码登录。</span>
           操作前请确认已备份目标数据库。
         </div>
         <div class="flex items-center gap-3">
@@ -522,7 +522,7 @@
           </button>
         </div>
         <div v-if="migrationResult" class="bg-stone-800/60 rounded-xl p-4 text-sm">
-          <div class="text-green-400 font-medium mb-2">✅ {{ migrationResult.message }}</div>
+          <div class="text-green-400 font-medium mb-2 flex items-center gap-1.5"><AppIcon name="check-circle" class="w-4 h-4" /> {{ migrationResult.message }}</div>
           <pre class="text-xs text-stone-300 whitespace-pre-wrap overflow-auto max-h-72">{{ JSON.stringify(migrationResult.data, null, 2) }}</pre>
         </div>
         <div v-if="migrationError" class="text-sm text-red-400">{{ migrationError }}</div>
@@ -705,6 +705,7 @@
 <script setup lang="ts">
 import { ref, onMounted, inject, computed, watch } from 'vue'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 import QuestionBankEditor from '@/components/QuestionBankEditor.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
@@ -713,16 +714,16 @@ const notify = inject('notify') as any
 const activeTab = ref('portal')
 const maintenanceEnabled = ref(false)
 const menuItems = [
-  { key: 'portal', icon: '🏠', label: '门户管理' },
-  { key: 'settings', icon: '🎨', label: '外观设置' },
-  { key: 'review', icon: '✅', label: '审核管理' },
-  { key: 'players', icon: '👥', label: '玩家管理' },
-  { key: 'stats', icon: '📊', label: '数据统计' },
-  { key: 'audits', icon: '📜', label: '审计日志' },
-  { key: 'appeals', icon: '📮', label: '申诉处理' },
-  { key: 'questionnaires', icon: '📝', label: '问卷管理' },
-  { key: 'verify', icon: '🔐', label: '验证页面' },
-  { key: 'migration', icon: '📦', label: '数据迁移' }
+  { key: 'portal', icon: 'home', label: '门户管理' },
+  { key: 'settings', icon: 'cog', label: '外观设置' },
+  { key: 'review', icon: 'clipboard-check', label: '审核管理' },
+  { key: 'players', icon: 'users', label: '玩家管理' },
+  { key: 'stats', icon: 'chart-bar', label: '数据统计' },
+  { key: 'audits', icon: 'document-text', label: '审计日志' },
+  { key: 'appeals', icon: 'envelope', label: '申诉处理' },
+  { key: 'questionnaires', icon: 'pencil-square', label: '问卷管理' },
+  { key: 'verify', icon: 'shield-check', label: '验证页面' },
+  { key: 'migration', icon: 'archive-box', label: '数据迁移' }
 ]
 
 const loadMaintenance = async () => {
@@ -1073,7 +1074,7 @@ const addCarousel = () => { portalData.value.carousel.push({ image: '', title: '
 const removeCarousel = (i: number) => { portalData.value.carousel.splice(i, 1) }
 const addTeamMember = () => { portalData.value.team.push({ name: '', role: '', avatar: '' }) }
 const removeTeamMember = (i: number) => { portalData.value.team.splice(i, 1) }
-const addFeature = () => { portalData.value.features.push({ icon: '🎯', title: '', description: '' }) }
+const addFeature = () => { portalData.value.features.push({ icon: 'star', title: '', description: '' }) }
 const removeFeature = (i: number) => { portalData.value.features.splice(i, 1) }
 const addTimelineEvent = () => { portalData.value.timeline.push({ date: '', title: '', description: '', image: '' }) }
 const removeTimelineEvent = (i: number) => { portalData.value.timeline.splice(i, 1) }

@@ -4,10 +4,10 @@
       <div class="card w-full max-w-md p-8 animate-scale-in">
         <div class="text-center mb-6">
           <div class="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4" :class="status === 'completed' ? (passed ? 'bg-emerald-900/30' : 'bg-orange-900/30') : 'bg-orange-900/30'">
-            <span v-if="status === 'scoring'" class="text-2xl animate-spin">⏳</span>
-            <span v-else-if="status === 'completed' && passed" class="text-3xl">🎉</span>
-            <span v-else-if="status === 'completed' && !passed" class="text-3xl">📝</span>
-            <span v-else-if="status === 'error'" class="text-3xl">❌</span>
+            <AppIcon v-if="status === 'scoring'" name="clock" class="w-8 h-8 animate-spin" />
+            <AppIcon v-else-if="status === 'completed' && passed" name="check-circle" class="w-10 h-10 text-green-400" />
+            <AppIcon v-else-if="status === 'completed' && !passed" name="pencil-square" class="w-10 h-10 text-stone-400" />
+            <AppIcon v-else-if="status === 'error'" name="x-circle" class="w-10 h-10 text-rose-400" />
           </div>
           <h2 class="text-xl font-semibold text-white mb-2">{{ title }}</h2>
           <p class="text-sm text-stone-400">{{ subtitle }}</p>

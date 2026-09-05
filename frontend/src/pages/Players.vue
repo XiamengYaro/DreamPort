@@ -28,7 +28,7 @@
 
       <!-- 空状态 -->
       <div v-else-if="filteredPlayers.length === 0" class="text-center py-12 text-stone-500">
-        <div class="text-4xl mb-2">👤</div>
+        <AppIcon name="users" class="w-12 h-12 mx-auto mb-2 text-stone-500" />
         <div>{{ searchQuery ? '未找到匹配的玩家' : '暂无玩家数据' }}</div>
       </div>
 
@@ -56,6 +56,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 
 const loading = ref(false)
 const players = ref<any[]>([])

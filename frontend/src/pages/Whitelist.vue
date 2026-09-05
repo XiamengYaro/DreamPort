@@ -60,7 +60,7 @@
       <div v-if="userStatus === 'approved'" class="card p-8
 ">
         <div class="text-center">
-          <div class="text-5xl mb-4">✅</div>
+          <AppIcon name="check-circle" class="w-14 h-14 mx-auto mb-4 text-green-400" />
           <h2 class="text-2xl font-bold text-emerald-400 mb-2">白名单已通过</h2>
           <p class="text-stone-400">你已经拥有白名单权限，可以直接登录服务器游戏。</p>
           <router-link to="/dashboard" class="btn-primary mt-6 inline-block">进入控制台</router-link>
@@ -191,6 +191,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import AppIcon from '@/components/AppIcon.vue'
 
 const router = useRouter()
 const config = inject('config') as any
