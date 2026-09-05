@@ -25,22 +25,22 @@ wl:
   version: 0.1.0
   security:
     # 生产必须通过环境变量 WL_JWT_SECRET 覆盖（Rules.md §5）
-    jwt-secret: "dev-only-change-me-0123456789abcdef0123456789abcdef"
+    jwt-secret: ${WL_JWT_SECRET:dev-only-change-me-0123456789abcdef0123456789abcdef}
     jwt-ttl-days: 7
   internal:
-    # P1 引导值；P4 起 dp_server 表按服务器管理（哈希存储）
-    server-token: "dev-internal-token"
+    # 服务器间通信令牌；插件 backend.server-token 需一致（生产用 WL_SERVER_TOKEN）
+    server-token: ${WL_SERVER_TOKEN:dev-internal-token}
   cors:
     allowed-origins: "*"
   seed-demo: true    # 首次启动播种演示账号（生产置 false）
   web-register-url: "http://localhost:18898"
   admin-notify-email: ""
   mail:
-    host: ""         # 留空 = 日志模式（不发信，仅打印）；生产填 SMTP
-    port: 465
-    username: ""
-    password: ""
-    from: "no_reply@xmcraft.cn"
+    host: ${WL_SMTP_HOST:}        # 留空 = 日志模式（不发信，仅打印）；生产填 SMTP
+    port: ${WL_SMTP_PORT:465}
+    username: ${WL_SMTP_USER:}
+    password: ${WL_SMTP_PASSWORD:}
+    from: ${WL_SMTP_FROM:no_reply@xmcraft.cn}
     ssl: true
     subject: ""
   questionnaire:

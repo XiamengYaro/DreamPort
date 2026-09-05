@@ -257,6 +257,7 @@ cp dreamport-plugin/target/dreamport-plugin-0.1.0.jar <服务器>/plugins/
 | 文档 | 内容 |
 |------|------|
 | [README.md](../README.md) | 项目简介、架构图、SemVer 规范、路线图 |
+| [USER_GUIDE.md](USER_GUIDE.md) | **使用文档**（部署/配置/插件/迁移/玩家与管理员指南/FAQ） |
 | [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) | **128 项功能实现进度总表（实时更新）** |
 | [FEATURE_GAP_vs_参考项目.md](FEATURE_GAP_vs_参考项目.md) | Legacy vs 参考项目 v1.8.0 功能差距与吸收决策 |
 | [AGENTS.md](../AGENTS.md) | AI 协作操作指南 |

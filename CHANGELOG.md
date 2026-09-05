@@ -8,6 +8,9 @@
 ## [Unreleased]
 
 ### Added
+- `docs/USER_GUIDE.md` 使用文档：快速开始/生产部署(systemd/Docker/环境变量)/配置两层说明/
+  插件三角色安装/旧版迁移与回滚/玩家与管理员功能指南/命令权限/FAQ/安全清单
+- `application.yml` 基础设施凭据全面支持环境变量（WL_JWT_SECRET/WL_SERVER_TOKEN/WL_SMTP_*）
 - 项目仓库初始化：git 管理（main 分支）、MIT LICENSE、语义化版本规范
 - README：重写版架构简介、模块划分、关键设计决策、路线图（P0–P8）
 - 版本基线 `0.1.0-dev`；首个可运行脚手架构建通过后打 `v0.1.0` 标签

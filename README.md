@@ -121,7 +121,8 @@ DreamPort/
 
 | 文档 | 内容 |
 |------|------|
-| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | **完整项目文档**（架构/数据/API/安全/配置/部署） |
+| **[docs/USER_GUIDE.md](docs/USER_GUIDE.md)** | **使用文档**（快速开始/部署/配置/插件/迁移/玩家与管理员指南/FAQ） |
+| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | 完整项目文档（架构/数据/API/安全/配置/部署） |
 | [docs/IMPLEMENTATION_PROGRESS.md](docs/IMPLEMENTATION_PROGRESS.md) | **功能实现进度总表**（128 项，实时更新） |
 | [docs/FEATURE_GAP_vs_参考项目.md](docs/FEATURE_GAP_vs_参考项目.md) | Legacy vs 参考项目 功能差距与吸收决策 |
 | [AGENTS.md](AGENTS.md) / [Rules.md](Rules.md) | AI 协作指南 / 工程硬规则 |
