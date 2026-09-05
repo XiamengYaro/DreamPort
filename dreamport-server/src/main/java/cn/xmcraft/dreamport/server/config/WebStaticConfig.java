@@ -19,7 +19,7 @@ public class WebStaticConfig implements WebMvcConfigurer {
 
     private static final List<String> SPA_ROUTES = List.of(
             "/", "/docs", "/whitelist", "/login", "/register", "/forgot-password", "/reset-password",
-            "/verify", "/questionnaire", "/questionnaire-result", "/dashboard", "/leaderboard",
+            "/verify", "/questionnaire", "/questionnaire-result", "/dashboard", "/leaderboard", "/setup",
             "/village", "/players", "/machines", "/map", "/admin",
             "/docs/*", "/player/*", "/questionnaire/*");
 

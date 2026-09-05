@@ -100,7 +100,16 @@ const route = useRoute()
 const notify = inject('notify') as any
 const logoUrl = ref('/logo.png')
 
+const setupRequired = ref(false)
+const checkSetup = async () => {
+  try {
+    const res: any = await fetch('/api/setup/status').then(r => r.json())
+    setupRequired.value = !!res.setupRequired
+  } catch { /* ignore */ }
+}
+
 onMounted(async () => {
+  checkSetup()
   try { const res = await fetch('/api/config'); const data = await res.json(); if (data.success && data.data.portal?.logo) logoUrl.value = data.data.portal.logo } catch (e) {}
 })
 

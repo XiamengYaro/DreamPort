@@ -22,25 +22,25 @@
 
 ## 1. 快速开始
 
-无需 MySQL、无需任何外部服务，5 分钟跑起来：
+**只需 MySQL + 一个 JAR**，首次启动自动生成配置文件并进入初始化向导：
 
 ```bash
-# 1. 构建（或从 Gitea Actions/Release 下载现成 JAR）
-./scripts/build.sh
+# 0. 准备数据库（一次性）
+mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
-# 2. 启动后端（默认 H2 内存库，仅用于体验）
-java -jar dreamport-server/target/dreamport-server-0.1.0.jar
+# 1. 首次启动 —— 自动在工作目录生成 config.yml（数据库需先在 config.yml 填好）
+java -jar dreamport-server-0.1.0.jar
 
-# 3. 浏览器访问
-open http://localhost:18898
+# 2. 编辑 config.yml：填 MySQL 连接（[必改]），改 jwt-secret / server-token，重启
+nano config.yml && java -jar dreamport-server-0.1.0.jar
+
+# 3. 浏览器打开 http://localhost:18898/setup 进入初始化向导：
+#    ① 创建管理员账号  ② 选择「全新部署」或「上传旧库 .sql 导入」
+open http://localhost:18898/setup
 ```
 
-- 官网门户 / 注册 / 登录 / 管理后台全部可用
-- 演示账号：`demo / demo12345`（管理员登录后可用）、`demo2 / demo12345`
+- 后端仅支持 **MySQL**；SMTP 未配置时邮件为**日志模式**（验证码打印在后端日志）
 - 默认端口：**18898**（网页+API）、**18899**（WebSocket 实时推送）
-- SMTP 未配置时邮件为**日志模式**（验证码打印在后端日志里，方便体验）
-
-> 体验完记得关掉：`Ctrl+C` 即可；数据在内存里，重启即清空。
 
 ---
 
@@ -56,28 +56,25 @@ open http://localhost:18898
 | 端口 | 18898（TCP，对玩家开放）、18899（TCP，管理后台用；可走内网/反代） |
 | SMTP | 任一支持 SMTP 的邮箱（不配则验证码功能不可用） |
 
-### 2.2 部署流程（config.yml 单文件，三次启动上线）
-
-部署只需一个配置文件，**无需环境变量**：
+### 2.2 部署流程（config.yml 单文件 + 初始化向导）
 
 ```bash
-# ① 首次启动 —— 自动在工作目录生成 config.yml（带中文注释的完整模板）
+# ① 建库（一次性）
+mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+
+# ② 首次启动 —— 自动生成 config.yml（数据库未就绪时本次启动失败属预期，文件已生成）
 java -jar dreamport-server-0.1.0.jar
-# 进程会提示 "已生成部署配置"，此时 Ctrl+C 停止
 
-# ② 编辑 config.yml（完成 [必改] 项）
+# ③ 编辑 config.yml（[必改]：spring.datasource 数据库、jwt-secret、server-token、SMTP）
 nano config.yml
-#   - jwt-secret:      openssl rand -base64 48 生成
-#   - server-token:    随机串（与插件 backend.server-token 一致）
-#   - 取消 spring.datasource 段注释并填入 MySQL（生产必做，H2 数据不持久）
-#   - mail.host:       填 SMTP（不填则验证码只打日志）
-#   - seed-demo 保持 false
 
-# ③ 再次启动 —— 生产运行
+# ④ 再次启动 → 打开 http://域名:18898/setup 完成初始化向导
 java -jar dreamport-server-0.1.0.jar
 ```
 
-> **优先级**：命令行参数 > 环境变量（WL_JWT_SECRET 等，Docker/CI 场景可用）> config.yml > 内置默认。
+向导完成两件事：**创建管理员账号**（写入管理员名单）+ **选择部署方式**（全新部署 / 上传旧库 .sql 导入）。
+
+> **优先级**：命令行参数 > 环境变量（WL_JWT_SECRET 等，Docker/CI 可用）> config.yml > 内置默认。
 > ⚠️ `config.yml` 含密钥，已列入 .gitignore，**不要提交或外传**。
 
 ### 2.3 进程守护（可选）
@@ -184,17 +181,16 @@ web-register-url: "https://你的域名"
 2. 启动后端（`--spring.profiles.active=mysql`）
 3. 启动时自动执行：
    - Flyway 建 `dp_*` 新表（自动 baseline，不影响旧表）
-   - 检测到 `xmwhitelist_*` 旧表 → 改名 `legacy_<表>_backup`（原地备份，零拷贝）
-   - 按列映射导入：用户（**旧密码哈希原样保留，玩家无感登录**）、审计、邀请、通知、进服记录、申诉、村谱、机器
+   - 检测到 `xmwhitelist_*` 旧表 → 改名 `legacy_<表>_backup`（原地备份，零拷贝）并按列映射导入
    - 若配置 `wl.migration.legacy-dir`：追加导入 file 模式的 `users.json`/`audits.json`
    - 若配置 `wl.migration.legacy-config`：旧 `config.yml` 的门户/背景/公告/管理员导入后台
-4. 日志输出迁移报告（各表行数），并写入后台可查的 `migration.report`
+3. 日志输出迁移报告（各表行数），并写入后台可查的 `migration.report`
 
-**回滚**：停 DreamPort → 把 `legacy_*_backup` 改回原名 → 换回旧版插件 JAR。旧数据从未被删除。
+**回滚**（方式 B）：停 DreamPort → 把 `legacy_*_backup` 改回原名 → 换回旧版插件 JAR。旧数据从未被删除。
 
-**实测记录**（v0.2.1，生产 xmc 库 dump）：19 用户 / 71 审计 / 8 邀请 / 1672 进服记录，1778 行 1.6s 导入，哈希逐字节保留，错误密码 401。
+**实测记录**（v0.2.1 真实生产 dump）：19 用户 / 71 审计 / 8 邀请 / 1672 进服记录，1778 行 1.6s 导入，哈希逐字节保留，错误密码 401；v0.4.0 又以「向导上传 .sql」路径在同数据上复验通过。
 
-> `file` 存储模式的旧服：MySQL 里没有旧表，直接配 `wl.migration.legacy-dir` 指向旧 `plugins/XMWhitelist/` 目录即可。
+> `file` 存储模式的旧服：MySQL 里没有旧表，向导上传不支持 json；改用 `wl.migration.legacy-dir` 指向旧 `plugins/XMWhitelist/` 目录（方式 B）。
 
 ---
 

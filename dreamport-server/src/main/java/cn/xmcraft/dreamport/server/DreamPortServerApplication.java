@@ -31,6 +31,12 @@ public class DreamPortServerApplication {
     }
 
     @Bean
+    public cn.xmcraft.dreamport.server.migration.LegacyMigrator legacyMigrator(
+            org.springframework.jdbc.core.JdbcTemplate jdbc) {
+        return new cn.xmcraft.dreamport.server.migration.LegacyMigrator(jdbc);
+    }
+
+    @Bean
     public cn.xmcraft.dreamport.server.infra.MailService.MailProps mailProps(
             cn.xmcraft.dreamport.server.config.WlProps props) {
         var m = props.mail();

@@ -7,14 +7,13 @@ spring:
     virtual:
       enabled: true
   datasource:
-    # dev 默认 H2（MySQL 兼容模式），无需安装数据库即可启动；生产用 --spring.profiles.active=mysql
-    url: jdbc:h2:mem:dreamport;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
-    username: sa
-    password: ""
+    # 仅支持 MySQL（部署配置见工作目录 config.yml，首次启动自动生成）
+    url: jdbc:mysql://${WL_DB_HOST:127.0.0.1}:${WL_DB_PORT:3306}/${WL_DB_NAME:dreamport}?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${WL_DB_USER:dreamport}
+    password: ${WL_DB_PASSWORD:change-me}
   flyway:
-    locations: classpath:db/migration/{vendor}
-    # 旧库（非空 schema）接入时自动建立基线，随后增量迁移
-    # baseline-version 必须为 0，否则 V1 建表会被基线吞掉
+    locations: classpath:db/migration/mysql
+    # 接入非空旧库时自动建立基线（baseline-version=0 保证 V1 建表执行）
     baseline-on-migrate: true
     baseline-version: 0
   jackson:
@@ -22,6 +21,10 @@ spring:
 
 server:
   port: 18898
+
+spring.servlet.multipart:
+  max-file-size: 128MB       # 管理后台旧库 dump 上传上限
+  max-request-size: 128MB
 
 wl:
   ws-port: 18899             # WebSocket 端口（可被工作目录 config.yml 覆盖）
@@ -35,7 +38,6 @@ wl:
     server-token: ${WL_SERVER_TOKEN:dev-internal-token}
   cors:
     allowed-origins: "*"
-  seed-demo: true    # 首次启动播种演示账号（生产置 false）
   web-register-url: "http://localhost:18898"
   admin-notify-email: ""
   mail:
@@ -66,12 +68,3 @@ wl:
     legacy-dir: ""                 # 旧版 file 模式目录（含 users.json/audits.json）
     legacy-config: ""              # 旧版 config.yml 路径（站点内容导入 dp_setting）
 
----
-spring:
-  config:
-    activate:
-      on-profile: mysql
-  datasource:
-    url: jdbc:mysql://${WL_DB_HOST:127.0.0.1}:${WL_DB_PORT:3306}/${WL_DB_NAME:dreamport}?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: ${WL_DB_USER:dreamport}
-    password: ${WL_DB_PASSWORD:change-me}

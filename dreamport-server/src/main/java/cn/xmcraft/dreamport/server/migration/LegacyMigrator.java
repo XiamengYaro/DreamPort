@@ -95,8 +95,41 @@ public class LegacyMigrator {
         return report;
     }
 
+    /** 管理后台上传迁移：从暂存表复制到 dp_* 表（不_rename，导入后由调用方清理暂存） */
+    public Map<String, Object> migrateFromStaging(Map<String, String> stagingToTarget) {
+        Map<String, Object> report = new LinkedHashMap<>();
+        if (!dpUserEmpty()) {
+            report.put("skipped", "dp_user 已有数据，禁止覆盖导入（幂等保护）");
+            log.info("[迁移] {}", report.get("skipped"));
+            return report;
+        }
+        long start = System.currentTimeMillis();
+        Map<String, Integer> imported = new LinkedHashMap<>();
+        for (Map.Entry<String, String> e : stagingToTarget.entrySet()) {
+            jdbc.update("DELETE FROM " + e.getValue());
+            imported.put(e.getKey(), importTable(e.getKey(), e.getValue()));
+        }
+        report.put("importedRows", imported);
+        report.put("elapsedMs", System.currentTimeMillis() - start);
+        log.info("[迁移] 上传数据导入完成：{} 行，耗时 {}ms",
+                imported.values().stream().mapToInt(Integer::intValue).sum(),
+                System.currentTimeMillis() - start);
+        try {
+            jdbc.update("DELETE FROM dp_setting WHERE skey = ?", "migration.report");
+            jdbc.update("INSERT INTO dp_setting (skey, svalue, updated_at, updated_by) VALUES (?, ?, ?, ?)",
+                    "migration.report", mapper.writeValueAsString(report),
+                    System.currentTimeMillis(), "admin-upload");
+        } catch (Exception ignored) {
+        }
+        return report;
+    }
+
+    public boolean dpUserHasData() {
+        return !dpUserEmpty();
+    }
+
     /** 单表导入：按 ResultSetMetaData 动态取列，同名/改名映射；返回导入行数 */
-    private int importTable(String legacyTable, String newTable) {
+    int importTable(String legacyTable, String newTable) {
         List<Map<String, Object>> rows = jdbc.queryForList("SELECT * FROM " + legacyTable);
         for (Map<String, Object> row : rows) {
             Map<String, Object> target = new LinkedHashMap<>();
@@ -233,7 +266,7 @@ public class LegacyMigrator {
         }
     }
 
-    private boolean dpUserEmpty() {
+    boolean dpUserEmpty() {
         try {
             Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM dp_user", Integer.class);
             return count == null || count == 0;

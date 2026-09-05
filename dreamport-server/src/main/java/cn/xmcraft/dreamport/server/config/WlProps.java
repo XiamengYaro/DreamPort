@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "wl")
 public record WlProps(Integer wsPort, String version, Security security, Internal internal,
-                      String cors, boolean seedDemo, Mail mail,
+                      String cors, Mail mail,
                       Questionnaire questionnaire, Llm llm, Invite invite,
                       String adminNotifyEmail, String webRegisterUrl) {
 

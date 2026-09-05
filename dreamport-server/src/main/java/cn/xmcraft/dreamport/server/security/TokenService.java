@@ -10,6 +10,9 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.Date;
 
 /**
@@ -22,11 +25,17 @@ public class TokenService {
     public static final String ROLE_USER = "user";
     public static final String ROLE_ADMIN = "admin";
 
+    private static final Logger log = LoggerFactory.getLogger(TokenService.class);
+
     private final SecretKey key;
     private final long ttlMs;
 
     public TokenService(WlProps props) {
-        this.key = Keys.hmacShaKeyFor(props.security().jwtSecret().getBytes(StandardCharsets.UTF_8));
+        String secret = props.security().jwtSecret();
+        if (secret.startsWith("change-me-please") || secret.startsWith("dev-only-change-me")) {
+            log.error("⚠️ jwt-secret 仍为占位值！生产环境必须修改 config.yml 的 wl.security.jwt-secret");
+        }
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.ttlMs = props.security().jwtTtlDays() * 86_400_000L;
     }
 

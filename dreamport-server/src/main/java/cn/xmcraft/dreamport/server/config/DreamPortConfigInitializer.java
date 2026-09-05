@@ -46,11 +46,10 @@ public class DreamPortConfigInitializer implements EnvironmentPostProcessor, Ord
         try {
             Map<String, Object> source = new Yaml().load(Files.readString(file, StandardCharsets.UTF_8));
             if (source != null && !source.isEmpty()) {
-                // 插到命令行参数之后（存在时），保证 CLI > 配置文件 > 打包默认值
-                if (environment.getPropertySources().contains(
-                        org.springframework.core.env.CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME)) {
-                    environment.getPropertySources().addAfter(
-                            org.springframework.core.env.CommandLinePropertySource.COMMAND_LINE_PROPERTY_SOURCE_NAME,
+                // 优先级：命令行 > 环境变量 > config.yml > 打包默认值
+                // （插到 systemEnvironment 之后；命令行参数在 systemEnvironment 之前，天然更高）
+                if (environment.getPropertySources().contains("systemEnvironment")) {
+                    environment.getPropertySources().addAfter("systemEnvironment",
                             new MapPropertySource(PROPERTY_SOURCE_NAME, flatten(source)));
                 } else {
                     environment.getPropertySources().addFirst(

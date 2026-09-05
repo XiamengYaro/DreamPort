@@ -45,6 +45,9 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
           验证页面
         </button>
+        <button @click="activeTab = 'migration'" class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all duration-200" :class="activeTab === 'migration' ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20' : 'text-stone-400 hover:text-white hover:bg-white/5'">
+          <span class="text-lg">📦</span><span class="text-sm font-medium">迁移</span>
+        </button>
       </div>
 
       <!-- Loading -->
@@ -520,6 +523,35 @@
       </div>
 
       <!-- 验证页面配置 Tab -->
+      <div v-if="activeTab === 'migration' && !loading" class="card p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-semibold text-white mb-2">📦 旧版数据迁移</h3>
+          <p class="text-sm text-stone-400">
+            上传旧版 XMWhitelist 的 MySQL 导出文件（mysqldump 生成的 <code>.sql</code>），
+            系统将自动导入 9 张旧表（用户/审计/邀请/通知/进服记录/申诉/村谱/公共机器）并转换为新数据结构。
+          </p>
+        </div>
+        <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-300">
+          ⚠️ 仅当系统内尚无用户数据时可执行导入（幂等保护）；旧密码将原样保留，玩家可继续用旧密码登录。
+          操作前请确认已备份目标数据库。
+        </div>
+        <div class="flex items-center gap-3">
+          <input ref="migrationFileInput" type="file" accept=".sql"
+            class="flex-1 text-sm text-stone-300 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0
+                   file:bg-orange-500/15 file:text-orange-400 hover:file:bg-orange-500/25 file:cursor-pointer"
+            @change="onMigrationFileChange" />
+          <button @click="uploadMigration" :disabled="!migrationFile || migrationLoading"
+            class="px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            {{ migrationLoading ? '导入中…' : '开始导入' }}
+          </button>
+        </div>
+        <div v-if="migrationResult" class="bg-stone-800/60 rounded-xl p-4 text-sm">
+          <div class="text-green-400 font-medium mb-2">✅ {{ migrationResult.message }}</div>
+          <pre class="text-xs text-stone-300 whitespace-pre-wrap overflow-auto max-h-72">{{ JSON.stringify(migrationResult.data, null, 2) }}</pre>
+        </div>
+        <div v-if="migrationError" class="text-sm text-red-400">{{ migrationError }}</div>
+      </div>
+
       <div v-if="activeTab === 'verify' && !loading" class="card p-6 space-y-6">
         <h3 class="text-lg font-semibold text-white mb-4">验证页面配置</h3>
         
@@ -701,6 +733,33 @@ import { getStatusText, getStatusClass } from '@/lib/status'
 const notify = inject('notify') as any
 
 const activeTab = ref('portal')
+const migrationFileInput = ref<HTMLInputElement | null>(null)
+const migrationFile = ref<File | null>(null)
+const migrationLoading = ref(false)
+const migrationResult = ref<any>(null)
+const migrationError = ref('')
+
+const onMigrationFileChange = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  migrationFile.value = input.files && input.files[0] ? input.files[0] : null
+  migrationResult.value = null
+  migrationError.value = ''
+}
+
+const uploadMigration = async () => {
+  if (!migrationFile.value) return
+  migrationLoading.value = true
+  migrationError.value = ''
+  migrationResult.value = null
+  try {
+    const res: any = await api.uploadMigrationDump(migrationFile.value)
+    migrationResult.value = res
+  } catch (err: any) {
+    migrationError.value = err.message || '导入失败'
+  } finally {
+    migrationLoading.value = false
+  }
+}
 const searchQuery = ref('')
 const statusFilter = ref('')
 const loading = ref(true)

@@ -639,6 +639,26 @@ class ApiService {
     return this.request('/verify/status')
   }
 
+  // Setup (first run)
+  async getSetupStatus() {
+    return this.request('/setup/status')
+  }
+
+  async submitSetup(form: FormData) {
+    return this.request('/setup', { method: 'POST', body: form })
+  }
+
+  // Migration (admin)
+  async uploadMigrationDump(file: File): Promise<any> {
+    const formData = new FormData()
+    formData.append('file', file)
+    return this.request('/admin/migration/upload', { method: 'POST', body: formData })
+  }
+
+  async getMigrationReport() {
+    return this.request('/admin/migration/report')
+  }
+
   // Public Machines
   async getMachineList() {
     return this.request('/machine/list')
