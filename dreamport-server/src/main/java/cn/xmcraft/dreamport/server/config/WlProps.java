@@ -7,9 +7,14 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "wl")
 public record WlProps(Integer wsPort, String version, Security security, Internal internal,
-                      String cors, Mail mail,
+                      String cors, Mail mail, Register register,
                       Questionnaire questionnaire, Llm llm, Invite invite,
                       String adminNotifyEmail, String webRegisterUrl) {
+
+    public record Register(boolean requireEmailCode, boolean captchaEnabled, int maxAccountsPerEmail,
+                           boolean domainWhitelistEnabled, java.util.List<String> emailDomainWhitelist,
+                           boolean autoApprove) {
+    }
 
     public record Security(String jwtSecret, int jwtTtlDays) {
     }

@@ -54,6 +54,17 @@
               </label>
             </div>
 
+            <div v-else-if="question.type === 'fill_blank'">
+              <input v-model="answers[question.id]" type="text" class="input"
+                :placeholder="question.placeholder || '请填写...'" />
+              <div v-if="question.scoringRule" class="text-xs mt-1 text-stone-500">自动识别：{{ validationLabel(question.scoringRule) }}</div>
+            </div>
+
+            <div v-else-if="question.type === 'essay'">
+              <textarea v-model="answers[question.id]" class="input min-h-[130px] resize-y"
+                :placeholder="question.placeholder || '请详细作答...'"></textarea>
+            </div>
+
             <div v-else-if="question.type === 'text'">
               <textarea v-if="question.multiline" v-model="answers[question.id]" class="input min-h-[100px] resize-y"
                 :placeholder="question.placeholder || '请输入你的回答...'" :minlength="question.minLength || 0" :maxlength="question.maxLength || 500"></textarea>
@@ -191,6 +202,16 @@ const loadQuestionnaire = async () => {
     const response: any = await fetch('/api/questionnaire/config'); const data = await response.json()
     if (data.success && data.data.enabled) { questions.value = data.data.questions || [] } else { notify?.error('问卷未启用'); router.push('/login') }
   } catch (error) { notify?.error('加载问卷失败'); router.push('/login') }
+}
+
+const validationLabel = (rule: string) => {
+  const r = (rule || '').toLowerCase()
+  if (r.startsWith('regex:')) return '自定义格式'
+  if (r.includes('qq')) return 'QQ 号'
+  if (r.includes('邮箱') || r.includes('email')) return '邮箱'
+  if (r.includes('手机')) return '手机号'
+  if (r.includes('数字') || r.includes('number')) return '数字'
+  return '任意内容'
 }
 
 const isMultiSelected = (questionId: string, optionText: string) => {

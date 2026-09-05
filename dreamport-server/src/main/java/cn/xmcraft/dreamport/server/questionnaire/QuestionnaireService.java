@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.Yaml;
 
+import java.util.regex.Pattern;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -101,7 +103,22 @@ public class QuestionnaireService {
             int score;
             String reason;
             boolean manualReview = false;
-            if ("text".equals(q.type())) {
+            if ("fill_blank".equals(q.type())) {
+                // 填空：按 scoring_rule 自动识别（qq/email/phone/number/regex:...），命中得满分
+                if (matchesValidation(answer, q.scoringRule())) {
+                    score = q.maxScore();
+                    reason = "格式正确";
+                } else {
+                    score = 0;
+                    reason = answer == null || answer.isBlank() ? "未作答" : "格式不符合要求";
+                }
+                total += score;
+                results.add(new QuestionResult(q.id(), "zh".equals(lang) ? q.questionZh() : orEn(q),
+                        score, q.maxScore(), reason, false));
+                summaryLines.add("Q" + q.id() + " " + answer + " → " + score + "/" + q.maxScore());
+                continue;
+            }
+            if ("text".equals(q.type()) || "essay".equals(q.type())) {
                 if (llmClient.enabled() && q.scoringRule() != null && !q.scoringRule().isBlank()) {
                     LlmScoringClient.ScoringResult llm = llmClient.score(
                             "zh".equals(lang) ? q.questionZh() : orEn(q), answer, q.scoringRule(), q.maxScore());
@@ -149,7 +166,12 @@ public class QuestionnaireService {
             if (answers.containsKey(String.valueOf(q.id()))) {
                 Object raw = answers.get(String.valueOf(q.id()));
                 String answer = raw == null ? "" : String.valueOf(raw);
-                if (!"text".equals(q.type())) {
+                if ("fill_blank".equals(q.type())) {
+                    boolean ok = matchesValidation(answer, q.scoringRule());
+                    return new QuestionResult(q.id(), q.questionZh(), ok ? q.maxScore() : 0, q.maxScore(),
+                            ok ? "格式正确" : (answer.isBlank() ? "未作答" : "格式不符合要求"), false);
+                }
+                if (!"text".equals(q.type()) && !"essay".equals(q.type())) {
                     int gained = 0;
                     for (QuestionnaireRecords.QuestionOption opt : options(q.id())) {
                         String text = "en".equals(lang) && opt.textEn() != null ? opt.textEn() : opt.textZh();
@@ -175,6 +197,37 @@ public class QuestionnaireService {
             }
         }
         return new QuestionResult(-1, "未知题目", 0, 0, "题目不存在", false);
+    }
+
+    private static final Pattern QQ_PATTERN = Pattern.compile("^\\d{5,12}$");
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+    private static final Pattern PHONE_PATTERN = Pattern.compile("^1\\d{10}$");
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("^\\d+$");
+
+    /**
+     * 填空题自动识别：scoring_rule 支持 qq / email / phone / number / regex:自定义 / 留空(任意非空)
+     */
+    public boolean matchesValidation(String answer, String rule) {
+        if (answer == null || answer.isBlank()) {
+            return false;
+        }
+        String r = rule == null ? "" : rule.trim().toLowerCase();
+        if (r.startsWith("regex:")) {
+            return answer.matches(r.substring(6));
+        }
+        if (r.contains("qq")) {
+            return QQ_PATTERN.matcher(answer).matches();
+        }
+        if (r.contains("邮箱") || r.contains("email")) {
+            return EMAIL_PATTERN.matcher(answer).matches();
+        }
+        if (r.contains("手机")) {
+            return PHONE_PATTERN.matcher(answer).matches();
+        }
+        if (r.contains("数字") || r.contains("number")) {
+            return NUMBER_PATTERN.matcher(answer).matches();
+        }
+        return true; // 无规则 = 填写即得分
     }
 
     private String orEn(QuestionnaireRecords.Question q) {

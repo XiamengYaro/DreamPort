@@ -94,7 +94,10 @@ public class ReviewAdminController {
         }
         List<Map<String, Object>> users = userRepository.listAll().stream()
                 .map(this::toUserMap).toList();
-        return ResponseEntity.ok(Map.of("users", users));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("users", users));
+        return ResponseEntity.ok(body);
     }
 
     private Map<String, Object> toUserMap(UserRecord u) {

@@ -241,18 +241,20 @@ public class CommunityController {
 
     @GetMapping("/players/list")
     public ResponseEntity<Object> playersList() {
+        // 全部 approved/封禁 用户均展示；MC 名缺失时回退用户名（修复玩家目录为空）
         List<Map<String, Object>> players = userRepository.listAll().stream()
-                .filter(u -> u.minecraftName() != null)
+                .filter(u -> "approved".equals(u.status()) || "banned".equals(u.status()))
                 .sorted((a, b) -> String.CASE_INSENSITIVE_ORDER.compare(a.username(), b.username()))
                 .map(u -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("username", u.username());
+                    m.put("minecraftName", u.minecraftName() == null ? u.username() : u.minecraftName());
                     m.put("uuid", u.minecraftUuid());
                     m.put("status", u.status());
                     m.put("regTime", u.regTime());
                     return m;
                 }).toList();
-        return ResponseEntity.ok(Map.of("players", players));
+        return ResponseEntity.ok(Map.of("success", true, "data", Map.of("list", players)));
     }
 
     @GetMapping("/players/profile/{username}")

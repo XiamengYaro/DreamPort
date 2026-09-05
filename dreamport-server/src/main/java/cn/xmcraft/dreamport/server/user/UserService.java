@@ -25,15 +25,19 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordService passwordService;
     private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
+    private final cn.xmcraft.dreamport.server.config.WlProps props;
 
     public UserService(UserRepository userRepository, PasswordService passwordService,
-                       cn.xmcraft.dreamport.server.settings.SettingService settingService) {
+                       cn.xmcraft.dreamport.server.settings.SettingService settingService,
+                       cn.xmcraft.dreamport.server.config.WlProps props) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
         this.settingService = settingService;
+        this.props = props;
     }
 
-    public enum RegisterError {INVALID_USERNAME, INVALID_EMAIL, INVALID_PASSWORD, USERNAME_TAKEN, EMAIL_TAKEN}
+    public enum RegisterError {INVALID_USERNAME, INVALID_EMAIL, INVALID_PASSWORD, USERNAME_TAKEN,
+        EMAIL_TAKEN, EMAIL_DOMAIN_DENIED, EMAIL_LIMIT}
 
     public record RegisterResult(UserRecord user, RegisterError error) {
         public boolean ok() {
@@ -54,13 +58,28 @@ public class UserService {
         if (userRepository.findByUsernameIgnoreCase(username).isPresent()) {
             return new RegisterResult(null, RegisterError.USERNAME_TAKEN);
         }
-        if (userRepository.existsByEmailIgnoreCase(email)) {
-            return new RegisterResult(null, RegisterError.EMAIL_TAKEN);
+        // 邮箱域名白名单（Rules.md §3）
+        var whitelist = props.register() != null ? props.register().emailDomainWhitelist() : null;
+        boolean whitelistOn = props.register() != null && props.register().domainWhitelistEnabled()
+                && whitelist != null && !whitelist.isEmpty();
+        if (whitelistOn) {
+            String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
+            if (whitelist.stream().noneMatch(d -> String.valueOf(d).equalsIgnoreCase(domain))) {
+                return new RegisterResult(null, RegisterError.EMAIL_DOMAIN_DENIED);
+            }
         }
-        UserRecord user = new UserRecord(null, username, email, "pending",
+        // 单邮箱注册账号数上限
+        int maxPerEmail = props.register() == null ? 2 : props.register().maxAccountsPerEmail();
+        long sameEmail = userRepository.listAll().stream()
+                .filter(u -> u.email() != null && u.email().equalsIgnoreCase(email)).count();
+        if (sameEmail >= maxPerEmail) {
+            return new RegisterResult(null, RegisterError.EMAIL_LIMIT);
+        }
+        boolean autoApprove = props.register() != null && props.register().autoApprove();
+        UserRecord user = new UserRecord(null, username, email, autoApprove ? "approved" : "pending",
                 "bcrypt", passwordService.hash(password), null,
                 null, null, null, null, null, null, null, null, null,
-                null, null, null, null, null, null, null, null, null, null,
+                null, username, null, null, null, null, null, null, null, null,
                 null, null, null);
         return new RegisterResult(userRepository.save(user), null);
     }
@@ -100,7 +119,9 @@ public class UserService {
         }
         return switch (user.status()) {
             case "approved" -> LoginCheckResponse.allow();
-            case "pending" -> LoginCheckResponse.deny("login.pending");
+            case "pending" -> props.questionnaire().enabled() && user.questionnaireScore() == 0
+                    ? LoginCheckResponse.deny("login.needs_questionnaire")
+                    : LoginCheckResponse.deny("login.pending");
             case "pending_review" -> LoginCheckResponse.deny("login.pending_review");
             case "invited_pending" -> LoginCheckResponse.deny("login.invited_pending");
             case "pending_verify" -> LoginCheckResponse.deny("login.pending_verify");

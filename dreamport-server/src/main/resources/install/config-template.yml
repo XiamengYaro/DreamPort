@@ -39,6 +39,13 @@ wl:
     ssl: true
     subject: ""
 
+  register:
+    require-email-code: true            # 注册需邮箱验证码（邀请码注册豁免）
+    captcha-enabled: true
+    max-accounts-per-email: 2
+    domain-whitelist-enabled: true
+    email-domain-whitelist: [qq.com, 163.com, gmail.com, outlook.com, xmcraft.cn]
+    auto-approve: false
   questionnaire:
     enabled: true                       # 注册流程是否要求问卷
     pass-score: 60                      # 通过线（百分制）

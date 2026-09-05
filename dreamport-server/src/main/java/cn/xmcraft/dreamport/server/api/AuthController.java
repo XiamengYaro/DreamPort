@@ -30,13 +30,25 @@ public class AuthController {
     private final TokenService tokenService;
     private final RateLimiter rateLimiter;
     private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
+    private final cn.xmcraft.dreamport.server.verification.CaptchaService captchaService;
+    private final cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService;
+    private final cn.xmcraft.dreamport.server.invite.InviteService inviteService;
+    private final cn.xmcraft.dreamport.server.config.WlProps props;
 
     public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
-                          cn.xmcraft.dreamport.server.settings.SettingService settingService) {
+                          cn.xmcraft.dreamport.server.settings.SettingService settingService,
+                          cn.xmcraft.dreamport.server.verification.CaptchaService captchaService,
+                          cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService,
+                          cn.xmcraft.dreamport.server.invite.InviteService inviteService,
+                          cn.xmcraft.dreamport.server.config.WlProps props) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.rateLimiter = rateLimiter;
         this.settingService = settingService;
+        this.captchaService = captchaService;
+        this.verifyCodeService = verifyCodeService;
+        this.inviteService = inviteService;
+        this.props = props;
     }
 
     /** 是否在管理员名单（dp_setting admins.list，语义对齐旧版 config.admins） */
@@ -47,7 +59,9 @@ public class AuthController {
                 .anyMatch(a -> String.valueOf(a).equalsIgnoreCase(username));
     }
 
-    public record RegisterRequest(String username, String email, String password) {
+    public record RegisterRequest(String username, String email, String password,
+                                  String verifyCode, String captchaToken, String captchaAnswer,
+                                  String inviteCode) {
     }
 
     public record LoginRequest(String username, String password) {
@@ -59,6 +73,19 @@ public class AuthController {
         if (!rateLimiter.allow("register:" + clientIp(request), 3, 60_000)) {
             return tooManyRequests();
         }
+        // 图形验证码（前端注册页强制携带）
+        boolean captchaEnabled = props.register() == null || props.register().captchaEnabled();
+        if (captchaEnabled
+                && !captchaService.check(req.captchaToken(), req.captchaAnswer())) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("图形验证码错误或已过期"));
+        }
+        // 邮箱验证码（邀请码注册豁免；Admin 后台初始化不受影响）
+        boolean hasInvite = req.inviteCode() != null && !req.inviteCode().isBlank();
+        boolean requireCode = props.register() == null || props.register().requireEmailCode();
+        if (requireCode && !hasInvite
+                && !verifyCodeService.check(req.email(), req.verifyCode())) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("邮箱验证码错误或已过期"));
+        }
         var result = userService.register(req.username(), req.email(), req.password());
         if (!result.ok()) {
             String message = switch (result.error()) {
@@ -67,10 +94,18 @@ public class AuthController {
                 case INVALID_PASSWORD -> "密码至少 6 位";
                 case USERNAME_TAKEN -> "用户名已被注册";
                 case EMAIL_TAKEN -> "该邮箱已注册账号";
+                case EMAIL_DOMAIN_DENIED -> "该邮箱域名不在白名单内";
+                case EMAIL_LIMIT -> "该邮箱注册账号数已达上限";
             };
             return ResponseEntity.badRequest().body(ApiResponse.failure(message));
         }
-        // P3：接入邮箱验证码/问卷后，状态流转按旧版分支；骨架先发 token
+        // 邀请码注册路径
+        if (hasInvite) {
+            var inviteResult = inviteService.registerWithInvite(result.user().username(), req.inviteCode());
+            if (!inviteResult.success()) {
+                return ResponseEntity.badRequest().body(ApiResponse.failure(inviteResult.message()));
+            }
+        }
         String token = tokenService.issue(result.user().username(), TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);
@@ -103,7 +138,11 @@ public class AuthController {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);
         data.put("username", u.username());
-        data.put("status", u.status());
+        // 问卷未答（pending 且 0 分）→ 前端引导去答题
+        String status = "pending".equals(u.status())
+                && props.questionnaire().enabled() && u.questionnaireScore() == 0
+                ? "needs_questionnaire" : u.status();
+        data.put("status", status);
         data.put("isAdmin", admin);
         return ResponseEntity.ok(ApiResponse.success("登录成功", data));
     }

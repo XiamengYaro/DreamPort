@@ -1,5 +1,6 @@
 package cn.xmcraft.dreamport.server.questionnaire;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -35,12 +36,12 @@ public final class QuestionnaireRecords {
     public record Question(
             @Id Long id,
             Long questionnaireId,
-            String questionZh,
-            String questionEn,
+            @JsonAlias("question_zh") String questionZh,
+            @JsonAlias("question_en") String questionEn,
             String type,
-            Boolean required,
-            Integer maxScore,
-            String scoringRule,
+            @JsonAlias("required") Boolean required,
+            @JsonAlias("max_score") Integer maxScore,
+            @JsonAlias("scoring_rule") String scoringRule,
             Boolean multiline,
             Integer minLength,
             Integer maxLength,
@@ -70,9 +71,9 @@ public final class QuestionnaireRecords {
     public record QuestionOption(
             @Id Long id,
             Long questionId,
-            String textZh,
-            String textEn,
-            Integer score,
+            @JsonAlias("text_zh") String textZh,
+            @JsonAlias("text_en") String textEn,
+            @JsonAlias("score") Integer score,
             Integer sortOrder
     ) {
         public QuestionOption {

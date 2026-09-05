@@ -51,6 +51,13 @@ wl:
     from: ${WL_SMTP_FROM:no_reply@xmcraft.cn}
     ssl: true
     subject: ""
+  register:
+    require-email-code: true    # 注册需邮箱验证码（邀请码注册豁免）
+    captcha-enabled: true       # 注册需图形验证码
+    max-accounts-per-email: 2   # 单邮箱最大注册账号数
+    domain-whitelist-enabled: true
+    email-domain-whitelist: [qq.com, 163.com, 126.com, gmail.com, outlook.com, hotmail.com, icloud.com, foxmail.com, xmcraft.cn]
+    auto-approve: false         # 注册后免审核直接通过
   questionnaire:
     enabled: true
     pass-score: 60

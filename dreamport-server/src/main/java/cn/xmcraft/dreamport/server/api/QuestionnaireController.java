@@ -92,12 +92,18 @@ public class QuestionnaireController {
             input.put("placeholder_zh", q.placeholderZh());
             input.put("placeholder_en", q.placeholderEn());
             qm.put("input", input);
+            // 前端扁平字段（text/placeholder/multiline/maxLength）
+            qm.put("text", q.questionZh());
+            qm.put("placeholder", q.placeholderZh());
+            qm.put("multiline", q.multiline());
+            qm.put("maxLength", q.maxLength());
             List<Map<String, Object>> options = new ArrayList<>();
             for (QuestionnaireRecords.QuestionOption o : questionnaireService.options(q.id())) {
                 Map<String, Object> om = new LinkedHashMap<>();
                 om.put("text_zh", o.textZh());
                 om.put("text_en", o.textEn());
                 om.put("score", o.score());
+                om.put("text", o.textZh());
                 options.add(om);
             }
             qm.put("options", options);
@@ -107,6 +113,7 @@ public class QuestionnaireController {
         body.put("enabled", true);
         body.put("questions", questions);
         body.put("passScore", questionnaire.passScore());
+        body.put("questionnairePassScore", questionnaire.passScore());
         return ResponseEntity.ok(body);
     }
 
@@ -209,7 +216,10 @@ public class QuestionnaireController {
             qm.put("options", questionnaireService.options(q.id()));
             questions.add(qm);
         }
-        return ResponseEntity.ok(Map.of("questionnaire", questionnaire, "questions", questions));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("questionnaire", questionnaire, "questions", questions));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/admin/questionnaire/save")

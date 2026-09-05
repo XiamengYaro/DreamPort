@@ -17,12 +17,14 @@
           <router-link to="/leaderboard" class="nav-item" :class="{ active: $route.path === '/leaderboard' }">排行榜</router-link>
           <router-link to="/map" class="nav-item" :class="{ active: $route.path === '/map' }">地图</router-link>
           
-          <!-- 更多下拉菜单 -->
-          <div class="relative group nav-item-dropdown">
-            <span class="flex items-center gap-1 cursor-pointer px-3 py-2 text-sm font-medium rounded-xl transition-all hover:text-white hover:bg-white/10">
-              更多 ▾
+          <!-- 更多下拉菜单（样式与其余导航项一致） -->
+          <div class="relative group">
+            <span class="nav-item cursor-pointer flex items-center gap-1"
+              :class="{ active: ['/village', '/players', '/machines'].includes($route.path) }">
+              更多
+              <svg class="w-3 h-3 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </span>
-            <div class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-40 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+            <div class="absolute top-full left-0 pt-2 w-40 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
               <router-link to="/village" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">村民族谱</router-link>
               <router-link to="/players" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">玩家</router-link>
               <router-link to="/machines" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公共机器</router-link>
