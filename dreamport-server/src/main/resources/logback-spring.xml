@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DreamPort 控制台日志：压制框架启动噪音（WARN 级以上才显示），应用日志保留 INFO -->
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss} [%thread] %-5level %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.boot.web.embedded" level="WARN"/>
+    <logger name="org.flywaydb" level="ERROR"/>
+    <logger name="com.zaxxer" level="WARN"/>
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.hibernate" level="ERROR"/>
+    <logger name="jakarta.servlet" level="WARN"/>
+    <logger name="org.apache.tomcat" level="WARN"/>
+    <logger name="org.apache.catalina" level="WARN"/>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

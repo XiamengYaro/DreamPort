@@ -1,6 +1,9 @@
 spring:
   application:
     name: dreamport-server
+  main:
+    banner-mode: off          # 关闭 Spring 原生横幅（自定义 Banner 见 StartupReporter）
+    log-startup-info: false   # 关闭框架启动过程日志
   # 部署配置：首次启动会在工作目录生成 config.yml（数据库/JWT/SMTP 等一处配置），
   # 由 DreamPortConfigInitializer 自动加载，优先级高于本文件、低于命令行参数与环境变量。
   threads:
