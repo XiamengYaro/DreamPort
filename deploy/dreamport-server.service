@@ -1,6 +1,6 @@
 # DreamPort 独立后端 systemd 单元
-# 安装: cp deploy/dreamport-server.service /etc/systemd/system/
-#       mkdir -p /opt/dreamport && 放入 jar
+# 安装: mkdir -p /opt/dreamport && 放入 jar → 启动一次生成 config.yml → 编辑后重启
+#       cp deploy/dreamport-server.service /etc/systemd/system/
 #       systemctl daemon-reload && systemctl enable --now dreamport-server
 [Unit]
 Description=DreamPort - Minecraft Server Portal & Player Management
@@ -10,12 +10,8 @@ After=network.target mysql.service
 Type=simple
 User=dreamport
 WorkingDirectory=/opt/dreamport
-ExecStart=/usr/bin/java -jar /opt/dreamport/dreamport-server-0.1.0.jar --spring.profiles.active=mysql
-Environment=WL_JWT_SECRET=__CHANGE_ME__
-Environment=WL_DB_HOST=127.0.0.1
-Environment=WL_DB_NAME=dreamport
-Environment=WL_DB_USER=dreamport
-Environment=WL_DB_PASSWORD=__CHANGE_ME__
+# 所有配置在工作目录 config.yml 中编辑（首次启动自动生成）
+ExecStart=/usr/bin/java -jar /opt/dreamport/dreamport-server-0.1.0.jar
 Restart=on-failure
 RestartSec=5
 

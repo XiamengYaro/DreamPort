@@ -56,46 +56,49 @@ open http://localhost:18898
 | 端口 | 18898（TCP，对玩家开放）、18899（TCP，管理后台用；可走内网/反代） |
 | SMTP | 任一支持 SMTP 的邮箱（不配则验证码功能不可用） |
 
-### 2.2 必配环境变量（生产）
+### 2.2 部署流程（config.yml 单文件，三次启动上线）
 
-| 变量 | 说明 |
-|------|------|
-| `WL_JWT_SECRET` | 登录令牌签名密钥，**32 位以上随机串**（`openssl rand -base64 48`） |
-| `WL_SERVER_TOKEN` | 服务器↔后端通信令牌，需与插件 `backend.server-token` 一致 |
-| `WL_DB_HOST/PORT/NAME/USER/PASSWORD` | MySQL 连接 |
-| `WL_SMTP_HOST/PORT/USER/PASSWORD/FROM` | SMTP 发信（不配则邮件日志模式） |
-
-### 2.3 启动方式
-
-**方式 A：systemd（推荐）**
+部署只需一个配置文件，**无需环境变量**：
 
 ```bash
+# ① 首次启动 —— 自动在工作目录生成 config.yml（带中文注释的完整模板）
+java -jar dreamport-server-0.1.0.jar
+# 进程会提示 "已生成部署配置"，此时 Ctrl+C 停止
+
+# ② 编辑 config.yml（完成 [必改] 项）
+nano config.yml
+#   - jwt-secret:      openssl rand -base64 48 生成
+#   - server-token:    随机串（与插件 backend.server-token 一致）
+#   - 取消 spring.datasource 段注释并填入 MySQL（生产必做，H2 数据不持久）
+#   - mail.host:       填 SMTP（不填则验证码只打日志）
+#   - seed-demo 保持 false
+
+# ③ 再次启动 —— 生产运行
+java -jar dreamport-server-0.1.0.jar
+```
+
+> **优先级**：命令行参数 > 环境变量（WL_JWT_SECRET 等，Docker/CI 场景可用）> config.yml > 内置默认。
+> ⚠️ `config.yml` 含密钥，已列入 .gitignore，**不要提交或外传**。
+
+### 2.3 进程守护（可选）
+
+**systemd（推荐）**：`deploy/dreamport-server.service` 无需环境变量，只需确认路径：
+
+```bash
+sudo cp dreamport-server-0.1.0.jar /opt/dreamport/
 sudo cp deploy/dreamport-server.service /etc/systemd/system/
-sudo nano /etc/systemd/system/dreamport-server.service   # 填好环境变量与路径
-sudo systemctl daemon-reload
 sudo systemctl enable --now dreamport-server
 ```
 
-**方式 B：Docker**
+**Docker**：把 config.yml 挂载进容器即可：
 
 ```bash
 docker build -t dreamport .
 docker run -d --name dreamport \
   -p 18898:18898 -p 18899:18899 \
-  -v dreamport-docs:/app/docs -v dreamport-uploads:/app/static/uploads -v dreamport-email:/app/email \
-  -e WL_JWT_SECRET="..." -e WL_SERVER_TOKEN="..." \
-  -e WL_DB_HOST=10.0.0.6 -e WL_DB_NAME=dreamport \
-  -e WL_DB_USER=dreamport -e WL_DB_PASSWORD="..." \
-  -e WL_SMTP_HOST=smtp.feishu.cn -e WL_SMTP_USER=... -e WL_SMTP_PASSWORD=... \
+  -v /opt/dreamport/config.yml:/app/config.yml \
+  -v dreamport-docs:/app/docs -v dreamport-uploads:/app/static/uploads \
   dreamport
-```
-
-**方式 C：裸命令**
-
-```bash
-WL_JWT_SECRET=xxx WL_SERVER_TOKEN=xxx \
-WL_DB_HOST=10.0.0.6 WL_DB_NAME=dreamport WL_DB_USER=dreamport WL_DB_PASSWORD=xxx \
-java -jar dreamport-server-0.1.0.jar --spring.profiles.active=mysql
 ```
 
 ### 2.4 部署后检查
@@ -103,21 +106,23 @@ java -jar dreamport-server-0.1.0.jar --spring.profiles.active=mysql
 1. `curl http://127.0.0.1:18898/api/health` → `{"status":"ok",...}`（`virtualThread:true`）
 2. 浏览器打开首页，注册一个自己的账号
 3. 管理后台 `http://域名/admin`：先到 **系统配置** 把 `admins`（管理员玩家名列表）和 `adminNotifyEmail`（问卷提醒邮箱）配好
-4. 语音/直播场景注意：WebSocket 18899 需要反代支持 Upgrade；SSE（聊天/问卷流）关闭反代缓冲
+4. WebSocket 18899 反代需支持 Upgrade；SSE（聊天/问卷流）关闭反代缓冲
 
 ---
 
 ## 3. 后端配置说明
 
-配置分两层（详细键位见 `config_help_zh.yml`）：
+配置分三层（详细键位见 `config_help_zh.yml` 与生成的 `config.yml` 注释）：
 
-**① application.yml / 环境变量** —— 基础设施（改后需重启）：
-端口、JWT 密钥、服务器令牌、MySQL、SMTP、LLM 评分（`wl.llm.*`，OpenAI 兼容接口如 DeepSeek）、邀请规则、迁移开关。
+**① 工作目录 config.yml** —— 部署配置（改后重启）：
+端口、WebSocket 端口、JWT 密钥、服务器令牌、MySQL 连接、SMTP、LLM 评分、邀请规则、迁移路径。**这是部署唯一需要编辑的文件。**
 
 **② 管理后台（存数据库 dp_setting，热生效）** —— 站点内容：
-门户（名称/轮播/团队/时间线/ICP）、背景与公告、公告文案、管理员名单、通知邮箱、维护模式、下载中心、AstrBot 令牌。
+门户（名称/轮播/团队/时间线/ICP）、背景与公告、管理员名单、通知邮箱、维护模式、下载中心、AstrBot 令牌。
 
-> 原则：**凭据进环境变量，内容进管理后台**。不要把密码写进任何 git 跟踪的文件。
+**③ 环境变量 / 命令行** —— 可选覆盖（Docker/CI/临时调试）。
+
+> 原则：**凭据进 config.yml 或环境变量（不进 git），内容进管理后台。**
 
 **问卷 AI 评分示例**（可选功能，不启用时文本题按长度降级评分）：
 

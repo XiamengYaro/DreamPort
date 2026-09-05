@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * wl.* 配置项（对应 application.yml）。
  */
 @ConfigurationProperties(prefix = "wl")
-public record WlProps(String version, Security security, Internal internal,
+public record WlProps(Integer wsPort, String version, Security security, Internal internal,
                       String cors, boolean seedDemo, Mail mail,
                       Questionnaire questionnaire, Llm llm, Invite invite,
                       String adminNotifyEmail, String webRegisterUrl) {

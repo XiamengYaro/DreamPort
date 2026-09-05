@@ -1,8 +1,9 @@
 # DreamPort 独立后端镜像
-# 构建: docker build -t dreamport-server .
-# 运行: docker run -p 18898:18898 -p 18899:18899 \
-#   -e WL_DB_HOST=... -e WL_DB_NAME=... -e WL_DB_USER=... -e WL_DB_PASSWORD=... \
-#   -e WL_JWT_SECRET=... dreamport-server
+# 构建: docker build -t dreamport .
+# 运行: docker run -d -p 18898:18898 -p 18899:18899 \
+#   -v /opt/dreamport/config.yml:/app/config.yml \
+#   -v dreamport-docs:/app/docs -v dreamport-uploads:/app/static/uploads dreamport
+# （首次启动自动生成 /app/config.yml，编辑后 docker restart）
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
@@ -14,4 +15,3 @@ VOLUME ["/app/docs", "/app/static/uploads", "/app/email"]
 
 EXPOSE 18898 18899
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
-# 生产: 追加 --spring.profiles.active=mysql

@@ -1,0 +1,2 @@
+org.springframework.boot.env.EnvironmentPostProcessor=\
+  cn.xmcraft.dreamport.server.config.DreamPortConfigInitializer

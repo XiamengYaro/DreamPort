@@ -1,6 +1,8 @@
 spring:
   application:
     name: dreamport-server
+  # 部署配置：首次启动会在工作目录生成 config.yml（数据库/JWT/SMTP 等一处配置），
+  # 由 DreamPortConfigInitializer 自动加载，优先级高于本文件、低于命令行参数与环境变量。
   threads:
     virtual:
       enabled: true
@@ -22,6 +24,7 @@ server:
   port: 18898
 
 wl:
+  ws-port: 18899             # WebSocket 端口（可被工作目录 config.yml 覆盖）
   version: 0.1.0
   security:
     # 生产必须通过环境变量 WL_JWT_SECRET 覆盖（Rules.md §5）

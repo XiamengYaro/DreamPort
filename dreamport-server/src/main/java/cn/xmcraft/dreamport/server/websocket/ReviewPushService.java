@@ -30,23 +30,26 @@ public class ReviewPushService implements DisposableBean {
     private static final int MAX_CONNECTIONS = 50;
 
     private final TokenService tokenService;
+    private final int wsPort;
     private final ObjectMapper mapper = new ObjectMapper();
     private volatile InnerServer server;
     private volatile boolean started;
 
     private final Set<WebSocket> authenticated = ConcurrentHashMap.newKeySet();
 
-    public ReviewPushService(TokenService tokenService) {
+    public ReviewPushService(TokenService tokenService,
+                             cn.xmcraft.dreamport.server.config.WlProps props) {
         this.tokenService = tokenService;
+        this.wsPort = props.wsPort() == null ? 18899 : props.wsPort();
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void start() {
-        server = new InnerServer(new InetSocketAddress(18899));
+        server = new InnerServer(new InetSocketAddress(wsPort));
         server.setReuseAddr(true);
         server.start();
         started = true;
-        log.info("WebSocket 推送服务已启动 :18899");
+        log.info("WebSocket 推送服务已启动 :" + wsPort);
     }
 
     /** 广播事件给所有已认证连接 */

@@ -8,6 +8,11 @@
 ## [Unreleased]
 
 ### Added
+- **config.yml 单文件部署模式（v0.3.0）**：首次启动自动在工作目录生成带中文注释的部署
+  配置（数据库/JWT/服务器令牌/SMTP/LLM/迁移路径一处搞定），编辑后重启即生效；
+  无需环境变量。优先级：命令行 > 环境变量（保留支持）> config.yml > 内置默认。
+  已实测：配置生成/端口覆盖/自定义 JWT 密钥全部生效
+- `wl.ws-port` 可配置 WebSocket 端口
 - `docs/USER_GUIDE.md` 使用文档：快速开始/生产部署(systemd/Docker/环境变量)/配置两层说明/
   插件三角色安装/旧版迁移与回滚/玩家与管理员功能指南/命令权限/FAQ/安全清单
 - `application.yml` 基础设施凭据全面支持环境变量（WL_JWT_SECRET/WL_SERVER_TOKEN/WL_SMTP_*）

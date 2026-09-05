@@ -27,6 +27,7 @@ npm-debug.log*
 ._*
 
 # ---- 本地密钥与环境（禁止提交）----
+config.yml
 application-local.yml
 application-local.yaml
 *.local.yml
