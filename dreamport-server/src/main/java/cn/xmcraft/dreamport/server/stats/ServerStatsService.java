@@ -4,6 +4,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayDeque;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -17,7 +18,7 @@ public class ServerStatsService {
 
     public record Heartbeat(String serverId, String serverName, String role,
                             int onlinePlayers, int maxPlayers, String version,
-                            long receivedAt) {
+                            List<String> players, long receivedAt) {
     }
 
     /** serverId → 最近心跳 */

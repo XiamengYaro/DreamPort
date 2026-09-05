@@ -8,6 +8,7 @@ import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
+import org.springframework.web.bind.annotation.GetMapping;
 import cn.xmcraft.dreamport.server.village.VillageTradeRepository;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -331,8 +332,80 @@ public class ReviewAdminController {
         if (guard != null) {
             return guard;
         }
+        // 前端期望 data 直接为数组
         List<Object> audits = new ArrayList<>(auditService.recent());
-        return ResponseEntity.ok(Map.of("audits", audits, "total", audits.size()));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", audits);
+        return ResponseEntity.ok(body);
+    }
+
+    /** 管理端统计概览（字段对齐前端 statsOverview.*） */
+    @GetMapping("/stats/overview")
+    public ResponseEntity<Object> statsOverview(HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var all = userRepository.listAll();
+        long approved = all.stream().filter(u -> "approved".equals(u.status())).count();
+        long pending = all.stream().filter(u -> "pending".equals(u.status()) || "pending_review".equals(u.status())).count();
+        long banned = all.stream().filter(u -> "banned".equals(u.status())).count();
+        long scored = all.stream().filter(u -> u.questionnaireScoredAt() != null && u.questionnaireScoredAt() > 0).toList().size();
+        long passed = all.stream().filter(u -> Boolean.TRUE.equals(u.questionnairePassed())).count();
+        long failed = scored - passed;
+        long now = System.currentTimeMillis();
+        long todayStart = now - (now % 86_400_000L);
+        long week = todayStart - 6L * 86_400_000L;
+        long month = todayStart - 29L * 86_400_000L;
+        long todayReg = all.stream().filter(u -> u.regTime() != null && u.regTime() >= todayStart).count();
+        long weekReg = all.stream().filter(u -> u.regTime() != null && u.regTime() >= week).count();
+        long monthReg = all.stream().filter(u -> u.regTime() != null && u.regTime() >= month).count();
+        double avg = all.stream().filter(u -> u.questionnaireScoredAt() != null && u.questionnaireScoredAt() > 0)
+                .mapToInt(UserRecord::questionnaireScore).average().orElse(0);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("totalUsers", all.size());
+        data.put("approvedUsers", approved);
+        data.put("pendingUsers", pending);
+        data.put("bannedUsers", banned);
+        data.put("todayRegistrations", todayReg);
+        data.put("weekRegistrations", weekReg);
+        data.put("monthRegistrations", monthReg);
+        data.put("averageScore", Math.round(avg * 10) / 10.0);
+        data.put("questionnairePassed", passed);
+        data.put("questionnaireFailed", failed);
+        data.put("questionnairePassRate", scored == 0 ? 0 : Math.round(passed * 1000.0 / scored) / 10.0);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return ResponseEntity.ok(body);
+    }
+
+    /** 问卷成绩详情（前端 viewQuestionnaire 读 data.questionnaireScore 等） */
+    @GetMapping("/questionnaire/detail/{username}")
+    public ResponseEntity<Object> questionnaireDetail(@PathVariable String username,
+                                                      HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
+        }
+        var u = userOpt.get();
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("username", u.username());
+        data.put("questionnaireScore", u.questionnaireScore());
+        data.put("questionnairePassed", u.questionnairePassed());
+        data.put("questionnaireReasons", u.questionnaireReasons());
+        data.put("questionnaireAnswers", u.questionnaireAnswers());
+        data.put("questionnaireReviewSummary", u.questionnaireReviewSummary());
+        data.put("questionnaireScoredAt", u.questionnaireScoredAt());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/maintenance")

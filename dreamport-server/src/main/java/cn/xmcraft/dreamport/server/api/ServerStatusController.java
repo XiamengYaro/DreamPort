@@ -27,12 +27,14 @@ public class ServerStatusController {
     @GetMapping("/status")
     public Map<String, Object> status() {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("online", statsService.totalOnline());
-        body.put("max", statsService.maxPlayers());
-        body.put("totalOnline", statsService.totalOnline());
-        body.put("totalServers", statsService.totalServers());
-        body.put("version", statsService.version());
-        body.put("tps", 20.0);
+        body.put("success", true);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("online", statsService.totalOnline());
+        data.put("max", statsService.maxPlayers());
+        data.put("totalOnline", statsService.totalOnline());
+        data.put("totalServers", statsService.totalServers());
+        data.put("version", statsService.version());
+        data.put("tps", 20.0);
         List<Map<String, Object>> servers = new ArrayList<>();
         statsService.heartbeats().values().stream()
                 .sorted((a, b) -> a.serverId().compareTo(b.serverId()))
@@ -46,19 +48,26 @@ public class ServerStatusController {
                     s.put("lastSeen", hb.receivedAt());
                     servers.add(s);
                 });
-        body.put("servers", servers);
+        data.put("servers", servers);
+        body.put("data", data);
         return body;
     }
 
     @GetMapping("/player-history")
     public Map<String, Object> playerHistory() {
-        List<Map<String, Object>> history = new ArrayList<>();
+        List<Map<String, Object>> list = new ArrayList<>();
         statsService.history().forEach(point -> {
             Map<String, Object> p = new LinkedHashMap<>();
-            p.put("timestamp", point[0]);
-            p.put("online", point[1]);
-            history.add(p);
+            p.put("time", point[0]);
+            p.put("players", point[1]);
+            list.add(p);
         });
-        return Map.of("history", history, "currentOnline", statsService.totalOnline());
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("list", list);
+        data.put("currentOnline", statsService.totalOnline());
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return body;
     }
 }

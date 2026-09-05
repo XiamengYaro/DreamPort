@@ -41,6 +41,7 @@ public class EconomyService {
         Comparator<PlayerEconomy> comparator = switch (metric) {
             case "playtime" -> Comparator.comparingLong(PlayerEconomy::playtimeSeconds).reversed();
             case "activedays" -> Comparator.comparingLong(PlayerEconomy::playtimeDays).reversed();
+            case "wealth" -> Comparator.comparingDouble(PlayerEconomy::balance).reversed();
             default -> Comparator.comparingDouble(PlayerEconomy::balance).reversed();
         };
         return snapshot().stream().sorted(comparator).limit(Math.max(1, limit)).toList();

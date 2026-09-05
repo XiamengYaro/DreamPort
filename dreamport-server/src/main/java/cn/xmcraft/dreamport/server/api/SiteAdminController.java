@@ -52,11 +52,14 @@ public class SiteAdminController {
         }
         Map<String, Object> portal = settingService.getMap(SettingService.KEY_PORTAL);
         if (portal.isEmpty()) {
-            portal.put("serverName", "夏日小镇");
+            portal.put("server_name", "夏日小镇");
             portal.put("subtitle", "Minecraft 服务器");
             portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，欢迎每一位玩家加入！");
         }
-        return ResponseEntity.ok(portal);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("portal", portal));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/admin/portal")
@@ -65,8 +68,28 @@ public class SiteAdminController {
         if (!admin(request)) {
             return forbidden();
         }
-        settingService.set(SettingService.KEY_PORTAL, body);
+        // 合并保存：保留未提交的键（team/carousel/features/timeline 等子端点分别写入）
+        Map<String, Object> merged = settingService.getMap(SettingService.KEY_PORTAL);
+        merged.putAll(body);
+        settingService.set(SettingService.KEY_PORTAL, merged);
         return ResponseEntity.ok(ApiResponse.success("门户配置已保存"));
+    }
+
+    /** 门户子项保存（team/carousel/features/timeline，契约对齐旧版四个子端点） */
+    @PostMapping({"/admin/portal/team", "/admin/portal/carousel", "/admin/portal/features", "/admin/portal/timeline"})
+    public ResponseEntity<Object> setPortalSection(@RequestBody List<Map<String, Object>> items,
+                                                   HttpServletRequest request) {
+        if (!admin(request)) {
+            return forbidden();
+        }
+        String uri = request.getRequestURI();
+        String key = uri.endsWith("/team") ? "team"
+                : uri.endsWith("/carousel") ? "carousel"
+                : uri.endsWith("/features") ? "features" : "timeline";
+        Map<String, Object> portal = settingService.getMap(SettingService.KEY_PORTAL);
+        portal.put(key, items);
+        settingService.set(SettingService.KEY_PORTAL, portal);
+        return ResponseEntity.ok(ApiResponse.success("已保存"));
     }
 
     @GetMapping("/admin/background")
@@ -80,7 +103,10 @@ public class SiteAdminController {
         background.putIfAbsent("blur", 20);
         Object announcement = settingService.get(SettingService.KEY_ANNOUNCEMENT, String.class);
         background.put("announcement", announcement == null ? "欢迎来到夏日小镇！" : announcement);
-        return ResponseEntity.ok(background);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", background);
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/admin/background")
@@ -113,8 +139,11 @@ public class SiteAdminController {
         if (!admin(request)) {
             return forbidden();
         }
-        return ResponseEntity.ok(Map.of("officialUuid",
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("officialUuid",
                 settingService.getMap("verify.config").getOrDefault("officialUuid", false)));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/admin/server-config")

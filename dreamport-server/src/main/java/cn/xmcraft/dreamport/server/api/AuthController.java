@@ -131,10 +131,13 @@ public class AuthController {
     @GetMapping("/auth/validate")
     public Map<String, Object> validate(HttpServletRequest request) {
         String username = AuthUtil.currentUser(request);
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("valid", username != null);
+        data.put("username", username);
+        data.put("isAdmin", AuthUtil.isAdmin(request));
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("valid", username != null);
-        body.put("username", username);
-        body.put("isAdmin", AuthUtil.isAdmin(request));
+        body.put("success", true);
+        body.put("data", data);
         return body;
     }
 

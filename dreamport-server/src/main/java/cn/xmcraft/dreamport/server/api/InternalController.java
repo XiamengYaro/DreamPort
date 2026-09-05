@@ -83,6 +83,7 @@ public class InternalController {
         }
         statsService.heartbeat(new ServerStatsService.Heartbeat(req.serverId(), req.serverName(),
                 req.role(), req.onlinePlayers(), req.maxPlayers(), req.version(),
+                req.players() == null ? java.util.List.of() : req.players(),
                 System.currentTimeMillis()));
         return ResponseEntity.ok(new HeartbeatResponse(true, System.currentTimeMillis()));
     }

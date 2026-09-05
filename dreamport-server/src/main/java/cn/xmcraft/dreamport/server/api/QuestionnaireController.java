@@ -5,6 +5,7 @@ import cn.xmcraft.dreamport.server.questionnaire.QuestionOptionRepository;
 import cn.xmcraft.dreamport.server.questionnaire.QuestionRepository;
 import cn.xmcraft.dreamport.server.questionnaire.QuestionnaireRepository;
 import cn.xmcraft.dreamport.server.questionnaire.QuestionnaireService;
+import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,15 +36,21 @@ public class QuestionnaireController {
     private final QuestionnaireRepository questionnaireRepository;
     private final QuestionRepository questionRepository;
     private final QuestionOptionRepository optionRepository;
+    private final cn.xmcraft.dreamport.server.user.UserRepository userRepository;
+    private final cn.xmcraft.dreamport.server.audit.AuditService auditService;
 
     public QuestionnaireController(QuestionnaireService questionnaireService,
                                    QuestionnaireRepository questionnaireRepository,
                                    QuestionRepository questionRepository,
-                                   QuestionOptionRepository optionRepository) {
+                                   QuestionOptionRepository optionRepository,
+                                   cn.xmcraft.dreamport.server.user.UserRepository userRepository,
+                                   cn.xmcraft.dreamport.server.audit.AuditService auditService) {
         this.questionnaireService = questionnaireService;
         this.questionnaireRepository = questionnaireRepository;
         this.questionRepository = questionRepository;
         this.optionRepository = optionRepository;
+        this.userRepository = userRepository;
+        this.auditService = auditService;
     }
 
     public record SubmitBody(String username, Map<String, Object> answers, String language) {
@@ -206,16 +213,79 @@ public class QuestionnaireController {
     }
 
     @PostMapping("/admin/questionnaire/save")
-    public ResponseEntity<Object> save(@RequestBody SaveBody body, HttpServletRequest request) {
+    public ResponseEntity<Object> save(@RequestBody String body, HttpServletRequest request) {
         if (!AuthUtil.isAdmin(request)) {
             return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
         }
         try {
-            int count = questionnaireService.importYaml(body.yaml());
+            // 前端 api.saveQuestionnaire 直接以原始 YAML 文本为请求体
+            int count = questionnaireService.importYaml(body);
             return ResponseEntity.ok(ApiResponse.success("已保存 " + count + " 题"));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("YAML 解析失败: " + e.getMessage()));
         }
+    }
+
+    /** 管理员改分（契约对齐旧版 /admin/questionnaire/update） */
+    @PostMapping("/admin/questionnaire/update")
+    public ResponseEntity<Object> updateScore(@RequestBody java.util.Map<String, Object> body,
+                                              HttpServletRequest request) {
+        if (!AuthUtil.isAdmin(request)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
+        }
+        String username = String.valueOf(body.get("username"));
+        var userOpt = userRepository.findByUsernameIgnoreCase(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
+        }
+        var user = userOpt.get();
+        Integer score = body.get("questionnaireScore") == null ? user.questionnaireScore()
+                : Integer.parseInt(String.valueOf(body.get("questionnaireScore")));
+        Boolean passed = body.get("questionnairePassed") == null ? user.questionnairePassed()
+                : Boolean.parseBoolean(String.valueOf(body.get("questionnairePassed")));
+        String status = body.get("status") == null ? user.status() : String.valueOf(body.get("status"));
+        if (!"approved".equals(status) && Boolean.TRUE.equals(passed) && "pending".equals(user.status())) {
+            status = "pending_review";
+        }
+        UserRecord updated = new UserRecord(user.id(), user.username(), user.email(), status,
+                user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
+                user.qqNumber(), user.qqBoundAt(), score, passed, user.questionnaireReviewSummary(),
+                user.questionnaireScoredAt(),
+                body.get("questionnaireReasons") == null ? user.questionnaireReasons()
+                        : String.valueOf(body.get("questionnaireReasons")),
+                user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(),
+                user.microsoftVerified(), user.verifiedAt(), user.verifyType(), user.invitedBy(),
+                user.bedrockUuid(), user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
+                user.banReason(), user.banTime(), user.avatar());
+        userRepository.save(updated);
+        auditService.log("admin_update_questionnaire", AuthUtil.currentUser(request), username, null);
+        return ResponseEntity.ok(ApiResponse.success("问卷成绩已更新"));
+    }
+
+    /** 问卷详情（GET /admin/questionnaire/{username}，契约对齐旧版） */
+    @GetMapping("/admin/questionnaire/{username}")
+    public ResponseEntity<Object> questionnaireOf(@PathVariable String username,
+                                                  HttpServletRequest request) {
+        if (!AuthUtil.isAdmin(request)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(username);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
+        }
+        var u = userOpt.get();
+        java.util.Map<String, Object> data = new java.util.LinkedHashMap<>();
+        data.put("username", u.username());
+        data.put("questionnaireScore", u.questionnaireScore());
+        data.put("questionnairePassed", u.questionnairePassed());
+        data.put("questionnaireReasons", u.questionnaireReasons());
+        data.put("questionnaireAnswers", u.questionnaireAnswers());
+        data.put("questionnaireReviewSummary", u.questionnaireReviewSummary());
+        data.put("questionnaireScoredAt", u.questionnaireScoredAt());
+        java.util.Map<String, Object> body = new java.util.LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/admin/questionnaire/reset")
@@ -256,11 +326,13 @@ public class QuestionnaireController {
         return ResponseEntity.ok(ApiResponse.success("题目已添加"));
     }
 
-    @PostMapping("/admin/questionnaire/delete-question/{id}")
-    public ResponseEntity<Object> deleteQuestion(@PathVariable Long id, HttpServletRequest request) {
+    @PostMapping("/admin/questionnaire/delete-question")
+    public ResponseEntity<Object> deleteQuestion(@RequestBody DeleteQuestionBody body,
+                                                 HttpServletRequest request) {
         if (!AuthUtil.isAdmin(request)) {
             return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
         }
+        long id = body.id() == null ? -1 : body.id();
         optionRepository.findByQuestionIdOrderBySortOrderAsc(id).forEach(optionRepository::delete);
         questionRepository.findById(id).ifPresent(questionRepository::delete);
         return ResponseEntity.ok(ApiResponse.success("题目已删除"));

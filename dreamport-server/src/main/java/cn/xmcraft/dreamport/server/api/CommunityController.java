@@ -416,7 +416,10 @@ public class CommunityController {
         if (!isAdminOfSite(request)) {
             return forbidden();
         }
-        return ResponseEntity.ok(Map.of("appeals", appealRepository.findAllByOrderByCreatedAtDesc()));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", appealRepository.findAllByOrderByCreatedAtDesc());
+        return ResponseEntity.ok(body);
     }
 
     // ---------- 工具 ----------
