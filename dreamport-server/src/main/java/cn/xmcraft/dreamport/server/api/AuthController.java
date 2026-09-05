@@ -29,11 +29,22 @@ public class AuthController {
     private final UserService userService;
     private final TokenService tokenService;
     private final RateLimiter rateLimiter;
+    private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
 
-    public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter) {
+    public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
+                          cn.xmcraft.dreamport.server.settings.SettingService settingService) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.rateLimiter = rateLimiter;
+        this.settingService = settingService;
+    }
+
+    /** 是否在管理员名单（dp_setting admins.list，语义对齐旧版 config.admins） */
+    private boolean inAdminsList(String username) {
+        java.util.List<Object> admins = settingService.get(
+                cn.xmcraft.dreamport.server.settings.SettingService.KEY_ADMINS, java.util.List.class);
+        return admins != null && admins.stream()
+                .anyMatch(a -> String.valueOf(a).equalsIgnoreCase(username));
     }
 
     public record RegisterRequest(String username, String email, String password) {
@@ -85,12 +96,15 @@ public class AuthController {
                     ? "账户已被封禁" : "账户已被封禁：" + u.banReason();
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ApiResponse.failure(reason));
         }
-        String token = tokenService.issue(u.username(), TokenService.ROLE_USER);
+        // 语义对齐旧版：admins 名单内玩家普通登录即管理员（否则无法进入后台）
+        boolean admin = inAdminsList(u.username());
+        String token = tokenService.issue(u.username(),
+                admin ? TokenService.ROLE_ADMIN : TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);
         data.put("username", u.username());
         data.put("status", u.status());
-        data.put("isAdmin", false);
+        data.put("isAdmin", admin);
         return ResponseEntity.ok(ApiResponse.success("登录成功", data));
     }
 

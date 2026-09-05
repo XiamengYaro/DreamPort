@@ -7,7 +7,10 @@
 
 ## [Unreleased]
 
-### Added
+### Fixed
+- **管理员无法进入后台（v0.4.2）**：普通登录接口恒返回 isAdmin=false，前端路由守卫
+  依据 localStorage isAdmin 拦截 /admin。修复为语义对齐旧版：dp_setting admins.list
+  内的玩家登录时签发 admin 角色令牌并返回 isAdmin=true
 - **自定义启动界面（v0.4.1）**：关闭 Spring 原生横幅与启动日志（logback 压制框架日志至
   WARN），启动时打印 DreamPort 字符画 Banner + 中文启动记录清单（数据库/数据表/旧库
   迁移/初始化状态/AI 评分/邮件/邀请/维护模式/运行环境/耗时 + 访问地址）；启动失败输出
