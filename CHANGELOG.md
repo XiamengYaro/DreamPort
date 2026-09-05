@@ -40,8 +40,15 @@
   - P8：Gitea Actions 构建/Release 工作流、Dockerfile、systemd 单元
   - 全链路实测：注册→问卷→审核→进服放行→ID 验证→邀请/村谱/机器/聊天/维护 全部通过
 
+- **v0.2.1 真实数据迁移演练通过（8-2 ✅）**：用户提供的生产 xmc 库 dump（19 用户/71 审计/
+  8 邀请/4 通知/4 密码重置/1672 进服记录）本地 MySQL 隔离导入 → DreamPort 自动迁移：
+  9 张旧表改名备份、1778 行 1.6s 导入、$SHA$ 哈希逐字节保留（password_algo=legacy_sha256）、
+  错误密码登录 401（算法验证）、真实用户进服决策 allow、问卷分数/答案/基岩名/门户内容全保留
+
 ### Fixed
-- 限流器初版差一错误（达到上限时仍放行），已修复并实测 429 生效
+- Flyway 接入非空旧库需 baseline-on-migrate: true + baseline-version: 0（演练发现，
+  否则 V1 建表被基线吞掉导致 dp_user 缺失）
+- 限流器初版差一错误（达到上限时仍放行），已修复并实测 429 生效（达到上限时仍放行），已修复并实测 429 生效
 - Spring Data JDBC @Query DELETE 不生效 → 改 JdbcTemplate；进服记录清理条件
   由 login_time 改为 expire_time（修复刚保存记录被误删）
 - /api/review/status 改读 query 参数（FIX(legacy)：旧版 X-Username 头与前端不匹配）

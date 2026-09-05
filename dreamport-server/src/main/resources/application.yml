@@ -11,6 +11,10 @@ spring:
     password: ""
   flyway:
     locations: classpath:db/migration/{vendor}
+    # 旧库（非空 schema）接入时自动建立基线，随后增量迁移
+    # baseline-version 必须为 0，否则 V1 建表会被基线吞掉
+    baseline-on-migrate: true
+    baseline-version: 0
   jackson:
     default-property-inclusion: non_null
 
