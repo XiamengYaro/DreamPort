@@ -4,6 +4,8 @@ import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.security.TokenService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserService;
+import cn.xmcraft.dreamport.server.user.UserRecord;
+import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import cn.xmcraft.dreamport.server.web.RateLimiter;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,13 +36,15 @@ public class AuthController {
     private final cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService;
     private final cn.xmcraft.dreamport.server.invite.InviteService inviteService;
     private final cn.xmcraft.dreamport.server.config.WlProps props;
+    private final UserRepository userRepository;
 
     public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
                           cn.xmcraft.dreamport.server.settings.SettingService settingService,
                           cn.xmcraft.dreamport.server.verification.CaptchaService captchaService,
                           cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService,
                           cn.xmcraft.dreamport.server.invite.InviteService inviteService,
-                          cn.xmcraft.dreamport.server.config.WlProps props) {
+                          cn.xmcraft.dreamport.server.config.WlProps props,
+                          cn.xmcraft.dreamport.server.user.UserRepository userRepository) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.rateLimiter = rateLimiter;
@@ -49,6 +53,7 @@ public class AuthController {
         this.verifyCodeService = verifyCodeService;
         this.inviteService = inviteService;
         this.props = props;
+        this.userRepository = userRepository;
     }
 
     /** 是否在管理员名单（dp_setting admins.list，语义对齐旧版 config.admins） */
@@ -59,9 +64,13 @@ public class AuthController {
                 .anyMatch(a -> String.valueOf(a).equalsIgnoreCase(username));
     }
 
-    public record RegisterRequest(String username, String email, String password,
-                                  String verifyCode, String captchaToken, String captchaAnswer,
-                                  String inviteCode) {
+    public record RegisterRequest(@com.fasterxml.jackson.annotation.JsonAlias({"minecraftName", "minecraft_name"}) String username,
+                                  String email, String password,
+                                  String verifyCode,
+                                  @com.fasterxml.jackson.annotation.JsonAlias("captchaToken") String captchaToken,
+                                  String captchaAnswer,
+                                  String inviteCode,
+                                  @com.fasterxml.jackson.annotation.JsonAlias("bedrock_name") String bedrockName) {
     }
 
     public record LoginRequest(String username, String password) {
@@ -73,11 +82,15 @@ public class AuthController {
         if (!rateLimiter.allow("register:" + clientIp(request), 3, 60_000)) {
             return tooManyRequests();
         }
-        // 图形验证码（前端注册页强制携带）
-        boolean captchaEnabled = props.register() == null || props.register().captchaEnabled();
-        if (captchaEnabled
+        // 图形验证码：仅当前端携带 token 时才校验（旧注册页无图形验证码控件）
+        if (req.captchaToken() != null && !req.captchaToken().isBlank()
                 && !captchaService.check(req.captchaToken(), req.captchaAnswer())) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("图形验证码错误或已过期"));
+        }
+        // 基岩-only 注册：用户名回退为基岩名（剥离 Geyser 前缀）
+        String username = req.username();
+        if ((username == null || username.isBlank()) && req.bedrockName() != null && !req.bedrockName().isBlank()) {
+            username = req.bedrockName().startsWith(".") ? req.bedrockName().substring(1) : req.bedrockName();
         }
         // 邮箱验证码（邀请码注册豁免；Admin 后台初始化不受影响）
         boolean hasInvite = req.inviteCode() != null && !req.inviteCode().isBlank();
@@ -86,7 +99,7 @@ public class AuthController {
                 && !verifyCodeService.check(req.email(), req.verifyCode())) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("邮箱验证码错误或已过期"));
         }
-        var result = userService.register(req.username(), req.email(), req.password());
+        var result = userService.register(username, req.email(), req.password());
         if (!result.ok()) {
             String message = switch (result.error()) {
                 case INVALID_USERNAME -> "用户名不合法（3-16 位字母数字_-）";
@@ -105,6 +118,17 @@ public class AuthController {
             if (!inviteResult.success()) {
                 return ResponseEntity.badRequest().body(ApiResponse.failure(inviteResult.message()));
             }
+        }
+        // 基岩 ID 一并落库（未验证态，玩家后续可走基岩验证）
+        if (req.bedrockName() != null && !req.bedrockName().isBlank()) {
+            String bn = req.bedrockName().startsWith(".") ? req.bedrockName() : "." + req.bedrockName();
+            var userOpt = userRepository.findByUsernameIgnoreCase(result.user().username());
+            userOpt.ifPresent(u -> userRepository.save(new UserRecord(u.id(), u.username(), u.email(), u.status(),
+                    u.passwordAlgo(), u.passwordHash(), u.regTime(), u.discordId(), u.qqNumber(), u.qqBoundAt(),
+                    u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
+                    u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
+                    u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
+                    u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.avatar())));
         }
         String token = tokenService.issue(result.user().username(), TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();

@@ -344,6 +344,101 @@ public class ReviewAdminController {
     }
 
     /** 管理端统计概览（字段对齐前端 statsOverview.*） */
+    public record BedrockBody(String username, String bedrockName) {
+    }
+
+    /** 代管基岩 ID 绑定（自动加 Geyser 前缀，重置验证态） */
+    @PostMapping("/user/set-bedrock")
+    public ResponseEntity<Object> setBedrock(@RequestBody BedrockBody body, HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(body.username() == null ? "" : body.username());
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
+        }
+        var u = userOpt.get();
+        String bn = body.bedrockName() == null || body.bedrockName().isBlank() ? ""
+                : (body.bedrockName().startsWith(".") ? body.bedrockName() : "." + body.bedrockName());
+        UserRecord updated = new UserRecord(u.id(), u.username(), u.email(), u.status(),
+                u.passwordAlgo(), u.passwordHash(), u.regTime(), u.discordId(), u.qqNumber(), u.qqBoundAt(),
+                u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
+                u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
+                u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
+                u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.avatar());
+        userRepository.save(updated);
+        auditService.log("set_bedrock", operator(request), u.username(), bn);
+        return ResponseEntity.ok(ApiResponse.success("基岩 ID 已设置"));
+    }
+
+    /** 代管基岩验证：使用该用户最近一条进服记录直接验证 */
+    @PostMapping("/user/verify-bedrock")
+    public ResponseEntity<Object> verifyBedrock(@RequestBody BedrockBody body, HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(body.username() == null ? "" : body.username());
+        if (userOpt.isEmpty() || userOpt.get().bedrockName() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("该用户未绑定基岩 ID"));
+        }
+        var u = userOpt.get();
+        UserRecord updated = new UserRecord(u.id(), u.username(), u.email(), "approved",
+                u.passwordAlgo(), u.passwordHash(), u.regTime(), u.discordId(), u.qqNumber(), u.qqBoundAt(),
+                u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
+                u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
+                u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
+                u.invitedBy(), "admin-verified", u.bedrockName(), true, System.currentTimeMillis(),
+                u.banReason(), u.banTime(), u.avatar());
+        userRepository.save(updated);
+        auditService.log("verify_bedrock", operator(request), u.username(), u.bedrockName());
+        return ResponseEntity.ok(ApiResponse.success("基岩 ID 已验证"));
+    }
+
+    /** 近 30 天注册趋势 */
+    @GetMapping("/stats/registrations")
+    public ResponseEntity<Object> statsRegistrations(HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var all = userRepository.listAll();
+        List<Map<String, Object>> trend = new java.util.ArrayList<>();
+        long todayStart = System.currentTimeMillis() - (System.currentTimeMillis() % 86_400_000L);
+        for (int i = 29; i >= 0; i--) {
+            long dayStart = todayStart - (long) i * 86_400_000L;
+            long dayEnd = dayStart + 86_400_000L;
+            long c = all.stream().filter(u -> u.regTime() != null && u.regTime() >= dayStart && u.regTime() < dayEnd).count();
+            trend.add(Map.of("date", new java.text.SimpleDateFormat("MM-dd").format(new java.util.Date(dayStart)),
+                    "count", c));
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("trend", trend));
+        return ResponseEntity.ok(body);
+    }
+
+    /** 问卷统计分布 */
+    @GetMapping("/stats/questionnaires")
+    public ResponseEntity<Object> statsQuestionnaires(HttpServletRequest request) {
+        ResponseEntity<Object> guard = requireAdmin(request);
+        if (guard != null) {
+            return guard;
+        }
+        var scored = userRepository.listAll().stream()
+                .filter(u -> u.questionnaireScoredAt() != null && u.questionnaireScoredAt() > 0).toList();
+        long passed = scored.stream().filter(u -> Boolean.TRUE.equals(u.questionnairePassed())).count();
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("total", scored.size());
+        data.put("passed", passed);
+        data.put("failed", scored.size() - passed);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return ResponseEntity.ok(body);
+    }
+
     @GetMapping("/stats/overview")
     public ResponseEntity<Object> statsOverview(HttpServletRequest request) {
         ResponseEntity<Object> guard = requireAdmin(request);

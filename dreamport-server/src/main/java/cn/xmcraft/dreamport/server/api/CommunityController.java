@@ -47,7 +47,6 @@ import java.util.Set;
 public class CommunityController {
 
     private static final Set<String> WORLDS = Set.of("survival", "factory", "resource");
-    private static final Set<String> MACHINE_TYPES = Set.of("红石机器", "刷怪塔", "农场", "自动化设备", "交通系统", "其他");
 
     private final VillageTradeRepository villageRepository;
     private final PublicMachineRepository machineRepository;
@@ -89,7 +88,10 @@ public class CommunityController {
         var list = villageRepository.findByStatusOrderByCreatedAtDesc("approved").stream()
                 .filter(t -> world == null || world.isBlank() || world.equals(t.world()))
                 .toList();
-        return ResponseEntity.ok(Map.of("villages", list));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", Map.of("list", list));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/village/submit")
@@ -162,6 +164,7 @@ public class CommunityController {
                 || body.usage() == null || body.usage().isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("名称/世界/坐标/用途必填"));
         }
+        // 类型不再做白名单强校验（前端使用键名 redstone/mob_grinder 等）
         machineRepository.save(new PublicMachineRecord(null, body.name(), body.type(), body.world(),
                 body.x(), body.y(), body.z(),
                 body.builder() == null || body.builder().isBlank() ? me : body.builder(),
@@ -324,7 +327,8 @@ public class CommunityController {
         if (me == null) {
             return unauthorized();
         }
-        return wrap(inviteService.apply(me, body.get("code")));
+        String code = body.get("inviteCode") != null ? body.get("inviteCode") : body.get("code");
+        return wrap(inviteService.apply(me, code));
     }
 
     @PostMapping("/invite/confirm")

@@ -296,6 +296,17 @@ public class SiteAdminController {
         return s == null ? "" : s;
     }
 
+    // ---------- 下载中心（公开） ----------
+
+    @GetMapping("/downloads")
+    public ResponseEntity<Object> downloads() {
+        Map<String, Object> downloads = settingService.getMap(SettingService.KEY_DOWNLOADS);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", downloads);
+        return ResponseEntity.ok(body);
+    }
+
     // ---------- 工具 ----------
 
     private boolean admin(HttpServletRequest request) {
