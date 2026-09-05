@@ -13,7 +13,7 @@
 - 版本基线 `0.1.0-dev`；首个可运行脚手架构建通过后打 `v0.1.0` 标签
 
 ### Changed
-- 项目定名 **DreamPort · 夏梦之门**（XM DreamPort）：夏梦（XiaMeng → XM）+ Port（Portal 门户 / Harbor 港湾 双关）
+- 项目定名 **DreamPort**，中文名 **「夏日小镇 · 梦港」**：主品牌为服务器"夏日小镇"，项目名"梦港"（DreamPort 直译），"夏梦"（XiaMeng → XM）为作者署名；宣传语"进入夏日小镇，先入梦港"
 - 命名规范确立：模块 `dreamport-common` / `dreamport-server` / `dreamport-plugin`，Java 包根 `cn.xmcraft.dreamport`，新数据库表前缀 `dp_`，插件名 `DreamPort`
 
 ### 备注

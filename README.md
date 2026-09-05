@@ -1,8 +1,10 @@
-# DreamPort · 夏梦之门
+# DreamPort · 夏日小镇 · 梦港
 
-> **XM DreamPort** —— Minecraft 服务器门户与玩家管理系统。
-> 网名"夏梦"（XiaMeng，缩写 **XM**）+ Port（双关 **Portal 门户** / **Harbor 港湾**）：
-> 既是玩家进入服务器的门户，也是玩家的港湾。
+> **XM DreamPort** —— Minecraft 服务器门户与玩家管理系统，夏日小镇官方门户。
+>
+> **品牌结构**：夏日小镇（主品牌）· 梦港（项目名）· 夏梦（作者署名 by XiaMeng / XM）
+> "梦港" = DreamPort 直译——夏梦（XiaMeng → **XM**）之"梦" + Port（**Portal 门户** / **Harbor 港湾**）。
+> 玩家在梦港查验入镇、停靠补给：**进入夏日小镇，先入梦港。**
 >
 > 独立架构重写，功能对标旧版 XMWhitelist（归档于 `../XMWhitelist-Legacy/`），数据库无缝迁移兼容。
 
