@@ -1,7 +1,10 @@
-# XMWhitelist NG
+# DreamPort · 夏梦之门
 
-> XMWhitelist 全新重写版（Next Generation）—— Minecraft 服务器白名单 / 社区门户管理系统。
-> 独立架构重写，功能对标旧版（归档于 `../XMWhitelist-Legacy/`），数据库无缝迁移兼容。
+> **XM DreamPort** —— Minecraft 服务器门户与玩家管理系统。
+> 网名"夏梦"（XiaMeng，缩写 **XM**）+ Port（双关 **Portal 门户** / **Harbor 港湾**）：
+> 既是玩家进入服务器的门户，也是玩家的港湾。
+>
+> 独立架构重写，功能对标旧版 XMWhitelist（归档于 `../XMWhitelist-Legacy/`），数据库无缝迁移兼容。
 
 - **当前版本**：`0.1.0-dev`（脚手架阶段）
 - **协议**：MIT
@@ -15,25 +18,25 @@
 
 ```
 ┌────────────────────────┐            ┌─────────────────────────────────────┐
-│  Minecraft 服务器集群    │            │  xmwhitelist-server（独立后端进程）    │
+│  Minecraft 服务器集群    │            │  dreamport-server（独立后端进程）     │
 │  ┌──────────────────┐  │   HTTP     │  Spring Boot 3.4 · Java 21          │
-│  │ 薄插件 xm-plugin  │──┼──(内网API)─▶│  虚拟线程 · REST + SPA :18898       │
-│  │ primary 角色      │  │  +缓存兜底 │  WebSocket :18899（审核实时推送）     │
+│  │ 薄插件 dreamport  │──┼──(内网API)─▶│  虚拟线程 · REST + SPA :18898       │
+│  │ -plugin (primary) │  │  +缓存兜底 │  WebSocket :18899（审核实时推送）     │
 │  └──────────────────┘  │            │  Flyway 新 Schema · HikariCP        │
 │  ┌──────────────────┐  │            │  MySQL                              │
 │  │ 子服插件          │──┼──(上报)────▶                                     │
-│  │ secondary 角色    │  │            └─────────────────────────────────────┘
+│  │ (secondary)       │  │            └─────────────────────────────────────┘
 │  └──────────────────┘  │                        ▲
 └────────────────────────┘            浏览器访问 Vue 3 SPA（后端托管）
 ```
 
-### 模块划分（Maven 多模块）
+### 模块划分（Maven 多模块，包根 `cn.xmcraft.dreamport`）
 
 | 模块 | 技术 | 职责 |
 |------|------|------|
-| `xm-common` | Java 21 | 插件 ↔ 后端通信协议 DTO、错误码、事件常量 |
-| `xm-server` | Spring Boot 3.4 + 虚拟线程 | 全部业务：注册/问卷(LLM 评分)/审核/邀请/通知/村谱/公共机器/排行/门户/文档/聊天/AstrBot 对接；托管前端 SPA |
-| `xm-plugin` | Paper API 1.20 | 薄插件：进服白名单校验（本地缓存 + fail_policy 兜底）、聊天/进出事件上报、经济数据快照、whitelist 指令执行 |
+| `dreamport-common` | Java 21 | 插件 ↔ 后端通信协议 DTO、错误码、事件常量 |
+| `dreamport-server` | Spring Boot 3.4 + 虚拟线程 | 全部业务：注册/问卷(LLM 评分)/审核/邀请/通知/村谱/公共机器/排行/门户/文档/聊天/AstrBot 对接；托管前端 SPA |
+| `dreamport-plugin` | Paper API 1.20 | 薄插件：进服白名单校验（本地缓存 + fail_policy 兜底）、聊天/进出事件上报、经济数据快照、whitelist 指令执行 |
 | `frontend/` | Vue 3 + Vite + Pinia | 由旧版前端升级（保留全部页面与双语），构建产物由后端托管 |
 
 ### 关键设计决策
@@ -42,7 +45,7 @@
 |------|------|
 | 架构形态 | 独立后端服务 + 薄插件（多服共享一个后台） |
 | 运行时 | Java 21 + 虚拟线程（高并发低成本） |
-| 数据兼容 | **新 Schema（`wl_` 前缀，规范约束/索引）+ 自动迁移器**：首次启动检测旧库 9 张表 / users.json / audits.json / config.yml，备份改名后导入 |
+| 数据兼容 | **新 Schema（`dp_` 前缀，规范约束/索引）+ 自动迁移器**：首次启动检测旧库 9 张表 / users.json / audits.json / config.yml，备份改名后导入 |
 | 密码兼容 | 旧 `$SHA$盐$哈希` 算法保留可验证，登录成功后透明升级为 bcrypt |
 | 前端 | 保留旧版前端代码作为基线，升级技术栈，API 契约尽量逐字保留 |
 
@@ -75,7 +78,7 @@ MAJOR.MINOR.PATCH   例：1.2.3
 
 ```bash
 mvn clean package        # 后端 + 插件
-cd frontend && npm ci && npm run build   # 前端（产物由 xm-server 托管）
+cd frontend && npm ci && npm run build   # 前端（产物由 dreamport-server 托管）
 ```
 
 ---
@@ -84,12 +87,12 @@ cd frontend && npm ci && npm run build   # 前端（产物由 xm-server 托管�
 
 | 阶段 | 内容 | 状态 |
 |------|------|------|
-| P0 | 仓库初始化、规范冻结（协议/Schema/API 契约） | 🚧 进行中 |
-| P1 | xm-server 骨架（虚拟线程/Flyway/JWT/限流） | ⬜ |
+| P0 | 仓库初始化、定名 DreamPort、规范冻结（协议/Schema/API 契约） | 🚧 进行中 |
+| P1 | dreamport-server 骨架（虚拟线程/Flyway/JWT/限流） | ⬜ |
 | P2 | 旧库自动迁移器（9 表 + 文件存储 + config 导入） | ⬜ |
 | P3 | 账户域 + 问卷域（邮箱验证码、LLM 评分、统一 SSE） | ⬜ |
 | P4 | 审核与社区域（审计/WS 推送/邀请/通知/村谱/公共机器/排行/聊天） | ⬜ |
-| P5 | xm-plugin 完善（缓存 fail_policy/经济快照/双角色） | ⬜ |
+| P5 | dreamport-plugin 完善（缓存 fail_policy/经济快照/双角色） | ⬜ |
 | P6 | 前端升级与托管切换 | ⬜ |
 | P7 | 收尾（文档中心/导出/维护模式/AstrBot 兼容端点） | ⬜ |
 | P8 | 全功能验收 + 迁移演练 + 压测 | ⬜ |
@@ -97,12 +100,12 @@ cd frontend && npm ci && npm run build   # 前端（产物由 xm-server 托管�
 ## 五、目录结构
 
 ```
-XMWhitelist-NG/
-├── xm-common/        # （P0）协议 DTO
-├── xm-server/        # （P1）独立后端
-├── xm-plugin/        # （P5）Paper 薄插件
-├── frontend/         # （P6）前端（由 Legacy 前端升级）
-├── docs/             # 设计文档、ADR
+DreamPort/
+├── dreamport-common/  # （P0）协议 DTO
+├── dreamport-server/  # （P1）独立后端
+├── dreamport-plugin/  # （P5）Paper 薄插件
+├── frontend/          # （P6）前端（由 Legacy 前端升级）
+├── docs/              # 设计文档、ADR
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
