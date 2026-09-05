@@ -24,6 +24,11 @@ public class SettingService {
     public static final String KEY_DOWNLOADS = "downloads.list";
     public static final String KEY_ECONOMY_SNAPSHOT = "economy.snapshot";
     public static final String KEY_CHAT_HISTORY = "chat.history";
+    public static final String KEY_REGISTER_CONFIG = "register.config";
+    public static final String KEY_LLM_CONFIG = "llm.config";
+    public static final String KEY_INVITE_CONFIG = "invite.config";
+    public static final String KEY_GAME_CONFIG = "game.config";
+    public static final String KEY_SETUP_COMPLETED = "setup.completed";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

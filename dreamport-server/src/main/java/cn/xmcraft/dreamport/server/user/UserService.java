@@ -2,6 +2,8 @@ package cn.xmcraft.dreamport.server.user;
 
 import cn.xmcraft.dreamport.common.LoginCheckResponse;
 import cn.xmcraft.dreamport.server.security.PasswordService;
+import cn.xmcraft.dreamport.server.settings.SettingService;
+import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -25,15 +27,15 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordService passwordService;
     private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
-    private final cn.xmcraft.dreamport.server.config.WlProps props;
+    private final SystemSettingsService systemSettings;
 
     public UserService(UserRepository userRepository, PasswordService passwordService,
                        cn.xmcraft.dreamport.server.settings.SettingService settingService,
-                       cn.xmcraft.dreamport.server.config.WlProps props) {
+                       SystemSettingsService systemSettings) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
         this.settingService = settingService;
-        this.props = props;
+        this.systemSettings = systemSettings;
     }
 
     public enum RegisterError {INVALID_USERNAME, INVALID_EMAIL, INVALID_PASSWORD, USERNAME_TAKEN,
@@ -58,24 +60,21 @@ public class UserService {
         if (userRepository.findByUsernameIgnoreCase(username).isPresent()) {
             return new RegisterResult(null, RegisterError.USERNAME_TAKEN);
         }
-        // 邮箱域名白名单（Rules.md §3）
-        var whitelist = props.register() != null ? props.register().emailDomainWhitelist() : null;
-        boolean whitelistOn = props.register() != null && props.register().domainWhitelistEnabled()
-                && whitelist != null && !whitelist.isEmpty();
+        var regConfig = systemSettings.registerConfig();
+        var whitelist = (java.util.List<?>) regConfig.getOrDefault("emailDomainWhitelist", java.util.List.of());
+        boolean whitelistOn = Boolean.TRUE.equals(regConfig.get("domainWhitelistEnabled")) && !whitelist.isEmpty();
         if (whitelistOn) {
             String domain = email.substring(email.indexOf('@') + 1).toLowerCase();
-            if (whitelist.stream().noneMatch(d -> String.valueOf(d).equalsIgnoreCase(domain))) {
-                return new RegisterResult(null, RegisterError.EMAIL_DOMAIN_DENIED);
-            }
+            boolean allowed = whitelist.stream().anyMatch(d -> String.valueOf(d).equalsIgnoreCase(domain));
+            if (!allowed) return new RegisterResult(null, RegisterError.EMAIL_DOMAIN_DENIED);
         }
-        // 单邮箱注册账号数上限
-        int maxPerEmail = props.register() == null ? 2 : props.register().maxAccountsPerEmail();
+        int maxPerEmail = ((Number) regConfig.getOrDefault("maxAccountsPerEmail", 2)).intValue();
         long sameEmail = userRepository.listAll().stream()
                 .filter(u -> u.email() != null && u.email().equalsIgnoreCase(email)).count();
         if (sameEmail >= maxPerEmail) {
             return new RegisterResult(null, RegisterError.EMAIL_LIMIT);
         }
-        boolean autoApprove = props.register() != null && props.register().autoApprove();
+        boolean autoApprove = Boolean.TRUE.equals(regConfig.get("autoApprove"));
         UserRecord user = new UserRecord(null, username, email, autoApprove ? "approved" : "pending",
                 "bcrypt", passwordService.hash(password), null,
                 null, null, null, null, null, null, null, null, null,
@@ -119,7 +118,7 @@ public class UserService {
         }
         return switch (user.status()) {
             case "approved" -> LoginCheckResponse.allow();
-            case "pending" -> props.questionnaire().enabled() && user.questionnaireScore() == 0
+            case "pending" -> isQuestionnaireEnabled() && user.questionnaireScore() == 0
                     ? LoginCheckResponse.deny("login.needs_questionnaire")
                     : LoginCheckResponse.deny("login.pending");
             case "pending_review" -> LoginCheckResponse.deny("login.pending_review");
@@ -169,6 +168,10 @@ public class UserService {
     private LoginCheckResponse denyMaintained() {
         return new LoginCheckResponse(cn.xmcraft.dreamport.common.Protocol.DECISION_DENY,
                 "maintenance.kick", true);
+    }
+
+    private boolean isQuestionnaireEnabled() {
+        try { return settingService.getBool("questionnaire.enabled", true); } catch (Exception e) { return true; }
     }
 
     private boolean maintenance() {

@@ -667,6 +667,17 @@ class ApiService {
     return this.request('/admin/migration/upload', { method: 'POST', body: formData })
   }
 
+  async getRegisterSettings() { return this.request('/admin/settings/register') }
+  async saveRegisterSettings(body: any) { return this.request('/admin/settings/register', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getLlmSettings() { return this.request('/admin/settings/llm') }
+  async saveLlmSettings(body: any) { return this.request('/admin/settings/llm', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getInviteSettings() { return this.request('/admin/settings/invite') }
+  async saveInviteSettings(body: any) { return this.request('/admin/settings/invite', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getGameSettings() { return this.request('/admin/settings/game') }
+  async saveGameSettings(body: any) { return this.request('/admin/settings/game', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getDownloadsAdmin() { return this.request('/admin/settings/downloads') }
+  async saveDownloadsAdmin(body: any) { return this.request('/admin/settings/downloads', { method: 'PUT', body: JSON.stringify(body) }) }
+
   async getMigrationReport() {
     return this.request('/admin/migration/report')
   }

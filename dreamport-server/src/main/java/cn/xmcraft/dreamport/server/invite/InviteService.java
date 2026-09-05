@@ -1,6 +1,6 @@
 package cn.xmcraft.dreamport.server.invite;
 
-import cn.xmcraft.dreamport.server.config.WlProps;
+import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
 import cn.xmcraft.dreamport.server.notification.NotificationRecord;
 import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.user.UserRecord;
@@ -20,14 +20,14 @@ public class InviteService {
     private final InviteRepository inviteRepository;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final WlProps props;
+    private final SystemSettingsService systemSettings;
 
     public InviteService(InviteRepository inviteRepository, UserRepository userRepository,
-                         NotificationRepository notificationRepository, WlProps props) {
+                         NotificationRepository notificationRepository, SystemSettingsService systemSettings) {
         this.inviteRepository = inviteRepository;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
-        this.props = props;
+        this.systemSettings = systemSettings;
     }
 
     public record Result(boolean success, String message) {
@@ -40,13 +40,18 @@ public class InviteService {
         }
     }
 
+    private boolean isInviteEnabled() {
+        var cfg = systemSettings.inviteConfig();
+        return Boolean.TRUE.equals(cfg.getOrDefault("enabled", true));
+    }
+
     private void notifyUser(String username, String type, String title, String message, String related) {
         notificationRepository.save(new NotificationRecord(null, username, type, title, message,
                 null, null, related));
     }
 
     public Result generate(String inviter) {
-        if (!props.invite().enabled()) {
+        if (!isInviteEnabled()) {
             return Result.fail("邀请功能未启用");
         }
         Optional<UserRecord> inviterOpt = userRepository.findByUsernameIgnoreCase(inviter);
@@ -55,12 +60,15 @@ public class InviteService {
         }
         long activeCount = inviteRepository
                 .countByInviterUsernameIgnoreCaseAndStatus(inviter, "active");
-        if (activeCount >= props.invite().maxInvitesPerUser()) {
-            return Result.fail("活跃邀请码已达上限（" + props.invite().maxInvitesPerUser() + "）");
+        var cfg = systemSettings.inviteConfig();
+        if (activeCount >= ((Number) cfg.getOrDefault("maxInvitesPerUser", 3)).intValue()) {
+            return Result.fail("活跃邀请码已达上限（" + ((Number) systemSettings.inviteConfig().getOrDefault("maxInvitesPerUser", 3)).intValue() + "）");
         }
         long now = System.currentTimeMillis();
+        var cfg2 = systemSettings.inviteConfig();
+        long expiryDays = ((Number) cfg2.getOrDefault("codeExpiryDays", 7)).longValue();
         InviteRecord invite = new InviteRecord(null, InviteRecord.generateCode(), inviter,
-                null, "active", now, now + props.invite().codeExpiryDays() * 86_400_000L, null);
+                null, "active", now, now + expiryDays * 86_400_000L, null);
         inviteRepository.save(invite);
         return Result.ok("邀请码已生成：" + invite.code());
     }
