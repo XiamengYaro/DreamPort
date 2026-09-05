@@ -28,8 +28,15 @@ public class AuthFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         String header = request.getHeader("Authorization");
+        String token = null;
         if (header != null && header.startsWith("Bearer ")) {
-            Claims claims = tokenService.parse(header.substring(7).trim());
+            token = header.substring(7).trim();
+        } else if (request.getParameter("token") != null) {
+            // SSE/EventSource 无法携带 Header，兼容旧前端 ?token= 传参
+            token = request.getParameter("token");
+        }
+        if (token != null) {
+            Claims claims = tokenService.parse(token);
             if (claims != null) {
                 request.setAttribute(AuthUtil.ATTR_USERNAME, claims.getSubject());
                 request.setAttribute(AuthUtil.ATTR_ROLE,

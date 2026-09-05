@@ -29,6 +29,35 @@ wl:
   cors:
     allowed-origins: "*"
   seed-demo: true    # 首次启动播种演示账号（生产置 false）
+  web-register-url: "http://localhost:18898"
+  admin-notify-email: ""
+  mail:
+    host: ""         # 留空 = 日志模式（不发信，仅打印）；生产填 SMTP
+    port: 465
+    username: ""
+    password: ""
+    from: "no_reply@xmcraft.cn"
+    ssl: true
+    subject: ""
+  questionnaire:
+    enabled: true
+    pass-score: 60
+  llm:
+    enabled: false   # 问卷 AI 评分（OpenAI 兼容接口）；不启用时按长度降级评分
+    api-base: "https://api.deepseek.com/v1"
+    api-key: ""
+    model: "deepseek-chat"
+    timeout-ms: 10000
+    max-concurrency: 4
+    system-prompt: "你是一位公正的 Minecraft 白名单问卷评分员。严格根据问题、候选人回答和评分规则进行评分。仅返回 JSON。"
+  invite:
+    enabled: true
+    code-expiry-days: 7
+    max-invites-per-user: 3
+  migration:
+    enabled: true                  # 启动时自动检测旧库并迁移（幂等）
+    legacy-dir: ""                 # 旧版 file 模式目录（含 users.json/audits.json）
+    legacy-config: ""              # 旧版 config.yml 路径（站点内容导入 dp_setting）
 
 ---
 spring:

@@ -2,6 +2,8 @@ package cn.xmcraft.dreamport.server.user;
 
 import org.springframework.data.repository.CrudRepository;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository extends CrudRepository<UserRecord, Long> {
@@ -10,4 +12,11 @@ public interface UserRepository extends CrudRepository<UserRecord, Long> {
     Optional<UserRecord> findByUsernameIgnoreCase(String username);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    /** findAll() 返回 Iterable，统一转 List */
+    default List<UserRecord> listAll() {
+        List<UserRecord> list = new ArrayList<>();
+        findAll().forEach(list::add);
+        return list;
+    };
 }

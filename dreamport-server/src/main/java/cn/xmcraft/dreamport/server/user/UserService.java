@@ -20,10 +20,13 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordService passwordService;
+    private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
 
-    public UserService(UserRepository userRepository, PasswordService passwordService) {
+    public UserService(UserRepository userRepository, PasswordService passwordService,
+                       cn.xmcraft.dreamport.server.settings.SettingService settingService) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
+        this.settingService = settingService;
     }
 
     public enum RegisterError {INVALID_USERNAME, INVALID_EMAIL, INVALID_PASSWORD, USERNAME_TAKEN, EMAIL_TAKEN}
@@ -79,14 +82,18 @@ public class UserService {
 
     /**
      * 进服校验决策：按用户状态映射 allow/deny + 与旧版一致的 i18n reasonKey。
+     * 维护模式读 dp_setting（持久化——修复旧版重启失效）。
      */
     public LoginCheckResponse loginDecision(String username) {
+        boolean maintenance = maintenance();
         Optional<UserRecord> found = userRepository.findByUsernameIgnoreCase(username);
         if (found.isEmpty()) {
-            return LoginCheckResponse.deny("login.not_registered");
+            return maintenance ? denyMaintained() : LoginCheckResponse.deny("login.not_registered");
         }
         UserRecord user = found.get();
-        // P4 接入 dp_setting 的维护模式开关
+        if (maintenance) {
+            return denyMaintained();
+        }
         return switch (user.status()) {
             case "approved" -> LoginCheckResponse.allow();
             case "pending" -> LoginCheckResponse.deny("login.pending");
@@ -99,5 +106,19 @@ public class UserService {
                             ? "login.banned" : "login.banned_reason");
             default -> LoginCheckResponse.deny("login.unknown_status");
         };
+    }
+
+    private LoginCheckResponse denyMaintained() {
+        return new LoginCheckResponse(cn.xmcraft.dreamport.common.Protocol.DECISION_DENY,
+                "maintenance.kick", true);
+    }
+
+    private boolean maintenance() {
+        try {
+            return settingService.getBool(cn.xmcraft.dreamport.server.settings.SettingService.KEY_MAINTENANCE,
+                    false);
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

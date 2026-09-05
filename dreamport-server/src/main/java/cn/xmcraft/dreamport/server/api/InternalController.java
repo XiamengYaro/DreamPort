@@ -3,23 +3,27 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.common.HeartbeatRequest;
 import cn.xmcraft.dreamport.common.HeartbeatResponse;
 import cn.xmcraft.dreamport.common.LoginCheckRequest;
-import cn.xmcraft.dreamport.common.Protocol;
+import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
+import cn.xmcraft.dreamport.server.economy.EconomyService;
+import cn.xmcraft.dreamport.server.stats.ServerStatsService;
 import cn.xmcraft.dreamport.server.user.UserService;
+import cn.xmcraft.dreamport.server.verification.MinecraftVerifyService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 服务器间内部端点（鉴权：X-Server-Id/X-Server-Token，Rules.md §5）。
- * P1 提供 login-check 与 heartbeat；login-record/events/economy/commands 在 P5 接入。
+ * 服务器间内部端点（鉴权：X-Server-Token，Rules.md §5）。
+ * login-check / heartbeat / login-record / events / economy/snapshot / commands/whitelist。
  */
 @RestController
 @RequestMapping("/internal/v1")
@@ -27,12 +31,22 @@ public class InternalController {
 
     private final UserService userService;
     private final WlProps props;
-    /** 各服务器最近一次心跳（内存态；P4 落 dp_server） */
-    private final Map<String, HeartbeatRequest> lastHeartbeats = new ConcurrentHashMap<>();
+    private final ServerStatsService statsService;
+    private final MinecraftVerifyService minecraftVerifyService;
+    private final EconomyService economyService;
+    private final cn.xmcraft.dreamport.server.chat.ChatService chatService;
 
-    public InternalController(UserService userService, WlProps props) {
+    public InternalController(UserService userService, WlProps props,
+                              ServerStatsService statsService,
+                              MinecraftVerifyService minecraftVerifyService,
+                              EconomyService economyService,
+                              cn.xmcraft.dreamport.server.chat.ChatService chatService) {
         this.userService = userService;
         this.props = props;
+        this.statsService = statsService;
+        this.minecraftVerifyService = minecraftVerifyService;
+        this.economyService = economyService;
+        this.chatService = chatService;
     }
 
     @PostMapping("/login-check")
@@ -45,6 +59,7 @@ public class InternalController {
         if (req == null || req.username() == null || req.username().isBlank()) {
             return badRequest("username 必填");
         }
+        // 群组服统一拦截（proxy 角色）时也走同一决策
         return ResponseEntity.ok(userService.loginDecision(req.username()));
     }
 
@@ -58,21 +73,79 @@ public class InternalController {
         if (req == null || req.serverId() == null || req.serverId().isBlank()) {
             return badRequest("serverId 必填");
         }
-        lastHeartbeats.put(req.serverId(), req);
+        statsService.heartbeat(new ServerStatsService.Heartbeat(req.serverId(), req.serverName(),
+                req.role(), req.onlinePlayers(), req.maxPlayers(), req.version(),
+                System.currentTimeMillis()));
         return ResponseEntity.ok(new HeartbeatResponse(true, System.currentTimeMillis()));
     }
 
-    /** 最近心跳（运维观察用，后续随 dp_server 落库移除） */
-    public Map<String, HeartbeatRequest> lastHeartbeats() {
-        return Map.copyOf(lastHeartbeats);
+    public record LoginRecordBody(String name, String uuid, String ip) {
+    }
+
+    @PostMapping("/login-record")
+    public ResponseEntity<Object> loginRecord(@RequestBody LoginRecordBody body,
+                                              HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        minecraftVerifyService.recordLogin(body.name(), body.uuid(), body.ip());
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    public record EventBody(String type, String serverId, String player, String message) {
+    }
+
+    @PostMapping("/events")
+    public ResponseEntity<Object> events(@RequestBody EventBody body, HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        switch (body.type() == null ? "" : body.type()) {
+            case "chat" -> chatService.broadcast(body.player() == null ? "?" : body.player(),
+                    body.message() == null ? "" : body.message());
+            case "join", "quit" -> chatService.broadcast("[系统]",
+                    (body.player() == null ? "?" : body.player())
+                            + ("join".equals(body.type()) ? " 加入了服务器" : " 离开了服务器"));
+            default -> {
+                return badRequest("未知事件类型");
+            }
+        }
+        return ResponseEntity.ok(Map.of("ok", true));
+    }
+
+    public record EconomySnapshotBody(List<EconomyService.PlayerEconomy> players) {
+    }
+
+    @PostMapping("/economy/snapshot")
+    public ResponseEntity<Object> economySnapshot(@RequestBody EconomySnapshotBody body,
+                                                  HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        economyService.saveSnapshot(body.players() == null ? List.of() : body.players());
+        return ResponseEntity.ok(Map.of("ok", true, "count",
+                body.players() == null ? 0 : body.players().size()));
+    }
+
+    @GetMapping("/commands/whitelist")
+    public ResponseEntity<Object> whitelistCommands(HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        String serverId = request.getParameter("serverId");
+        return ResponseEntity.ok(Map.of("commands",
+                minecraftVerifyService.drainWhitelistCommands(serverId == null ? "main" : serverId)));
     }
 
     private ResponseEntity<Object> requireServerToken(HttpServletRequest request) {
-        String token = request.getHeader(Protocol.HEADER_SERVER_TOKEN);
+        String token = request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN);
         if (token == null || !props.internal().serverToken().equals(token)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("code", cn.xmcraft.dreamport.common.ErrorCode.TOKEN_MISSING.code(),
-                            "message", "服务器认证失败"));
+                    .body(Map.of("code", ErrorCode.TOKEN_MISSING.code(), "message", "服务器认证失败"));
         }
         return null;
     }

@@ -20,17 +20,21 @@ public class DevSeeder implements CommandLineRunner {
 
     private final UserRepository userRepository;
     private final PasswordService passwordService;
+    private final cn.xmcraft.dreamport.server.questionnaire.QuestionnaireService questionnaireService;
     private final boolean seedDemo;
 
     public DevSeeder(UserRepository userRepository, PasswordService passwordService,
+                     cn.xmcraft.dreamport.server.questionnaire.QuestionnaireService questionnaireService,
                      org.springframework.core.env.Environment env) {
         this.userRepository = userRepository;
         this.passwordService = passwordService;
+        this.questionnaireService = questionnaireService;
         this.seedDemo = Boolean.parseBoolean(env.getProperty("wl.seed-demo", "true"));
     }
 
     @Override
     public void run(String... args) {
+        seedDefaultQuestionnaire();
         if (!seedDemo || userRepository.findByUsernameIgnoreCase("demo").isPresent()) {
             return;
         }
@@ -49,5 +53,21 @@ public class DevSeeder implements CommandLineRunner {
         userRepository.save(demo2);
 
         log.info("[DevSeeder] 已播种演示账号：demo/demo12345（legacy_sha256，验证旧哈希兼容）与 demo2/demo12345（bcrypt）");
+    }
+
+    /** 首次启动把内置默认题库（旧版 questionnaire.yml 格式）导入 dp_question */
+    private void seedDefaultQuestionnaire() {
+        try (var in = getClass().getResourceAsStream("/questionnaire-default.yml")) {
+            if (in == null || !questionnaireService.activeQuestionnaire().enabled()
+                    || !questionnaireService.questions(
+                    questionnaireService.activeQuestionnaire().id()).isEmpty()) {
+                return;
+            }
+            int count = questionnaireService.importYaml(new String(in.readAllBytes(),
+                    java.nio.charset.StandardCharsets.UTF_8));
+            log.info("[DevSeeder] 已导入默认问卷题库 {} 题", count);
+        } catch (Exception e) {
+            log.warn("[DevSeeder] 默认题库导入失败: {}", e.getMessage());
+        }
     }
 }

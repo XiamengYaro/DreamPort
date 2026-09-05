@@ -1,0 +1,285 @@
+# XMWhitelist 问卷配置
+# 题目类型: single_choice, multiple_choice, text
+
+questions:
+- id: 1
+  question_en: Please read our server charter before proceeding.
+  question_zh: 请您先阅读我们的服务器公约以更好的回答接下来的问题
+  type: single_choice
+  required: true
+  max_score: 3
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: I have read and agree to the charter
+    text_zh: 我已阅读并愿意遵守以上约定
+    score: 3
+
+- id: 2
+  question_en: What is your Minecraft Java edition ID or Little Skin ID (non-premium players only)?
+  question_zh: 您的Minecraft Java 版正版账号ID 或 Little Skin皮肤站（仅限非正版玩家）ID为？
+  type: text
+  required: true
+  max_score: 3
+  scoring_rule: 只要填写即满分
+  input:
+    multiline: false
+    min_length: 1
+    max_length: 50
+    placeholder_en: Enter your Minecraft or LittleSkin ID...
+    placeholder_zh: 请输入您的 Minecraft Java 版正版账号ID 或 LittleSkin皮肤站玩家ID...
+
+- id: 3
+  question_en: What is your QQ number?
+  question_zh: 您的QQ号码为？
+  type: text
+  required: true
+  max_score: 3
+  scoring_rule: 只要填写即满分
+  input:
+    multiline: false
+    min_length: 5
+    max_length: 15
+    placeholder_en: Enter your QQ number...
+    placeholder_zh: 请输入您的QQ号码...
+
+- id: 4
+  question_en: Do you agree to follow the server charter and accept penalties for violations?
+  question_zh: 你是否同意遵守服务器公约，并接受因违规行为导致的处罚？
+  type: single_choice
+  required: true
+  max_score: 3
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: Yes, I agree
+    text_zh: 同意
+    score: 3
+  - text_en: No, I do not agree
+    text_zh: 不同意
+    score: 0
+
+- id: 5
+  question_en: How did you find out about our server?
+  question_zh: 你是怎么知道夏日小镇服务器的？
+  type: single_choice
+  required: true
+  max_score: 3
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: A friend recommended it
+    text_zh: 朋友推荐
+    score: 3
+  - text_en: Found it on a forum or community
+    text_zh: 在论坛或社区看到的
+    score: 3
+  - text_en: Found it through a search engine
+    text_zh: 搜索引擎找到的
+    score: 3
+  - text_en: Other
+    text_zh: 其他
+    score: 3
+
+- id: 6
+  question_en: How long have you been playing Minecraft?
+  question_zh: 你玩 Minecraft 多久了？
+  type: single_choice
+  required: true
+  max_score: 3
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: Less than 1 year
+    text_zh: 不到 1 年
+    score: 3
+  - text_en: 1-2 years
+    text_zh: 1-2 年
+    score: 3
+  - text_en: 3-5 years
+    text_zh: 3-5 年
+    score: 3
+  - text_en: More than 5 years
+    text_zh: 5 年以上
+    score: 3
+
+- id: 7
+  question_en: What are your favorite Minecraft gameplay styles? (Multiple choices)
+  question_zh: 你最喜欢 Minecraft 的哪些玩法？（多选）
+  type: multiple_choice
+  required: true
+  max_score: 10
+  input:
+    min_selections: 1
+    max_selections: 6
+  options:
+  - text_en: Survival building
+    text_zh: 生存建造
+    score: 4
+  - text_en: Redstone engineering
+    text_zh: 红石科技
+    score: 4
+  - text_en: Adventure and exploration
+    text_zh: 冒险探索
+    score: 4
+  - text_en: Farming and breeding
+    text_zh: 农场养殖
+    score: 4
+  - text_en: Architecture and design
+    text_zh: 建筑设计
+    score: 4
+  - text_en: PVP combat
+    text_zh: PVP 对战
+    score: 4
+
+- id: 8
+  question_en: Introduce yourself in one sentence.
+  question_zh: 用一句话介绍你自己
+  type: text
+  required: true
+  max_score: 8
+  scoring_rule: AI根据回答完整性和态度评分，认真介绍自己得满分
+  input:
+    multiline: false
+    min_length: 2
+    max_length: 100
+    placeholder_en: Introduce yourself...
+    placeholder_zh: 介绍一下你自己...
+
+- id: 9
+  question_en: Have you ever been banned or punished on other Minecraft servers?
+  question_zh: 你是否有过在其他服务器被封禁或处罚的经历？
+  type: single_choice
+  required: true
+  max_score: 8
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: No, never
+    text_zh: 没有过
+    score: 8
+  - text_en: Yes, once
+    text_zh: 有过一次
+    score: 5
+  - text_en: Yes, multiple times
+    text_zh: 有过多次
+    score: 2
+  - text_en: Prefer not to say
+    text_zh: 不想说
+    score: 1
+
+- id: 10
+  question_en: What do you most want to do on our server?
+  question_zh: 你在服务器中最想做的事情是什么？
+  type: text
+  required: true
+  max_score: 8
+  scoring_rule: AI根据回答完整性和与服务器的相关性评分
+  input:
+    multiline: true
+    min_length: 5
+    max_length: 300
+    placeholder_en: Describe what you want to do on the server...
+    placeholder_zh: 描述你在服务器中最想做的事情...
+
+- id: 11
+  question_en: If you see another player using cheat mods (like X-ray), what would you do?
+  question_zh: 如果你看到其他玩家使用作弊模组（如矿物透视），你会怎么做？
+  type: single_choice
+  required: true
+  max_score: 10
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: Report to admins immediately
+    text_zh: 立即向管理员举报
+    score: 10
+  - text_en: Privately remind the player to stop
+    text_zh: 私下提醒该玩家停止作弊
+    score: 7
+  - text_en: Ignore it and continue playing
+    text_zh: 装作没看见，继续玩自己的
+    score: 3
+  - text_en: Join in and use cheats too
+    text_zh: 也跟着一起用
+    score: 0
+
+- id: 12
+  question_en: If you have a dispute with another player, how would you handle it?
+  question_zh: 如果你和另一位玩家发生了纠纷，你会如何处理？
+  type: single_choice
+  required: true
+  max_score: 10
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: Contact an admin to mediate
+    text_zh: 找管理员调解
+    score: 10
+  - text_en: Try to resolve it calmly through discussion
+    text_zh: 冷静沟通，尝试自行解决
+    score: 8
+  - text_en: Ignore the other player
+    text_zh: 对方不理就算了
+    score: 4
+  - text_en: Fight back or retaliate
+    text_zh: 以牙还牙，报复回去
+    score: 0
+
+- id: 13
+  question_en: Please briefly describe your understanding of "griefing" in Minecraft servers.
+  question_zh: 请简述你对"恶意破坏"（griefing）的理解
+  type: text
+  required: true
+  max_score: 10
+  scoring_rule: AI根据回答深度评分，能准确理解griefing的定义、表现形式和危害得满分
+  input:
+    multiline: true
+    min_length: 10
+    max_length: 500
+    placeholder_en: Describe your understanding of griefing...
+    placeholder_zh: 请简述你对恶意破坏的理解...
+
+- id: 14
+  question_en: Which behavior do you think is most unacceptable on a Minecraft server?
+  question_zh: 你认为以下哪种行为最不应该在服务器中出现？
+  type: single_choice
+  required: true
+  max_score: 10
+  input:
+    min_selections: 1
+    max_selections: 1
+  options:
+  - text_en: Destroying other players' buildings
+    text_zh: 破坏其他玩家的建筑
+    score: 10
+  - text_en: Using cheat mods
+    text_zh: 使用作弊模组
+    score: 10
+  - text_en: Stealing other players' items
+    text_zh: 偷窃其他玩家的物品
+    score: 10
+  - text_en: Harassing or insulting other players
+    text_zh: 骚扰或辱骂其他玩家
+    score: 10
+
+- id: 15
+  question_en: What are your expectations or suggestions for our server?
+  question_zh: 你对夏日小镇有什么期待或建议？
+  type: text
+  required: false
+  max_score: 8
+  scoring_rule: AI根据回答认真程度评分，有具体想法得满分
+  input:
+    multiline: true
+    min_length: 0
+    max_length: 500
+    placeholder_en: Share your expectations or suggestions...
+    placeholder_zh: 分享你对夏日小镇的期待或建议...

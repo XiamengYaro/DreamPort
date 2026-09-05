@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XMCraft - 验证码</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: #fef7ed; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(249, 115, 22, 0.08); }
+        .header { background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white; padding: 32px; text-align: center; }
+        .header h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.5px; }
+        .content { padding: 32px; color: #1c1917; }
+        .code-box { background: rgba(249, 115, 22, 0.06); border: 2px dashed rgba(249, 115, 22, 0.2); border-radius: 16px; padding: 24px; text-align: center; margin: 24px 0; }
+        .code { font-size: 36px; font-weight: 700; color: #ea580c; letter-spacing: 10px; }
+        .footer { background: #fef7ed; padding: 20px; text-align: center; color: #a8a29e; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>XMCraft</h1>
+        </div>
+        <div class="content">
+            <p>你好！你的验证码是：</p>
+            <div class="code-box">
+                <div class="code">{code}</div>
+            </div>
+            <p style="color: #a8a29e; font-size: 14px;">验证码有效期为 5 分钟。</p>
+        </div>
+        <div class="footer">
+            <p>此邮件由 XMCraft 白名单系统 自动发送</p>
+        </div>
+    </div>
+</body>
+</html>
