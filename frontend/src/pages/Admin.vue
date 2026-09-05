@@ -65,6 +65,10 @@
               <input v-model.number="portalData.server_port" type="number" class="input" />
             </div>
             <div>
+              <label class="block text-sm text-stone-300 mb-1">地图地址（多个用 | 分隔）</label>
+              <input v-model="portalData.map_url" class="input" placeholder="http://mc.example.com:8123" />
+            </div>
+            <div>
               <label class="block text-sm text-stone-300 mb-1">Wiki 链接</label>
               <input v-model="portalData.social.wiki" type="text" class="input" />
             </div>
@@ -793,6 +797,7 @@ const portalData = ref({
   server_port: 25565,
   logo: '/logo.png',
   icp: '',
+  map_url: '',
   social: { wiki: '' },
   carousel: [] as any[],
   team: [] as any[],
@@ -1059,6 +1064,7 @@ const loadPortalConfig = async () => {
         server_port: p.server_port || 25565,
         logo: p.logo || '/logo.png',
         icp: p.icp || '',
+        map_url: p.map_url || '',
         social: p.social || { wiki: '' },
         carousel: Array.isArray(p.carousel) ? p.carousel : [],
         team: Array.isArray(p.team) ? p.team : [],
