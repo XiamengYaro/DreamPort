@@ -87,17 +87,21 @@ cd frontend && npm ci && npm run build   # 前端（产物由 dreamport-server �
 
 ## 四、路线图
 
+> 逐项进度见 [docs/IMPLEMENTATION_PROGRESS.md](docs/IMPLEMENTATION_PROGRESS.md)（128 项功能追踪）。
+
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | P0 | 仓库初始化、定名 DreamPort、规范冻结（协议/Schema/API 契约） | 🚧 进行中 |
 | P1 | dreamport-server 骨架（虚拟线程/Flyway/JWT/限流） | ⬜ |
 | P2 | 旧库自动迁移器（9 表 + 文件存储 + config 导入） | ⬜ |
-| P3 | 账户域 + 问卷域（邮箱验证码、LLM 评分、统一 SSE） | ⬜ |
+| P3 | 账户域 + 问卷域（邮箱验证码、LLM 评分+人工复核、统一 SSE、i18n 全覆盖） | ⬜ |
 | P4 | 审核与社区域（审计/WS 推送/邀请/通知/村谱/公共机器/排行/聊天） | ⬜ |
-| P5 | dreamport-plugin 完善（缓存 fail_policy/经济快照/双角色） | ⬜ |
-| P6 | 前端升级与托管切换 | ⬜ |
-| P7 | 收尾（文档中心/导出/维护模式/AstrBot 兼容端点） | ⬜ |
-| P8 | 全功能验收 + 迁移演练 + 压测 | ⬜ |
+| P5 | dreamport-plugin 完善（缓存 fail_policy/经济快照/三角色含代理端拦截/delete 命令/bStats） | ⬜ |
+| P6 | 前端升级与托管切换（Pinia/语言切换/ui 组件库/组件测试） | ⬜ |
+| P7 | 收尾（文档中心/导出/维护模式/AstrBot 兼容端点/config_help） | ⬜ |
+| P8 | 全功能验收 + 迁移演练 + 压测 + CI（Gitea Actions） | ⬜ |
+
+> 自 参考项目 v1.8.0 的吸收项已并入对应阶段；Discord OAuth 经评估**排除**。依据：[docs/FEATURE_GAP_vs_参考项目.md](docs/FEATURE_GAP_vs_参考项目.md)。
 
 ## 五、目录结构
 
@@ -107,14 +111,18 @@ DreamPort/
 ├── dreamport-server/  # （P1）独立后端
 ├── dreamport-plugin/  # （P5）Paper 薄插件
 ├── frontend/          # （P6）前端（由 Legacy 前端升级）
-├── docs/              # 设计文档、ADR
+├── docs/              # 设计文档、进度表、比对报告
 ├── CHANGELOG.md
 ├── LICENSE
 └── README.md
 ```
 
-## 六、相关文档
+## 六、文档索引
 
-- 旧版项目文档：`../XMWhitelist-Legacy/README.md`
-- 旧版与 参考项目 比对报告：`../XMWhitelist-Legacy/docs/COMPARISON_Report_参考项目.md`
-- 旧版经济系统修复记录：`../XMWhitelist-Legacy/CHANGELOG_ECONOMY_FIX.md`
+| 文档 | 内容 |
+|------|------|
+| [docs/PROJECT_DOCUMENTATION.md](docs/PROJECT_DOCUMENTATION.md) | **完整项目文档**（架构/数据/API/安全/配置/部署） |
+| [docs/IMPLEMENTATION_PROGRESS.md](docs/IMPLEMENTATION_PROGRESS.md) | **功能实现进度总表**（128 项，实时更新） |
+| [docs/FEATURE_GAP_vs_参考项目.md](docs/FEATURE_GAP_vs_参考项目.md) | Legacy vs 参考项目 功能差距与吸收决策 |
+| [AGENTS.md](AGENTS.md) / [Rules.md](Rules.md) | AI 协作指南 / 工程硬规则 |
+| Legacy 归档 | `../XMWhitelist-Legacy/`（含谱系比对报告与旧版 README） |
