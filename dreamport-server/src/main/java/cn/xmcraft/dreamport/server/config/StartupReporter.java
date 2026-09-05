@@ -51,24 +51,16 @@ public class StartupReporter {
         this.mailService = mailService;
     }
 
-    /** 字符画 Banner（仅用 █ 与空格，任何终端字体都能正确显示） */
+    /** 字符画 Banner（figlet Standard 字体，纯 ASCII，任何终端都能正确显示） */
     public static void printBanner() {
         System.out.println();
-        String[][] lines = {
-            {"█████ ","████ ","█████ ","█████ ","█   █ ","████ ","█████ ","████ ","█████ "},
-            {"█   █ ","█   █ ","█     ","█   █ ","██ ██ ","█   █ ","█   █ ","█   █ ","  █  "},
-            {"█   █ ","████ ","███   ","█████ ","█ █ █ ","████ ","█   █ ","████ ","  █  "},
-            {"█   █ ","█  █ ","█     ","█   █ ","█   █ ","█     ","█   █ ","█  █ ","  █  "},
-            {"█████ ","█   █ ","█████ ","█   █ ","█   █ ","█     ","█████ ","█   █ ","  █  "}
-        };
-        for (String[] row : lines) {
-            StringBuilder sb = new StringBuilder("\u001B[38;5;208m");
-            for (String cell : row) {
-                sb.append(cell).append(' ');
-            }
-            System.out.println(sb);
-        }
-        System.out.println("\u001B[38;5;250m   夏日小镇 · 梦港  ——  Minecraft 服务器门户与玩家管理系统\u001B[0m");
+        System.out.println(" _____                           _____           _   ");
+        System.out.println(" |  __ \\                         |  __ \\         | |  ");
+        System.out.println(" | |  | |_ __ ___  __ _ _ __ ___ | |__) |__  _ __| |_ ");
+        System.out.println(" | | | | '__/ _ \\/ _` | '_ ` _ \\|  ___/ _ \\| '__| __|");
+        System.out.println(" | |__| | | |  __/ (_| | | | | | | |  | (_) | |  | |_ ");
+        System.out.println("  |_____/|_|  \\___|\\__,_|_| |_| |_|_|   \\___/|_|   \\__|");
+        System.out.println("    夏日小镇 · 梦港  ——  Minecraft 服务器门户与玩家管理系统");
         System.out.println();
     }
 
