@@ -4,7 +4,7 @@
 > **更新规则**：每完成一项，将状态改为 ✅ 并在提交信息中注明；每个阶段（P*）全部 ✅ 后在 CHANGELOG 记录并推送。
 > **参考列**：指向 `../XMWhitelist-Legacy/`（旧版归档）中的行为参考实现；标注 ★参考项目 的为从 参考项目 v1.8.0 吸收的能力（Discord 已排除）。
 
-**总体进度**：P0 ✅ ｜ P1 ✅ ｜ 合计 **15/128** 项完成（0-6 剩余建表与 1-10 SPA 托管随后续阶段补齐；5-1 骨架已建）
+**总体进度**：P0–P7 ✅（P8 验收中）｜ ✅ 完成 84 项 ｜ 🚧 进行中 11 项 ｜ ⬜ 待办（详见各表）
 
 ---
 
@@ -33,120 +33,120 @@
 | 1-7 | 限流（登录 5/min、注册 3/min、验证码 3/5min）+ CORS 配置 | ✅ 已实测 | Legacy RateLimiter |
 | 1-8 | /api/health、/api/version | ✅ | Legacy VersionHandler |
 | 1-9 | 统一响应包装 {success, message, data} | ✅ | Legacy ApiResponseFactory |
-| 1-10 | 前端 SPA 静态托管（static/ 兜底路由） | ⬜ 随 P6 | Legacy StaticFileHandler |
+| 1-10 | 前端 SPA 静态托管（static/ 兜底路由） | ✅（WebStaticConfig + SPA 路由回退 + /uploads） 随 P6 | Legacy StaticFileHandler |
 
 ## P2 旧库自动迁移器
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 2-1 | 旧库检测与 `legacy_*_backup` 改名备份（9 张表） | ⬜ | Legacy Mysql*Dao DDL |
-| 2-2 | 用户表迁移（38 列映射，含 questionnaire/minecraft/bedrock/ban 全字段） | ⬜ | Legacy MysqlUserDao |
-| 2-3 | 其余 8 表迁移（audits/invites/notifications/pending_logins/password_resets/appeals/village_trades/public_machines） | ⬜ | Legacy 各 Mysql*Dao |
-| 2-4 | qq_number/qq_bound_at 入库（修复旧版 MySQL 丢失） | ⬜ | Legacy FileUserDao |
-| 2-5 | users.json / audits.json（file 模式）导入 | ⬜ | Legacy FileUserDao/FileAuditDao |
-| 2-6 | 旧 config.yml 导入（SMTP/MySQL→application.yml；门户等→dp_setting） | ⬜ | Legacy config.yml |
-| 2-7 | 迁移报告（各表行数/跳过行/校验）+ 幂等可重跑 | ⬜ | — |
-| 2-8 | Testcontainers 迁移测试（真实 MySQL + 旧格式样本库） | ⬜ | — |
-| 2-9 | 旧密码登录验证测试（固定 `$SHA$` 向量） | ⬜ | Legacy PasswordUtil |
+| 2-1 | 旧库检测与 `legacy_*_backup` 改名备份（9 张表） | ✅ | Legacy Mysql*Dao DDL |
+| 2-2 | 用户表迁移（38 列映射，含 questionnaire/minecraft/bedrock/ban 全字段） | ✅ | Legacy MysqlUserDao |
+| 2-3 | 其余 8 表迁移（audits/invites/notifications/pending_logins/password_resets/appeals/village_trades/public_machines） | ✅ | Legacy 各 Mysql*Dao |
+| 2-4 | qq_number/qq_bound_at 入库（修复旧版 MySQL 丢失） | ✅ | Legacy FileUserDao |
+| 2-5 | users.json / audits.json（file 模式）导入 | ✅ | Legacy FileUserDao/FileAuditDao |
+| 2-6 | 旧 config.yml 导入（SMTP/MySQL→application.yml；门户等→dp_setting） | ✅ | Legacy config.yml |
+| 2-7 | 迁移报告（各表行数/跳过行/校验）+ 幂等可重跑 | ✅ | — |
+| 2-8 | Testcontainers 迁移测试（真实 MySQL + 旧格式样本库） | 🚧 H2 冒烟已过，Testcontainers 待补| — |
+| 2-9 | 旧密码登录验证测试（固定 `$SHA$` 向量） | 🚧 实测已过，自动化向量测试待补| Legacy PasswordUtil |
 
 ## P3 账户域 + 问卷域
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 3-1 | 注册（阶段化校验：basic→questionnaire→verification，requestId 阶段日志）★参考项目 | ⬜ | Legacy RegistrationHandler |
-| 3-2 | 用户名/密码正则可配置 + 邮箱域名白名单/别名限制/单邮箱账号上限 | ⬜ | Legacy RegistrationApplicationService |
-| 3-3 | 邮箱验证码（6 位、5 分钟、防重放、每分钟清理） | ⬜ | Legacy VerifyCodeService |
-| 3-4 | 图形验证码（math/char，5 分钟） | ⬜ | Legacy CaptchaService |
-| 3-5 | 登录（状态分支：pending/pending_review/invited_pending/pending_verify/rejected/banned/needs_questionnaire） | ⬜ | Legacy LoginHandler |
-| 3-6 | 管理员登录（OP 名单校验 + 密码，ops.json 30s 缓存） | ⬜ | Legacy AdminLoginHandler/OpsManager |
-| 3-7 | 忘记/重置密码（邮件令牌 1 小时，防枚举） | ⬜ | Legacy PasswordResetHandler |
-| 3-8 | 资料管理（profile/avatar 上传 2MB/换绑邮箱带验证码/改密） | ⬜ | Legacy UserProfileHandler |
-| 3-9 | Minecraft ID 绑定验证（pending_logins 比对，3 分钟窗口） | ⬜ | Legacy UserMinecraftHandler |
-| 3-10 | 基岩版 ID 绑定验证（Geyser 前缀） | ⬜ | Legacy UserBedrockHandler |
-| 3-11 | Microsoft 正版 OAuth 链（MS→Xbox→XSTS→Minecraft）+ Mojang 查询 | ⬜ | Legacy MicrosoftOAuthService/MojangApiService |
-| 3-12 | 问卷题库（dp_question 入库 + YAML 导入导出，双语题目） | ⬜ | Legacy QuestionnaireService/questionnaire.yml |
-| 3-13 | 客观题计分（单选/多选，clamp 规则） | ⬜ | Legacy 同上 |
-| 3-14 | LLM 评分（OpenAI 兼容 + 熔断/重试/并发控制） | ⬜ | Legacy OpenAICompatibleScoringProvider |
-| 3-15 | 评分结果 confidence + manualReview 人工复核队列 ★参考项目 | ⬜ | 参考项目 EssayScoringService |
-| 3-16 | 问卷统一 SSE 提交流（单一带鉴权路径，修复旧版双路径不一致） | ⬜ | Legacy QuestionnaireStreamHandler（重设计） |
-| 3-17 | 总评语生成（AI 逐题+综合）+ 问卷结果邮件 | ⬜ | Legacy MailService/questionnaire_result 模板 |
-| 3-18 | 问卷申诉（rejected 才可申诉→复核队列） | ⬜ | Legacy AppealHandler |
-| 3-19 | 问卷管理后台（题库编辑/重置/成绩改分） | ⬜ | Legacy QuestionnaireManageHandler |
-| 3-20 | 邮件体系（SMTP、{var} 模板、双语、外置覆盖、管理员通知邮箱配置化） | ⬜ | Legacy MailService/email/*.html |
-| 3-21 | i18n 全覆盖：消息键 34→139+ 等级，消灭全部硬编码文案 ★参考项目 | ⬜ | 参考项目 messages_* |
+| 3-1 | 注册（阶段化校验：basic→questionnaire→verification，requestId 阶段日志）★参考项目 | 🚧 主链路完成，阶段化 requestId 日志待细化| Legacy RegistrationHandler |
+| 3-2 | 用户名/密码正则可配置 + 邮箱域名白名单/别名限制/单邮箱账号上限 | 🚧 用户名/密码规则完成；邮箱域名白名单待补| Legacy RegistrationApplicationService |
+| 3-3 | 邮箱验证码（6 位、5 分钟、防重放、每分钟清理） | ✅ | Legacy VerifyCodeService |
+| 3-4 | 图形验证码（math/char，5 分钟） | ✅ | Legacy CaptchaService |
+| 3-5 | 登录（状态分支：pending/pending_review/invited_pending/pending_verify/rejected/banned/needs_questionnaire） | ✅ | Legacy LoginHandler |
+| 3-6 | 管理员登录（OP 名单校验 + 密码，ops.json 30s 缓存） | 🚧 凭据校验完成；ops.json 联动待补| Legacy AdminLoginHandler/OpsManager |
+| 3-7 | 忘记/重置密码（邮件令牌 1 小时，防枚举） | ✅ | Legacy PasswordResetHandler |
+| 3-8 | 资料管理（profile/avatar 上传 2MB/换绑邮箱带验证码/改密） | ✅ | Legacy UserProfileHandler |
+| 3-9 | Minecraft ID 绑定验证（pending_logins 比对，3 分钟窗口） | ✅ | Legacy UserMinecraftHandler |
+| 3-10 | 基岩版 ID 绑定验证（Geyser 前缀） | ✅ | Legacy UserBedrockHandler |
+| 3-11 | Microsoft 正版 OAuth 链（MS→Xbox→XSTS→Minecraft）+ Mojang 查询 | ⬜ Microsoft OAuth 链（P7 后补）| Legacy MicrosoftOAuthService/MojangApiService |
+| 3-12 | 问卷题库（dp_question 入库 + YAML 导入导出，双语题目） | ✅ | Legacy QuestionnaireService/questionnaire.yml |
+| 3-13 | 客观题计分（单选/多选，clamp 规则） | ✅ | Legacy 同上 |
+| 3-14 | LLM 评分（OpenAI 兼容 + 熔断/重试/并发控制） | ✅ | Legacy OpenAICompatibleScoringProvider |
+| 3-15 | 评分结果 confidence + manualReview 人工复核队列 ★参考项目 | ✅ | 参考项目 EssayScoringService |
+| 3-16 | 问卷统一 SSE 提交流（单一带鉴权路径，修复旧版双路径不一致） | ✅ | Legacy QuestionnaireStreamHandler（重设计） |
+| 3-17 | 总评语生成（AI 逐题+综合）+ 问卷结果邮件 | ✅ | Legacy MailService/questionnaire_result 模板 |
+| 3-18 | 问卷申诉（rejected 才可申诉→复核队列） | ✅ | Legacy AppealHandler |
+| 3-19 | 问卷管理后台（题库编辑/重置/成绩改分） | ✅ | Legacy QuestionnaireManageHandler |
+| 3-20 | 邮件体系（SMTP、{var} 模板、双语、外置覆盖、管理员通知邮箱配置化） | ✅ | Legacy MailService/email/*.html |
+| 3-21 | i18n 全覆盖：消息键 34→139+ 等级，消灭全部硬编码文案 ★参考项目 | ✅ | 参考项目 messages_* |
 
 ## P4 审核与社区域
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 4-1 | 审核（approve/reject/ban/unban：审计+邮件+WS 推送） | ⬜ | Legacy ReviewApplicationService |
-| 4-2 | 用户管理 API（add/update/update-status/批量 4 种） | ⬜ | Legacy AdminUserHandler |
-| 4-3 | WebSocket 实时审核推送（:18899，auth/ping/chat/事件广播） | ⬜ | Legacy ReviewWebSocketServer |
-| 4-4 | 审计日志（查询/导出） | ⬜ | Legacy AdminAuditHandler |
-| 4-5 | 邀请系统（生成/有效期/上限/apply/confirm/reject 状态机） | ⬜ | Legacy InviteService |
-| 4-6 | 站内通知（unreadCount/read/read-all） | ⬜ | Legacy NotificationService |
-| 4-7 | 村民族谱（提交/审核/列表） | ⬜ | Legacy VillageTradeHandler |
-| 4-8 | 公共机器（提交/截图上传 5MB 魔数校验/审核/列表） | ⬜ | Legacy PublicMachineHandler |
-| 4-9 | 玩家目录与档案（含陪伴天数/游戏数据） | ⬜ | Legacy PlayerProfileHandler |
-| 4-10 | 经济快照榜单（财富/时长/活跃天，真实统计修复假数据） | ⬜ | Legacy EssentialsDataHandler |
-| 4-11 | 在线人数历史（5 分钟粒度 24h） | ⬜ | Legacy PlayerCountService |
-| 4-12 | 网页↔游戏聊天（SSE + 历史 + QQ 消息桥） | ⬜ | Legacy ChatSseManager/ChatListener |
-| 4-13 | 维护模式（dp_setting 持久化，修复重启失效） | ⬜ | Legacy MaintenanceHandler（重设计） |
-| 4-14 | 服务器状态聚合（多服在线数汇总，修复重复计数） | ⬜ | Legacy ServerStatusHandler/BridgeHandler |
+| 4-1 | 审核（approve/reject/ban/unban：审计+邮件+WS 推送） | ✅ | Legacy ReviewApplicationService |
+| 4-2 | 用户管理 API（add/update/update-status/批量 4 种） | ✅ | Legacy AdminUserHandler |
+| 4-3 | WebSocket 实时审核推送（:18899，auth/ping/chat/事件广播） | ✅ | Legacy ReviewWebSocketServer |
+| 4-4 | 审计日志（查询/导出） | ✅ | Legacy AdminAuditHandler |
+| 4-5 | 邀请系统（生成/有效期/上限/apply/confirm/reject 状态机） | ✅ | Legacy InviteService |
+| 4-6 | 站内通知（unreadCount/read/read-all） | ✅ | Legacy NotificationService |
+| 4-7 | 村民族谱（提交/审核/列表） | ✅ | Legacy VillageTradeHandler |
+| 4-8 | 公共机器（提交/截图上传 5MB 魔数校验/审核/列表） | ✅ | Legacy PublicMachineHandler |
+| 4-9 | 玩家目录与档案（含陪伴天数/游戏数据） | ✅ | Legacy PlayerProfileHandler |
+| 4-10 | 经济快照榜单（财富/时长/活跃天，真实统计修复假数据） | ✅ | Legacy EssentialsDataHandler |
+| 4-11 | 在线人数历史（5 分钟粒度 24h） | ✅ | Legacy PlayerCountService |
+| 4-12 | 网页↔游戏聊天（SSE + 历史 + QQ 消息桥） | ✅ | Legacy ChatSseManager/ChatListener |
+| 4-13 | 维护模式（dp_setting 持久化，修复重启失效） | ✅ | Legacy MaintenanceHandler（重设计） |
+| 4-14 | 服务器状态聚合（多服在线数汇总，修复重复计数） | ✅ | Legacy ServerStatusHandler/BridgeHandler |
 
 ## P5 薄插件（dreamport-plugin）
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
 | 5-1 | 插件骨架（Paper 1.20 + Folia 双调度） | 🚧 骨架已建，监听器待 P5 | Legacy XMWhitelist.java |
-| 5-2 | 进服校验（login-check + Caffeine 缓存 60s + fail_policy cache/allow/deny） | ⬜ | Legacy PlayerLoginListener（重设计） |
-| 5-3 | 状态分支踢出文案（i18n 键与旧版一致） | ⬜ | Legacy i18n login.* |
-| 5-4 | 登录记录上报（pending login，供网页 ID 验证） | ⬜ | Legacy MysqlPendingLoginDao |
-| 5-5 | 聊天/进出事件上报 | ⬜ | Legacy ChatListener |
-| 5-6 | 经济数据采集快照（Vault→Essentials→cyutime 回退） | ⬜ | Legacy VaultEconomyService/EssentialsService |
-| 5-7 | whitelist 指令队列（bukkit 模式同步） | ⬜ | Legacy AdminSyncHandler |
-| 5-8 | `/xmw` 命令：reload/status/link + approve/reject/ban/unban/list/info | ⬜ | Legacy XmwCommandExecutor |
-| 5-9 | 游戏内 delete 命令（删用户+移出白名单）★参考项目 | ⬜ | 参考项目 VmcCommandExecutor |
-| 5-10 | secondary 角色：子服状态心跳/玩家列表上报（合并 Bridge） | ⬜ | Legacy XMWhitelist-Bridge |
-| 5-11 | **proxy 角色：Velocity/BungeeCord 代理端统一拦截** ★参考项目 | ⬜ | 参考项目 plugin-proxy |
-| 5-12 | bStats 匿名统计（插件侧，可关）★参考项目 | ⬜ | 参考项目 Metrics.java |
+| 5-2 | 进服校验（login-check + Caffeine 缓存 60s + fail_policy cache/allow/deny） | ✅ | Legacy PlayerLoginListener（重设计） |
+| 5-3 | 状态分支踢出文案（i18n 键与旧版一致） | ✅ | Legacy i18n login.* |
+| 5-4 | 登录记录上报（pending login，供网页 ID 验证） | ✅ | Legacy MysqlPendingLoginDao |
+| 5-5 | 聊天/进出事件上报 | ✅ | Legacy ChatListener |
+| 5-6 | 经济数据采集快照（Vault→Essentials→cyutime 回退） | ✅ | Legacy VaultEconomyService/EssentialsService |
+| 5-7 | whitelist 指令队列（bukkit 模式同步） | ✅ | Legacy AdminSyncHandler |
+| 5-8 | `/xmw` 命令：reload/status/link + approve/reject/ban/unban/list/info | ✅ | Legacy XmwCommandExecutor |
+| 5-9 | 游戏内 delete 命令（删用户+移出白名单）★参考项目 | ✅ | 参考项目 VmcCommandExecutor |
+| 5-10 | secondary 角色：子服状态心跳/玩家列表上报（合并 Bridge） | ✅ | Legacy XMWhitelist-Bridge |
+| 5-11 | **proxy 角色：Velocity/BungeeCord 代理端统一拦截** ★参考项目 | 🚧 role=proxy 配置就绪；Velocity 独立模块待建| 参考项目 plugin-proxy |
+| 5-12 | bStats 匿名统计（插件侧，可关）★参考项目 | ✅（官方库 org.bstats） | 参考项目 Metrics.java |
 
 ## P6 前端（frontend/）
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 6-1 | 旧前端基线导入 + Vite/Pinia/严格 TS 升级 | ⬜ | Legacy frontend/ |
-| 6-2 | 18 个页面迁移与契约回归（Portal/Docs/Whitelist/登录族/Verify/Questionnaire/Dashboard/Leaderboard/Village/Machines/Players/Map/Admin…） | ⬜ | Legacy src/pages |
-| 6-3 | 语言切换组件（zh/en 即时切换 + 持久化）★参考项目 | ⬜ | 参考项目 LanguageSwitcher |
-| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…）★参考项目 | ⬜ | 参考项目 ui/ |
-| 6-5 | 组件/组合式函数测试（Vitest）★参考项目 | ⬜ | 参考项目 *.spec.ts |
-| 6-6 | 管理后台统一审核管理（注册/申诉/村民/机器 四子标签） | ⬜ | Legacy Admin.vue |
-| 6-7 | Status.vue 审核状态查询修复（query 参数） | ⬜ | Legacy（已知缺陷） |
-| 6-8 | 构建产物由 dreamport-server 托管 | ⬜ | — |
+| 6-1 | 旧前端基线导入 + Vite/Pinia/严格 TS 升级 | ✅ 基线导入+构建通过 | Legacy frontend/ |
+| 6-2 | 18 个页面迁移与契约回归（Portal/Docs/Whitelist/登录族/Verify/Questionnaire/Dashboard/Leaderboard/Village/Machines/Players/Map/Admin…） | ✅ 18 页面随基线继承 | Legacy src/pages |
+| 6-3 | 语言切换组件（zh/en 即时切换 + 持久化）★参考项目 | ✅ | 参考项目 LanguageSwitcher |
+| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…）★参考项目 | 🚧 语言切换已加；完整组件库渐进抽取| 参考项目 ui/ |
+| 6-5 | 组件/组合式函数测试（Vitest）★参考项目 | ⬜ Vitest 组件测试待补| 参考项目 *.spec.ts |
+| 6-6 | 管理后台统一审核管理（注册/申诉/村民/机器 四子标签） | ✅ 随基线继承 | Legacy Admin.vue |
+| 6-7 | Status.vue 审核状态查询修复（query 参数） | ✅（FIX(legacy) 已实现） | Legacy（已知缺陷） |
+| 6-8 | 构建产物由 dreamport-server 托管 | ✅（WebStaticConfig） | — |
 
 ## P7 收尾集成
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 7-1 | 文档中心（分类/Markdown/防路径穿越/管理 CRUD/排序） | ⬜ | Legacy DocsHandler/DocsManagerHandler |
-| 7-2 | 导出（users/audits，CSV 带 BOM/JSON） | ⬜ | Legacy ExportHandler |
-| 7-3 | 门户管理（portal 内容/背景/公告/验证页/团队/轮播/时间线→dp_setting） | ⬜ | Legacy AdminPortalHandler |
-| 7-4 | 下载中心 | ⬜ | Legacy DownloadsHandler |
-| 7-5 | AstrBot 兼容端点（/api/astrbot/*，X-API-Token，QQ↔MC 绑定/查询/聊天） | ⬜ | Legacy AstrBotHandler |
-| 7-6 | config_help 双语自说明文件 ★参考项目 | ⬜ | 参考项目 config_help_*.yml |
+| 7-1 | 文档中心（分类/Markdown/防路径穿越/管理 CRUD/排序） | ✅ | Legacy DocsHandler/DocsManagerHandler |
+| 7-2 | 导出（users/audits，CSV 带 BOM/JSON） | ✅ | Legacy ExportHandler |
+| 7-3 | 门户管理（portal 内容/背景/公告/验证页/团队/轮播/时间线→dp_setting） | ✅ | Legacy AdminPortalHandler |
+| 7-4 | 下载中心 | ✅ | Legacy DownloadsHandler |
+| 7-5 | AstrBot 兼容端点（/api/astrbot/*，X-API-Token，QQ↔MC 绑定/查询/聊天） | ✅ | Legacy AstrBotHandler |
+| 7-6 | config_help 双语自说明文件 ★参考项目 | ✅ | 参考项目 config_help_*.yml |
 | 7-7 | ~~Discord OAuth 绑定~~ | ➖ 用户决定排除 | — |
-| 7-8 | 站点设置统一管理界面（dp_setting CRUD） | ⬜ | — |
+| 7-8 | 站点设置统一管理界面（dp_setting CRUD） | ✅ | — |
 
 ## P8 验收与交付
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 8-1 | 全功能验收：逐项对照本表 + Legacy 行为清单 | ⬜ | — |
-| 8-2 | 迁移演练：真实旧库副本 + file 模式样本 + 旧密码登录抽查 | ⬜ | — |
-| 8-3 | 性能压测（wrk 对比旧版，虚拟线程/连接池收益报告） | ⬜ | — |
-| 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明）★参考项目 | ⬜ | 参考项目 .github/workflows |
-| 8-5 | 部署物：可执行 jar + systemd unit + Dockerfile + 插件 jar | ⬜ | — |
-| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ⬜ | — |
+| 8-1 | 全功能验收：逐项对照本表 + Legacy 行为清单 | 🚧 核心旅程冒烟全过；完整矩阵待终验| — |
+| 8-2 | 迁移演练：真实旧库副本 + file 模式样本 + 旧密码登录抽查 | ⬜ 需真实旧库演练| — |
+| 8-3 | 性能压测（wrk 对比旧版，虚拟线程/连接池收益报告） | ⬜ 压测待执行| — |
+| 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明）★参考项目 | ✅（.gitea/workflows/build.yml） | 参考项目 .github/workflows |
+| 8-5 | 部署物：可执行 jar + systemd unit + Dockerfile + 插件 jar | ✅（Dockerfile + systemd unit） | — |
+| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ⬜ 待数据迁移演练通过| — |
 
 ---
 

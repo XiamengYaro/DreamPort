@@ -1,0 +1,67 @@
+name: Build DreamPort
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Read version
+        run: echo "VERSION=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/')" >> $GITHUB_ENV
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Sync frontend into server resources
+        run: |
+          rm -rf dreamport-server/src/main/resources/static
+          mkdir -p dreamport-server/src/main/resources/static
+          cp -R frontend/dist/* dreamport-server/src/main/resources/static/
+
+      - name: Build backend & plugin
+        run: mvn -B clean package -DskipTests
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dreamport-${{ env.VERSION }}
+          path: |
+            dreamport-server/target/dreamport-server-*.jar
+            dreamport-plugin/target/dreamport-plugin-*.jar
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dreamport-*/**/*.jar
+          body_path: CHANGELOG.md

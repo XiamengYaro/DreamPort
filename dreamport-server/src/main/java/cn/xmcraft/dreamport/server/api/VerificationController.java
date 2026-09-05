@@ -197,7 +197,7 @@ public class VerificationController {
         var userOpt = userRepository.findByUsernameIgnoreCase(me);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("minecraftName", userOpt.map(UserRecord::minecraftName).orElse(null));
-        data.put("verified", userOpt.map(u -> u.minecraftUuid() != null).orElse(false));
+        data.put("verified", userOpt.map(u -> u.minecraftName() != null && u.status().equals("approved")).orElse(false));
         data.put("status", userOpt.map(UserRecord::status).orElse(null));
         return ResponseEntity.ok(ApiResponse.success(null, data));
     }

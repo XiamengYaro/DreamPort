@@ -136,6 +136,7 @@ public class SiteAdminController {
         config.put("admins", settingService.get(SettingService.KEY_ADMINS, List.class));
         config.put("adminNotifyEmail", settingService.get(SettingService.KEY_ADMIN_NOTIFY_EMAIL, String.class));
         config.put("portal", settingService.getMap(SettingService.KEY_PORTAL));
+        config.put("astrbotApiToken", settingService.get("astrbot.api_token", String.class));
         return ResponseEntity.ok(config);
     }
 
@@ -150,6 +151,9 @@ public class SiteAdminController {
         }
         if (body.containsKey("adminNotifyEmail")) {
             settingService.set(SettingService.KEY_ADMIN_NOTIFY_EMAIL, body.get("adminNotifyEmail"));
+        }
+        if (body.containsKey("astrbotApiToken")) {
+            settingService.set("astrbot.api_token", body.get("astrbotApiToken"));
         }
         return ResponseEntity.ok(ApiResponse.success("系统配置已保存"));
     }

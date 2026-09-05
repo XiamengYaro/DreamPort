@@ -27,14 +27,17 @@ public class MinecraftVerifyService {
     private final PendingLoginRepository pendingLoginRepository;
     private final UserRepository userRepository;
     private final ReviewService reviewService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     /** bukkit 模式下待执行的 whitelist 指令（serverId → 指令），插件经 /internal/v1/commands/whitelist 领取 */
     private final Map<String, ConcurrentLinkedQueue<String>> whitelistCommands = new ConcurrentHashMap<>();
 
     public MinecraftVerifyService(PendingLoginRepository pendingLoginRepository,
-                                  UserRepository userRepository, ReviewService reviewService) {
+                                  UserRepository userRepository, ReviewService reviewService,
+                                  org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.pendingLoginRepository = pendingLoginRepository;
         this.userRepository = userRepository;
         this.reviewService = reviewService;
+        this.jdbc = jdbc;
     }
 
     public record Result(boolean success, String message) {
@@ -145,7 +148,7 @@ public class MinecraftVerifyService {
     public void recordLogin(String name, String uuid, String ip) {
         pendingLoginRepository.save(new PendingLoginRecord(null, name, uuid, ip,
                 System.currentTimeMillis(), null, null));
-        pendingLoginRepository.deleteExpired(System.currentTimeMillis());
+        jdbc.update("DELETE FROM dp_pending_login WHERE expire_time < ?", System.currentTimeMillis());
     }
 
     public void enqueueWhitelist(String serverId, String command) {
@@ -179,6 +182,6 @@ public class MinecraftVerifyService {
 
     @Scheduled(fixedRate = 300_000)
     public void cleanup() {
-        pendingLoginRepository.deleteExpired(System.currentTimeMillis());
+        jdbc.update("DELETE FROM dp_pending_login WHERE expire_time < ?", System.currentTimeMillis());
     }
 }

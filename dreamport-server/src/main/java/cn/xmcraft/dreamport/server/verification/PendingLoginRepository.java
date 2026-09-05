@@ -16,8 +16,5 @@ public interface PendingLoginRepository extends CrudRepository<PendingLoginRecor
             """)
     Optional<PendingLoginRecord> findLatestVerifiable(String name, long now);
 
-    @Query("DELETE FROM dp_pending_login WHERE login_time < :before")
-    void deleteExpired(long before);
-
     List<PendingLoginRecord> findTop100ByOrderByLoginTimeDesc();
 }

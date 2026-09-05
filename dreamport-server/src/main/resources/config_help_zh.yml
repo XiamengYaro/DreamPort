@@ -1,0 +1,41 @@
+# DreamPort application.yml 配置说明（中文）
+server:
+  port: 18898                # Web/API/SPA 端口（与旧版一致）
+wl:
+  version: 0.1.0             # 版本号（随发布更新）
+  security:
+    jwt-secret: <必填，32+ 字符随机串>   # JWT 签名密钥；生产用环境变量 WL_JWT_SECRET
+    jwt-ttl-days: 7          # 登录令牌有效期（天）
+  internal:
+    server-token: <必填>      # 服务器间通信令牌；插件 backend.server-token 需一致
+  cors:
+    allowed-origins: "*"     # 生产必须收敛为站点域名
+  seed-demo: false           # 是否播种演示账号（生产必须 false）
+  web-register-url: https://… # 注册页地址（进服踢出提示/邮件链接用）
+  admin-notify-email: ""     # 管理员通知邮箱（问卷通过提醒；修复旧版硬编码）
+  mail:
+    host: smtp.example.com   # 留空 = 日志模式（不实发）
+    port: 465
+    username / password / from: 发信账号
+    ssl: true
+  questionnaire:
+    enabled: true            # 注册流程是否要求问卷
+    pass-score: 60           # 通过线（百分制）
+  llm:
+    enabled: true            # 问卷 AI 评分（OpenAI 兼容接口）
+    api-base: https://api.deepseek.com/v1
+    api-key: <密钥>
+    model: deepseek-chat
+    timeout-ms: 10000
+    max-concurrency: 4
+    system-prompt: 评分员系统提示词
+  invite:
+    enabled: true
+    code-expiry-days: 7
+    max-invites-per-user: 3
+  migration:
+    enabled: true            # 启动时自动检测旧库并迁移（幂等）
+    legacy-dir: ""           # 旧版 file 模式目录（users.json/audits.json）
+    legacy-config: ""        # 旧版 config.yml 路径（站点内容导入）
+spring:
+  profiles: mysql            # 生产启用，需 WL_DB_HOST/PORT/NAME/USER/PASSWORD

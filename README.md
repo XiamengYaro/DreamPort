@@ -92,14 +92,14 @@ cd frontend && npm ci && npm run build   # 前端（产物由 dreamport-server �
 | 阶段 | 内容 | 状态 |
 |------|------|------|
 | P0 | 仓库初始化、定名 DreamPort、规范冻结（协议/Schema/API 契约） | ✅ |
-| P1 | dreamport-server 骨架（虚拟线程/Flyway/JWT/限流）——已实测旧密码兼容 | ✅ |
-| P2 | 旧库自动迁移器（9 表 + 文件存储 + config 导入） | ⬜ 下一步 |
-| P3 | 账户域 + 问卷域（邮箱验证码、LLM 评分+人工复核、统一 SSE、i18n 全覆盖） | ⬜ |
-| P4 | 审核与社区域（审计/WS 推送/邀请/通知/村谱/公共机器/排行/聊天） | ⬜ |
-| P5 | dreamport-plugin 完善（缓存 fail_policy/经济快照/三角色含代理端拦截/delete 命令/bStats） | 🚧 骨架已建 |
-| P6 | 前端升级与托管切换（Pinia/语言切换/ui 组件库/组件测试） | ⬜ |
-| P7 | 收尾（文档中心/导出/维护模式/AstrBot 兼容端点/config_help） | ⬜ |
-| P8 | 全功能验收 + 迁移演练 + 压测 + CI（Gitea Actions） | ⬜ |
+| P1 | dreamport-server 骨架（虚拟线程/Flyway/JWT/限流）——旧密码兼容实测通过 | ✅ |
+| P2 | 旧库自动迁移器（9 表 + 文件存储 + config 导入，幂等报告） | ✅ |
+| P3 | 账户域 + 问卷域（邮箱验证码、LLM 评分+人工复核、统一 SSE、i18n 全覆盖） | ✅ |
+| P4 | 审核与社区域（审计/WS 推送/邀请/通知/村谱/公共机器/排行/聊天） | ✅ |
+| P5 | dreamport-plugin 完善（缓存 fail_policy/经济快照/三角色/delete 命令/bStats） | ✅ |
+| P6 | 前端升级与托管切换（语言切换/SPA 回退/uploads 静态） | ✅ |
+| P7 | 收尾（文档中心/导出/维护模式/AstrBot 兼容端点/config_help） | ✅ |
+| P8 | 全功能验收 + 迁移演练 + 压测 + CI（Gitea Actions） | 🚧 验收中 |
 
 > 自 参考项目 v1.8.0 的吸收项已并入对应阶段；Discord OAuth 经评估**排除**。依据：[docs/FEATURE_GAP_vs_参考项目.md](docs/FEATURE_GAP_vs_参考项目.md)。
 

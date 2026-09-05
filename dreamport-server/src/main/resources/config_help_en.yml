@@ -1,0 +1,41 @@
+# DreamPort application.yml reference (English)
+server:
+  port: 18898                # Web/API/SPA port (same as legacy)
+wl:
+  version: 0.1.0             # version (update per release)
+  security:
+    jwt-secret: <required, random 32+ chars>   # JWT signing secret; use WL_JWT_SECRET env in production
+    jwt-ttl-days: 7          # login token TTL (days)
+  internal:
+    server-token: <必填>      # server-to-server token; must match plugin backend.server-token
+  cors:
+    allowed-origins: "*"     # restrict to site domains in production
+  seed-demo: false           # seed demo accounts (must be false in production)
+  web-register-url: https://… # register page URL (kick message / email links)
+  admin-notify-email: ""     # admin notify email (questionnaire alerts; fixes legacy hardcode)
+  mail:
+    host: smtp.example.com   # empty = log-only mode (no real sending)
+    port: 465
+    username / password / from: sender account
+    ssl: true
+  questionnaire:
+    enabled: true            # require questionnaire on registration
+    pass-score: 60           # pass threshold (percent)
+  llm:
+    enabled: true            # questionnaire AI scoring (OpenAI compatible)
+    api-base: https://api.deepseek.com/v1
+    api-key: <密钥>
+    model: deepseek-chat
+    timeout-ms: 10000
+    max-concurrency: 4
+    system-prompt: scorer system prompt
+  invite:
+    enabled: true
+    code-expiry-days: 7
+    max-invites-per-user: 3
+  migration:
+    enabled: true            # auto-migrate legacy DB on startup (idempotent)
+    legacy-dir: ""           # legacy file-mode dir (users.json/audits.json)
+    legacy-config: ""        # legacy config.yml path (site content import)
+spring:
+  profiles: mysql            # enable for production; needs WL_DB_* env vars
