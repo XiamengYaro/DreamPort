@@ -177,7 +177,7 @@ const scoringResults = ref<Array<{ score: number; maxScore: number; reason: stri
 const scoringTotalScore = ref(0)
 const scoringMaxScore = ref(0)
 
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 const username = computed(() => localStorage.getItem('pendingUsername') || localStorage.getItem('username'))
 const totalMaxScore = computed(() => questions.value.reduce((sum, q) => sum + (q.maxScore || 10), 0))
 const answeredCount = computed(() => {

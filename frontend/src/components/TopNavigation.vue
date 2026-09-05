@@ -111,7 +111,7 @@ const router = useRouter()
 const mobileMenuOpen = ref(false)
 const scrolled = ref(false)
 const serverName = ref('夏日小镇')
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 const moreGroupOpen = ref(false)
 
 watch(() => route.path, () => {
@@ -130,7 +130,7 @@ onMounted(async () => {
     const data = await res.json()
     if (data.success && data.data.portal) {
       serverName.value = data.data.portal.server_name || '夏日小镇'
-      logoUrl.value = data.data.portal.logo || '/logo.png'
+      logoUrl.value = data.data.portal.logo || '/Logo111.png'
     }
   } catch (e) {}
 })

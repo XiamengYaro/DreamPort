@@ -45,7 +45,7 @@ const notify = inject('notify') as any
 const loading = ref(false)
 const sent = ref(false)
 const email = ref('')
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 
 onMounted(async () => {
   try {

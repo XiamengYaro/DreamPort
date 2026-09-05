@@ -269,7 +269,7 @@ const route = useRoute()
 const router = useRouter()
 const notify = inject('notify') as any
 
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 const platform = ref('java')
 const userStatus = ref('')
 

@@ -56,7 +56,7 @@ public class DefaultContentSeeder implements ApplicationRunner {
         portal.put("server_ip", "mc.xmcraft.cn");
         portal.put("server_port", 25565);
         portal.put("map_url", "");
-        portal.put("logo", "/logo.png");
+        portal.put("logo", "/Logo111.png");       // 原项目 Logo
         portal.put("icp", "");
         portal.put("social", Map.of("wiki", "", "qq_group", ""));
         portal.put("carousel", List.of(

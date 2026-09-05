@@ -78,7 +78,7 @@ import FeaturesSection from '@/components/FeaturesSection.vue'
 import TimelineSection from '@/components/TimelineSection.vue'
 
 const serverStatus = ref<any>({})
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 
 const portalConfig = ref({
   server_name: '夏日小镇',

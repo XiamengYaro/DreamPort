@@ -98,7 +98,7 @@ import api from '@/services/api'
 const router = useRouter()
 const route = useRoute()
 const notify = inject('notify') as any
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 
 const setupRequired = ref(false)
 const checkSetup = async () => {

@@ -196,7 +196,7 @@ const router = useRouter()
 const config = inject('config') as any
 const notify = inject('notify') as any
 
-const logoUrl = ref('/logo.png')
+const logoUrl = ref('/Logo111.png')
 const serverName = ref('夏日小镇')
 const wikiUrl = ref('https://wiki.xmcraft.cn')
 
