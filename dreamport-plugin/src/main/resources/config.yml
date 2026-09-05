@@ -1,7 +1,13 @@
 # DreamPort 薄插件配置（完整字段说明见 docs/PROJECT_DOCUMENTATION.md §7.3）
 
+# 语言：zh | en
+language: zh
+
 # 运行角色：primary（主服，含进服校验） | secondary（子服，仅上报） | proxy（Velocity/BungeeCord 统一拦截）
 role: primary
+
+bstats:
+  enabled: true         # 匿名统计（可关）
 
 backend:
   url: "http://127.0.0.1:18898"
@@ -15,5 +21,14 @@ check:
 
 features:
   enforce-whitelist: true
-  forward-chat: false    # P5 启用
-  report-join-quit: false
+  forward-chat: true
+  report-join-quit: true
+
+# 未注册玩家踢出提示中的注册地址
+web-register-url: "http://localhost:18898"
+
+# 心跳与采集间隔（秒）
+tasks:
+  heartbeat-interval: 60
+  whitelist-poll-interval: 30
+  economy-interval: 300

@@ -34,6 +34,11 @@
         </dependency>
         <!-- Paper 服务端运行时自带 Gson，编译期显式声明便于 IDE 解析 -->
         <dependency>
+            <groupId>org.bstats</groupId>
+            <artifactId>bstats-bukkit</artifactId>
+            <version>3.0.2</version>
+        </dependency>
+        <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
             <version>2.10.1</version>

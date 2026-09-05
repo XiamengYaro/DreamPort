@@ -4,6 +4,10 @@ import cn.xmcraft.dreamport.common.LoginCheckResponse;
 import cn.xmcraft.dreamport.server.security.PasswordService;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -106,6 +110,39 @@ public class UserService {
                             ? "login.banned" : "login.banned_reason");
             default -> LoginCheckResponse.deny("login.unknown_status");
         };
+    }
+
+    /** /internal/v1/admin-ops/list：待审核用户（游戏内 /xmw list 用） */
+    public List<Map<String, Object>> pendingUsers() {
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (UserRecord u : userRepository.listAll()) {
+            if ("pending".equals(u.status()) || "pending_review".equals(u.status())) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("username", u.username());
+                m.put("email", u.email());
+                m.put("status", u.status());
+                list.add(m);
+            }
+        }
+        return list;
+    }
+
+    /** /internal/v1/admin-ops/info：单个用户信息 */
+    public Map<String, Object> userInfo(String username) {
+        var found = userRepository.findByUsernameIgnoreCase(username);
+        if (found.isEmpty()) {
+            return Map.of("found", false);
+        }
+        UserRecord u = found.get();
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("found", true);
+        m.put("username", u.username());
+        m.put("email", u.email());
+        m.put("status", u.status());
+        m.put("regTime", u.regTime());
+        m.put("banReason", u.banReason());
+        m.put("banTime", u.banTime());
+        return m;
     }
 
     private LoginCheckResponse denyMaintained() {

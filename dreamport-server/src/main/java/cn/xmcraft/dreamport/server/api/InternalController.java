@@ -7,12 +7,14 @@ import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
+import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.user.UserService;
 import cn.xmcraft.dreamport.server.verification.MinecraftVerifyService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -35,18 +37,24 @@ public class InternalController {
     private final MinecraftVerifyService minecraftVerifyService;
     private final EconomyService economyService;
     private final cn.xmcraft.dreamport.server.chat.ChatService chatService;
+    private final cn.xmcraft.dreamport.server.review.ReviewService reviewService;
+    private final UserRepository userRepository;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
                               MinecraftVerifyService minecraftVerifyService,
                               EconomyService economyService,
-                              cn.xmcraft.dreamport.server.chat.ChatService chatService) {
+                              cn.xmcraft.dreamport.server.chat.ChatService chatService,
+                              cn.xmcraft.dreamport.server.review.ReviewService reviewService,
+                              UserRepository userRepository) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
         this.minecraftVerifyService = minecraftVerifyService;
         this.economyService = economyService;
         this.chatService = chatService;
+        this.reviewService = reviewService;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/login-check")
@@ -139,6 +147,58 @@ public class InternalController {
         String serverId = request.getParameter("serverId");
         return ResponseEntity.ok(Map.of("commands",
                 minecraftVerifyService.drainWhitelistCommands(serverId == null ? "main" : serverId)));
+    }
+
+    // ---------- 游戏内管理命令（/xmw 经服务器令牌调用，替代旧版进程内直调） ----------
+
+    public record AdminOpBody(String username, String reason) {
+    }
+
+    @PostMapping("/admin-ops/{action}")
+    public ResponseEntity<Object> adminOp(@PathVariable String action,
+                                          @RequestBody AdminOpBody body,
+                                          HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        String operator = "console@" + request.getHeader(
+                cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID);
+        var result = switch (action == null ? "" : action) {
+            case "approve" -> reviewService.approve(body.username(), operator, "zh");
+            case "reject" -> reviewService.reject(body.username(), operator,
+                    body.reason() == null ? "未通过审核" : body.reason(), "zh");
+            case "ban" -> reviewService.ban(body.username(), operator,
+                    body.reason() == null ? "违规操作" : body.reason());
+            case "unban" -> reviewService.unban(body.username(), operator);
+            case "delete" -> reviewService.delete(body.username(), operator);
+            default -> null;
+        };
+        if (result == null) {
+            return badRequest("未知操作: " + action);
+        }
+        return result.success()
+                ? ResponseEntity.ok(Map.of("ok", true, "message", result.message()))
+                : ResponseEntity.badRequest().body(Map.of("ok", false, "message", result.message()));
+    }
+
+    @GetMapping("/admin-ops/list")
+    public ResponseEntity<Object> adminList(HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        return ResponseEntity.ok(userService.pendingUsers());
+    }
+
+    @GetMapping("/admin-ops/info/{username}")
+    public ResponseEntity<Object> adminInfo(@PathVariable String username,
+                                            HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        return ResponseEntity.ok(userService.userInfo(username));
     }
 
     private ResponseEntity<Object> requireServerToken(HttpServletRequest request) {

@@ -7,6 +7,7 @@ import org.bukkit.configuration.file.FileConfiguration;
  */
 public record PluginConfig(
         String role,
+        String language,
         String backendUrl,
         String serverId,
         String serverToken,
@@ -15,12 +16,14 @@ public record PluginConfig(
         int timeoutMs,
         boolean enforceWhitelist,
         boolean forwardChat,
-        boolean reportJoinQuit
+        boolean reportJoinQuit,
+        String webRegisterUrl
 ) {
 
     public static PluginConfig load(FileConfiguration config) {
         return new PluginConfig(
                 config.getString("role", "primary"),
+                config.getString("language", "zh"),
                 trimTrailingSlash(config.getString("backend.url", "http://127.0.0.1:18898")),
                 config.getString("backend.server-id", "main"),
                 config.getString("backend.server-token", ""),
@@ -29,7 +32,8 @@ public record PluginConfig(
                 config.getInt("check.timeout-ms", 1500),
                 config.getBoolean("features.enforce-whitelist", true),
                 config.getBoolean("features.forward-chat", false),
-                config.getBoolean("features.report-join-quit", false)
+                config.getBoolean("features.report-join-quit", false),
+                config.getString("web-register-url", "http://localhost:18898")
         );
     }
 
