@@ -385,6 +385,10 @@ class ApiService {
     return this.request('/admin/questionnaire/move-question', { method: 'POST', body: JSON.stringify(payload) })
   }
 
+  async saveBulkQuestionnaire(payload: { name: string; passScore: number; questions: any[] }) {
+    return this.request('/admin/questionnaire/save-bulk', { method: 'POST', body: JSON.stringify(payload) })
+  }
+
   async deleteQuestion(id: number) {
     return this.request('/admin/questionnaire/delete-question', {
       method: 'POST',

@@ -468,7 +468,7 @@
 
       <!-- 问卷管理 Tab -->
       <div v-if="activeTab === 'questionnaires' && !loading" class="space-y-6">
-      <QuestionBankEditor @changed="loadQuestionnaires" />
+      <QuestionnaireEditor @changed="loadQuestionnaires" />
 
       <div class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><AppIcon name="document-text" class="w-5 h-5" /> 问卷历史</h3>
@@ -706,7 +706,7 @@
 import { ref, onMounted, inject, computed, watch } from 'vue'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
-import QuestionBankEditor from '@/components/QuestionBankEditor.vue'
+import QuestionnaireEditor from '@/components/QuestionnaireEditor.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
 const notify = inject('notify') as any

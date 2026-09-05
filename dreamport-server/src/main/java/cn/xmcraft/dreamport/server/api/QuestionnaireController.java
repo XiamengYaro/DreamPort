@@ -401,6 +401,72 @@ public class QuestionnaireController {
         return ResponseEntity.badRequest().body(ApiResponse.failure("题目不存在"));
     }
 
+    // ===== 整卷保存（问卷平台式编辑器：一次性提交全部题目） =====
+
+    public record BulkOption(String textZh, Integer score) {
+    }
+
+    public record BulkQuestion(String type,
+                               @com.fasterxml.jackson.annotation.JsonAlias("question_zh") String questionZh,
+                               @com.fasterxml.jackson.annotation.JsonAlias("question_en") String questionEn,
+                               Boolean required,
+                               @com.fasterxml.jackson.annotation.JsonAlias("max_score") Integer maxScore,
+                               @com.fasterxml.jackson.annotation.JsonAlias("scoring_rule") String scoringRule,
+                               @com.fasterxml.jackson.annotation.JsonAlias("placeholder") String placeholderZh,
+                               List<BulkOption> options) {
+    }
+
+    public record SaveBulkBody(String name, Integer passScore, List<BulkQuestion> questions) {
+    }
+
+    /** 整卷保存：更新名称/及格分，删除并重建全部题目（sortOrder 按提交顺序） */
+    @PostMapping("/admin/questionnaire/save-bulk")
+    public ResponseEntity<Object> saveBulk(@RequestBody SaveBulkBody body, HttpServletRequest request) {
+        if (!AuthUtil.isAdmin(request)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
+        }
+        if (body.questions() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("questions 不能为空"));
+        }
+        var questionnaire = questionnaireService.activeQuestionnaire();
+        questionnaireRepository.save(new QuestionnaireRecords.Questionnaire(
+                questionnaire.id(),
+                body.name() == null || body.name().isBlank() ? questionnaire.name() : body.name(),
+                questionnaire.enabled(),
+                body.passScore() == null ? questionnaire.passScore() : body.passScore(),
+                questionnaire.createdAt()));
+        for (QuestionnaireRecords.Question old : questionnaireService.questions(questionnaire.id())) {
+            optionRepository.findByQuestionIdOrderBySortOrderAsc(old.id()).forEach(optionRepository::delete);
+            questionRepository.delete(old);
+        }
+        int sort = 0;
+        for (var bq : body.questions()) {
+            QuestionnaireRecords.Question saved = questionRepository.save(
+                    new QuestionnaireRecords.Question(null, questionnaire.id(),
+                            bq.questionZh() == null ? "" : bq.questionZh(), bq.questionEn(),
+                            bq.type() == null ? "text" : bq.type(),
+                            bq.required() == null || bq.required(),
+                            bq.maxScore() == null ? 0 : bq.maxScore(),
+                            bq.scoringRule(),
+                            "essay".equals(bq.type()),
+                            null, null, null, null,
+                            bq.placeholderZh(), null, sort));
+            if (bq.options() != null) {
+                int os = 0;
+                for (var o : bq.options()) {
+                    optionRepository.save(new QuestionnaireRecords.QuestionOption(
+                            null, saved.id(),
+                            o.textZh() == null ? "" : o.textZh(), null,
+                            o.score() == null ? 0 : o.score(), os++));
+                }
+            }
+            sort++;
+        }
+        auditService.log("questionnaire_save_bulk", AuthUtil.currentUser(request),
+                String.valueOf(sort), null);
+        return ResponseEntity.ok(ApiResponse.success("已保存 " + sort + " 题"));
+    }
+
     @PostMapping("/admin/questionnaire/delete-question")
     public ResponseEntity<Object> deleteQuestion(@RequestBody DeleteQuestionBody body,
                                                  HttpServletRequest request) {
