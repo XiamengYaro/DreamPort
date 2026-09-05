@@ -39,3 +39,6 @@ application-local.yaml
 logs/
 *.log
 *.tmp
+
+# ---- Maven shade ----
+dependency-reduced-pom.xml
