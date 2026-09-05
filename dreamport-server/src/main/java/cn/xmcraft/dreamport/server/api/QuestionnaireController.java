@@ -336,6 +336,71 @@ public class QuestionnaireController {
         return ResponseEntity.ok(ApiResponse.success("题目已添加"));
     }
 
+    /** 更新已有题目（含选项整体替换）——问卷平台式编辑器保存 */
+    @PostMapping("/admin/questionnaire/update-question")
+    public ResponseEntity<Object> updateQuestion(@RequestBody AddQuestionBody body,
+                                                 HttpServletRequest request) {
+        if (!AuthUtil.isAdmin(request)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
+        }
+        var q = body.question();
+        if (q == null || q.id() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("缺少题目 id"));
+        }
+        var oldOpt = questionRepository.findById(q.id());
+        if (oldOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("题目不存在"));
+        }
+        var old = oldOpt.get();
+        QuestionnaireRecords.Question saved = questionRepository.save(new QuestionnaireRecords.Question(
+                old.id(), old.questionnaireId(), q.questionZh(), q.questionEn(), q.type(), q.required(),
+                q.maxScore(), q.scoringRule(), q.multiline(), q.minLength(), q.maxLength(),
+                q.minSelections(), q.maxSelections(), q.placeholderZh(), q.placeholderEn(), old.sortOrder()));
+        optionRepository.findByQuestionIdOrderBySortOrderAsc(old.id()).forEach(optionRepository::delete);
+        if (body.options() != null) {
+            int sort = 0;
+            for (QuestionnaireRecords.QuestionOption o : body.options()) {
+                optionRepository.save(new QuestionnaireRecords.QuestionOption(
+                        null, old.id(), o.textZh(), o.textEn(), o.score(), sort++));
+            }
+        }
+        return ResponseEntity.ok(ApiResponse.success("题目已保存"));
+    }
+
+    /** 题目上移/下移（交换 sort_order） */
+    @PostMapping("/admin/questionnaire/move-question")
+    public ResponseEntity<Object> moveQuestion(@RequestBody java.util.Map<String, Object> body,
+                                               HttpServletRequest request) {
+        if (!AuthUtil.isAdmin(request)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("需要管理员权限"));
+        }
+        long id = Long.parseLong(String.valueOf(body.get("id")));
+        String direction = String.valueOf(body.get("direction"));
+        var questionnaire = questionnaireService.activeQuestionnaire();
+        List<QuestionnaireRecords.Question> questions =
+                questionRepository.findByQuestionnaireIdOrderBySortOrderAsc(questionnaire.id());
+        for (int i = 0; i < questions.size(); i++) {
+            if (questions.get(i).id().equals(id)) {
+                int j = "up".equals(direction) ? i - 1 : i + 1;
+                if (j < 0 || j >= questions.size()) {
+                    return ResponseEntity.ok(ApiResponse.success("已到边界"));
+                }
+                QuestionnaireRecords.Question a = questions.get(i);
+                QuestionnaireRecords.Question b = questions.get(j);
+                questionRepository.save(new QuestionnaireRecords.Question(a.id(), a.questionnaireId(),
+                        a.questionZh(), a.questionEn(), a.type(), a.required(), a.maxScore(), a.scoringRule(),
+                        a.multiline(), a.minLength(), a.maxLength(), a.minSelections(), a.maxSelections(),
+                        a.placeholderZh(), a.placeholderEn(), b.sortOrder()));
+                questionRepository.save(new QuestionnaireRecords.Question(b.id(), b.questionnaireId(),
+                        b.questionZh(), b.questionEn(), b.type(), b.required(), b.maxScore(), b.scoringRule(),
+                        b.multiline(), b.minLength(), b.maxLength(), b.minSelections(), b.maxSelections(),
+                        b.placeholderZh(), b.placeholderEn(), a.sortOrder()));
+                return ResponseEntity.ok(ApiResponse.success("已移动"));
+            }
+        }
+        return ResponseEntity.badRequest().body(ApiResponse.failure("题目不存在"));
+    }
+
     @PostMapping("/admin/questionnaire/delete-question")
     public ResponseEntity<Object> deleteQuestion(@RequestBody DeleteQuestionBody body,
                                                  HttpServletRequest request) {

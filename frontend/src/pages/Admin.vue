@@ -1,36 +1,27 @@
 <template>
   <div class="p-6 pt-24 pb-20">
-    <div class="max-w-7xl mx-auto">
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">管理面板</h1>
-        <p class="text-stone-400">欢迎回来，{{ username }}</p>
+    <div class="max-w-6xl mx-auto">
+      <div class="card p-6 mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="text-2xl font-bold text-white">管理面板</h1>
+          <p class="text-stone-400">欢迎回来，{{ username }}</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm cursor-pointer select-none"
+          :class="maintenanceEnabled ? 'text-rose-300' : 'text-stone-400'">
+          🚧 维护模式
+          <input type="checkbox" v-model="maintenanceEnabled" @change="toggleMaintenance" class="accent-rose-500 w-4 h-4" />
+        </label>
       </div>
 
       <!-- Tab 按钮 -->
-            <!-- 侧边栏 -->
-      <aside class="w-52 shrink-0">
-        <div class="card p-3 space-y-1 sticky top-24">
-          <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
-            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all duration-200 text-left"
-            :class="activeTab === m.key ? 'bg-orange-500/15 text-orange-400 font-medium' : 'text-stone-400 hover:text-white hover:bg-white/5'">
-            <span class="text-base">{{ m.icon }}</span><span>{{ m.label }}</span>
-            <span v-if="m.badge" class="ml-auto text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">{{ m.badge }}</span>
-          </button>
-          <div class="pt-2 mt-2 border-t border-stone-700/60">
-            <label class="flex items-center justify-between px-3 py-2.5 rounded-xl text-sm cursor-pointer transition-all"
-              :class="maintenanceEnabled ? 'bg-rose-500/10 text-rose-300' : 'text-stone-400 hover:text-white hover:bg-white/5'">
-              <span>🚧 维护模式</span>
-              <input type="checkbox" v-model="maintenanceEnabled" @change="toggleMaintenance" class="accent-rose-500" />
-            </label>
-            <router-link to="/" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-stone-400 hover:text-white hover:bg-white/5 transition-all">
-              <span class="text-base">🌐</span><span>返回官网</span>
-            </router-link>
-          </div>
-        </div>
-      </aside>
-
-      <!-- 内容区 -->
-      <div class="flex-1 min-w-0">
+            <!-- Tab 按钮（单行，可横向滚动） -->
+      <div class="card p-2 mb-6 flex gap-1 overflow-x-auto">
+        <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
+          class="flex-1 min-w-fit shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm transition-all duration-200"
+          :class="activeTab === m.key ? 'bg-orange-500/15 text-orange-400 font-medium' : 'text-stone-400 hover:text-white hover:bg-white/5'">
+          <span>{{ m.icon }}</span><span>{{ m.label }}</span>
+        </button>
+      </div>
 
       <!-- Loading -->
       <div v-if="loading" class="card p-12 text-center">
@@ -477,78 +468,7 @@
 
       <!-- 问卷管理 Tab -->
       <div v-if="activeTab === 'questionnaires' && !loading" class="space-y-6">
-      <div class="card p-6 space-y-5">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-white">📝 题库编辑器</h3>
-          <button @click="resetQuestionnaireDefault" class="text-sm text-stone-400 hover:text-white transition-all">恢复默认题库</button>
-        </div>
-
-        <!-- 题目列表 -->
-        <div class="space-y-2">
-          <div v-for="q in questionBank" :key="q.id" class="flex items-center gap-3 p-3 rounded-xl bg-stone-800/50 border border-stone-700/60">
-            <span class="text-xs px-2 py-1 rounded-lg bg-stone-700 text-stone-300 shrink-0">{{ typeLabel(q.type) }}</span>
-            <span class="flex-1 text-sm text-white truncate">{{ q.question_zh }}</span>
-            <span class="text-xs text-orange-400 shrink-0">{{ q.max_score }}分</span>
-            <button @click="removeQuestion(q.id)" class="text-rose-400 hover:text-rose-300 text-sm shrink-0">删除</button>
-          </div>
-          <div v-if="questionBank.length === 0" class="text-center py-6 text-stone-500 text-sm">暂无题目，请在下方添加</div>
-        </div>
-
-        <!-- 新增题目 -->
-        <div class="border-t border-stone-700/60 pt-5 space-y-4">
-          <div class="text-sm font-medium text-stone-300">新增题目</div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <select v-model="newQ.type" class="input">
-              <option value="single_choice">单选题</option>
-              <option value="multiple_choice">多选题</option>
-              <option value="fill_blank">填空题</option>
-              <option value="essay">问答题</option>
-            </select>
-            <input v-model.number="newQ.max_score" type="number" min="0" class="input" placeholder="分值" />
-            <label class="flex items-center gap-2 text-sm text-stone-300 px-2">
-              <input type="checkbox" v-model="newQ.required" class="accent-orange-500" /> 必答
-            </label>
-          </div>
-          <input v-model="newQ.question_zh" class="input w-full" placeholder="题目内容（中文）" />
-          <input v-model="newQ.question_en" class="input w-full" placeholder="题目内容（英文，可选）" />
-
-          <!-- 选择题选项 -->
-          <div v-if="newQ.type === 'single_choice' || newQ.type === 'multiple_choice'" class="space-y-2">
-            <div class="text-xs text-stone-400">选项（每项 = 选项文本 + 分值）</div>
-            <div v-for="(opt, i) in newQ.options" :key="i" class="flex gap-2">
-              <input v-model="opt.text" class="input flex-1" placeholder="选项文本" />
-              <input v-model.number="opt.score" type="number" class="input w-24" placeholder="分值" />
-              <button @click="newQ.options.splice(i, 1)" class="px-3 text-rose-400 hover:text-rose-300">✕</button>
-            </div>
-            <button @click="newQ.options.push({ text: '', score: 0 })" class="text-sm text-orange-400 hover:text-orange-300">+ 添加选项</button>
-          </div>
-
-          <!-- 填空题识别规则 -->
-          <div v-if="newQ.type === 'fill_blank'" class="space-y-2">
-            <div class="text-xs text-stone-400">自动识别规则（答案命中规则得满分）</div>
-            <select v-model="newQ.validation" class="input">
-              <option value="qq">QQ 号（5-12 位数字）</option>
-              <option value="email">邮箱</option>
-              <option value="phone">手机号</option>
-              <option value="number">纯数字</option>
-              <option :value="'regex:' + (newQ.customRegex || '^.{1,50}$')">自定义正则</option>
-            </select>
-            <input v-if="newQ.validation && newQ.validation.startsWith('regex:')" v-model="newQ.customRegex"
-              class="input w-full" placeholder="输入自定义正则，例如 ^1\d{10}$" />
-          </div>
-
-          <!-- 问答题评分规则 -->
-          <div v-if="newQ.type === 'essay'" class="space-y-2">
-            <div class="text-xs text-stone-400">评分规则（供 AI 评分参考；未启用 AI 时按回答长度评分）</div>
-            <textarea v-model="newQ.scoring_rule" class="input min-h-[70px]" placeholder="例如：能准确理解恶意破坏的形式与危害得满分；内容与问题无关得 0 分"></textarea>
-          </div>
-
-          <button @click="addQuestionToBank" :disabled="!newQ.question_zh"
-            class="w-full py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-40 transition-all">
-            ➕ 添加到题库
-          </button>
-        </div>
-      </div>
+      <QuestionBankEditor @changed="loadQuestionnaires" />
 
       <div class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">📋 问卷历史</h3>
@@ -779,13 +699,13 @@
       </div>
     </div>
   </div>
-      </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, inject, computed, watch } from 'vue'
 import api from '@/services/api'
+import QuestionBankEditor from '@/components/QuestionBankEditor.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
 const notify = inject('notify') as any
@@ -805,60 +725,6 @@ const menuItems = [
   { key: 'migration', icon: '📦', label: '数据迁移' }
 ]
 
-// ===== 题库编辑器 =====
-const questionBank = ref<any[]>([])
-const newQ = ref<any>({ type: 'single_choice', max_score: 3, required: true, question_zh: '', question_en: '',
-  options: [{ text: '', score: 3 }], validation: 'qq', customRegex: '', scoring_rule: '' })
-
-const typeLabel = (t: string) => ({ single_choice: '单选', multiple_choice: '多选', fill_blank: '填空', essay: '问答', text: '文本' }[t] || t)
-
-const loadQuestionBank = async () => {
-  try {
-    const r: any = await api.getQuestionnaireList()
-    if (r.success) questionBank.value = r.data.questions || []
-  } catch (e) {}
-}
-
-const addQuestionToBank = async () => {
-  const q: any = {
-    question_zh: newQ.value.question_zh,
-    question_en: newQ.value.question_en || null,
-    type: newQ.value.type,
-    required: !!newQ.value.required,
-    max_score: Number(newQ.value.max_score) || 0
-  }
-  let options: any[] = []
-  if (newQ.value.type === 'single_choice' || newQ.value.type === 'multiple_choice') {
-    options = newQ.value.options.filter((o: any) => o.text).map((o: any) => ({ text_zh: o.text, score: o.score || 0 }))
-    if (options.length < 2) { notify?.error('选择题至少需要 2 个选项'); return }
-  }
-  if (newQ.value.type === 'fill_blank') q.scoring_rule = newQ.value.validation
-  if (newQ.value.type === 'essay') q.scoring_rule = newQ.value.scoring_rule || ''
-  try {
-    await api.addQuestion({ question: q, options })
-    notify?.success('题目已添加')
-    newQ.value = { type: newQ.value.type, max_score: 3, required: true, question_zh: '', question_en: '',
-      options: [{ text: '', score: 3 }], validation: newQ.value.validation, customRegex: '', scoring_rule: '' }
-    loadQuestionBank()
-  } catch (e: any) { notify?.error(e.message || '添加失败') }
-}
-
-const removeQuestion = async (id: number) => {
-  try {
-    await api.deleteQuestion(id)
-    notify?.success('题目已删除')
-    loadQuestionBank()
-  } catch (e: any) { notify?.error(e.message || '删除失败') }
-}
-
-const resetQuestionnaireDefault = async () => {
-  try {
-    await api.resetQuestionnaire()
-    notify?.success('已恢复默认题库')
-    loadQuestionBank()
-  } catch (e: any) { notify?.error(e.message || '重置失败') }
-}
-
 const loadMaintenance = async () => {
   try { const r: any = await api.getMaintenanceMode(); maintenanceEnabled.value = !!r.data?.enabled } catch (e) {}
 }
@@ -872,7 +738,6 @@ const toggleMaintenance = async () => {
   }
 }
 loadMaintenance()
-loadQuestionBank()
 const migrationFileInput = ref<HTMLInputElement | null>(null)
 const migrationFile = ref<File | null>(null)
 const migrationLoading = ref(false)

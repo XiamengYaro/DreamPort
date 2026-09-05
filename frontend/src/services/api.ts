@@ -377,6 +377,14 @@ class ApiService {
     })
   }
 
+  async updateQuestion(payload: { question: any; options: any[] }) {
+    return this.request('/admin/questionnaire/update-question', { method: 'POST', body: JSON.stringify(payload) })
+  }
+
+  async moveQuestion(payload: { id: number; direction: 'up' | 'down' }) {
+    return this.request('/admin/questionnaire/move-question', { method: 'POST', body: JSON.stringify(payload) })
+  }
+
   async deleteQuestion(id: number) {
     return this.request('/admin/questionnaire/delete-question', {
       method: 'POST',

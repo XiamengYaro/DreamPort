@@ -268,7 +268,8 @@ public class CommunityController {
         UserRecord u = userOpt.get();
         Map<String, Object> profile = new LinkedHashMap<>();
         profile.put("username", u.username());
-        profile.put("minecraftName", u.minecraftName());
+        profile.put("minecraftName", u.minecraftName() == null ? u.username() : u.minecraftName());
+        profile.put("uuid", u.minecraftUuid());
         profile.put("status", u.status());
         profile.put("regTime", u.regTime());
         profile.put("daysSinceReg", (System.currentTimeMillis() - u.regTime()) / 86_400_000L);
