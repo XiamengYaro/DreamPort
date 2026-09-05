@@ -1,0 +1,19 @@
+# DreamPort 薄插件配置（完整字段说明见 docs/PROJECT_DOCUMENTATION.md §7.3）
+
+# 运行角色：primary（主服，含进服校验） | secondary（子服，仅上报） | proxy（Velocity/BungeeCord 统一拦截）
+role: primary
+
+backend:
+  url: "http://127.0.0.1:18898"
+  server-id: "main"
+  server-token: "dev-internal-token"   # 与后端 wl.internal.server-token 保持一致；P4 起由后台按服签发
+
+check:
+  fail-policy: cache     # 后端不可达时的兜底：cache（用最近缓存）| allow（放行）| deny（拒绝）
+  cache-ttl-seconds: 60
+  timeout-ms: 1500
+
+features:
+  enforce-whitelist: true
+  forward-chat: false    # P5 启用
+  report-join-quit: false

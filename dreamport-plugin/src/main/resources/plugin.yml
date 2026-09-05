@@ -1,0 +1,21 @@
+name: DreamPort
+version: '${project.version}'
+main: cn.xmcraft.dreamport.plugin.DreamPortPlugin
+api-version: '1.20'
+description: DreamPort 薄插件 —— 服务器门户与玩家管理（primary/secondary/proxy）
+author: Xia_Meng_
+folia-supported: true
+
+commands:
+  xmw:
+    description: DreamPort 管理命令
+    usage: /xmw <status|reload>
+    permission: dreamport.use
+
+permissions:
+  dreamport.use:
+    description: 允许使用 DreamPort 命令
+    default: true
+  dreamport.admin:
+    description: DreamPort 管理权限
+    default: op

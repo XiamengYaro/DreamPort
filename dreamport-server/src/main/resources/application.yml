@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: dreamport-server
+  threads:
+    virtual:
+      enabled: true
+  datasource:
+    # dev 默认 H2（MySQL 兼容模式），无需安装数据库即可启动；生产用 --spring.profiles.active=mysql
+    url: jdbc:h2:mem:dreamport;MODE=MySQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    username: sa
+    password: ""
+  flyway:
+    locations: classpath:db/migration/{vendor}
+  jackson:
+    default-property-inclusion: non_null
+
+server:
+  port: 18898
+
+wl:
+  version: 0.1.0
+  security:
+    # 生产必须通过环境变量 WL_JWT_SECRET 覆盖（Rules.md §5）
+    jwt-secret: "dev-only-change-me-0123456789abcdef0123456789abcdef"
+    jwt-ttl-days: 7
+  internal:
+    # P1 引导值；P4 起 dp_server 表按服务器管理（哈希存储）
+    server-token: "dev-internal-token"
+  cors:
+    allowed-origins: "*"
+  seed-demo: true    # 首次启动播种演示账号（生产置 false）
+
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: jdbc:mysql://${WL_DB_HOST:127.0.0.1}:${WL_DB_PORT:3306}/${WL_DB_NAME:dreamport}?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: ${WL_DB_USER:dreamport}
+    password: ${WL_DB_PASSWORD:change-me}

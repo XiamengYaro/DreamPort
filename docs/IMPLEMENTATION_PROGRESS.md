@@ -4,7 +4,7 @@
 > **更新规则**：每完成一项，将状态改为 ✅ 并在提交信息中注明；每个阶段（P*）全部 ✅ 后在 CHANGELOG 记录并推送。
 > **参考列**：指向 `../XMWhitelist-Legacy/`（旧版归档）中的行为参考实现；标注 ★参考项目 的为从 参考项目 v1.8.0 吸收的能力（Discord 已排除）。
 
-**总体进度**：P0 🚧 ｜ 合计 0/128 项完成（随开发滚动更新）
+**总体进度**：P0 ✅ ｜ P1 ✅ ｜ 合计 **15/128** 项完成（0-6 剩余建表与 1-10 SPA 托管随后续阶段补齐；5-1 骨架已建）
 
 ---
 
@@ -16,24 +16,24 @@
 | 0-2 | 项目定名 DreamPort / 夏日小镇·梦港 / 命名规范 | ✅ | — |
 | 0-3 | AGENTS.md + Rules.md 工程规则 | ✅ | — |
 | 0-4 | 旧项目比对报告（谱系 + 功能差距） | ✅ | — |
-| 0-5 | `dreamport-common` 协议 DTO 定义（login-check/事件/快照/错误码） | ⬜ | Legacy BridgeClient/ApiRouter |
-| 0-6 | 新 Schema DDL 定稿（全部 dp_ 表） | ⬜ | Legacy db/*Dao.java |
-| 0-7 | API 契约表落档（≥80 个对外端点逐字冻结） | ⬜ | Legacy ApiRouter + api.ts |
+| 0-5 | `dreamport-common` 协议 DTO 定义（login-check/heartbeat/事件/错误码） | ✅ | Legacy BridgeClient/ApiRouter |
+| 0-6 | 新 Schema DDL 定稿（V1 核心四表已建；其余表随域阶段 V2+ 迁移） | 🚧 | Legacy db/*Dao.java |
+| 0-7 | API 契约表落档（docs/API_CONTRACT.md，全部端点逐字冻结） | ✅ | Legacy ApiRouter + api.ts |
 
 ## P1 服务骨架（dreamport-server）
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 1-1 | Spring Boot 3.4 + Java 21 虚拟线程骨架 | ⬜ | — |
-| 1-2 | 多模块父 POM（common/server/plugin 构建链） | ⬜ | — |
-| 1-3 | Flyway V1 建表（dp_user/dp_audit_log/dp_setting/dp_server） | ⬜ | Legacy 表结构 |
-| 1-4 | HikariCP 连接池 + 双 profile（dev=H2 / prod=MySQL） | ⬜ | — |
-| 1-5 | JWT 签发/校验（role claim，7 天） | ⬜ | Legacy WebAuthHelper |
-| 1-6 | 密码双算法：bcrypt 写入 + 旧 `$SHA$盐$哈希` 恒时验证 + 透明升级 | ⬜ | Legacy PasswordUtil |
-| 1-7 | 限流（登录 5/min、注册 3/min、验证码 3/5min）+ CORS 配置 | ⬜ | Legacy RateLimiter |
-| 1-8 | /api/health、/api/version | ⬜ | Legacy VersionHandler |
-| 1-9 | 统一响应包装 {success, message, data} | ⬜ | Legacy ApiResponseFactory |
-| 1-10 | 前端 SPA 静态托管（static/ 兜底路由） | ⬜ | Legacy StaticFileHandler |
+| 1-1 | Spring Boot 3.4 + Java 21 虚拟线程骨架 | ✅ | — |
+| 1-2 | 多模块父 POM（common/server/plugin 构建链） | ✅ | — |
+| 1-3 | Flyway V1 建表（dp_user/dp_audit_log/dp_setting/dp_server） | ✅ | Legacy 表结构 |
+| 1-4 | HikariCP 连接池 + 双 profile（dev=H2 / prod=MySQL） | ✅ | — |
+| 1-5 | JWT 签发/校验（role claim，7 天） | ✅ | Legacy WebAuthHelper |
+| 1-6 | 密码双算法：bcrypt 写入 + 旧 `$SHA$盐$哈希` 恒时验证 + 透明升级 | ✅ 已实测 | Legacy PasswordUtil |
+| 1-7 | 限流（登录 5/min、注册 3/min、验证码 3/5min）+ CORS 配置 | ✅ 已实测 | Legacy RateLimiter |
+| 1-8 | /api/health、/api/version | ✅ | Legacy VersionHandler |
+| 1-9 | 统一响应包装 {success, message, data} | ✅ | Legacy ApiResponseFactory |
+| 1-10 | 前端 SPA 静态托管（static/ 兜底路由） | ⬜ 随 P6 | Legacy StaticFileHandler |
 
 ## P2 旧库自动迁移器
 
@@ -98,7 +98,7 @@
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 5-1 | 插件骨架（Paper 1.20 + Folia 双调度） | ⬜ | Legacy XMWhitelist.java |
+| 5-1 | 插件骨架（Paper 1.20 + Folia 双调度） | 🚧 骨架已建，监听器待 P5 | Legacy XMWhitelist.java |
 | 5-2 | 进服校验（login-check + Caffeine 缓存 60s + fail_policy cache/allow/deny） | ⬜ | Legacy PlayerLoginListener（重设计） |
 | 5-3 | 状态分支踢出文案（i18n 键与旧版一致） | ⬜ | Legacy i18n login.* |
 | 5-4 | 登录记录上报（pending login，供网页 ID 验证） | ⬜ | Legacy MysqlPendingLoginDao |
