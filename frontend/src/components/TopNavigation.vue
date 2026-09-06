@@ -9,11 +9,11 @@
         <!-- Logo -->
         <router-link to="/" class="flex items-center gap-3">
           <img :src="logoUrl" alt="Logo" class="w-9 h-9 rounded-xl object-cover shadow-lg" />
-          <span class="font-bold text-lg text-white tracking-tight hidden sm:block drop-shadow-lg">{{ serverName }}</span>
+          <span class="font-bold text-lg text-white tracking-tight hidden xl:block drop-shadow-lg">{{ serverName }}</span>
         </router-link>
 
         <!-- 中间导航 -->
-        <div class="hidden md:flex items-center gap-1">
+        <div class="hidden md:flex items-center gap-1 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 shrink-0">
           <router-link to="/" class="nav-item" :class="{ active: $route.path === '/' }"><AppIcon name="home" class="w-4 h-4" />首页</router-link>
           <router-link to="/docs" class="nav-item" :class="{ active: $route.path.startsWith('/docs') }"><AppIcon name="document-text" class="w-4 h-4" />文档</router-link>
           <router-link to="/announcements" class="nav-item" :class="{ active: $route.path === '/announcements' }"><AppIcon name="megaphone" class="w-4 h-4" />公告</router-link>
@@ -55,13 +55,13 @@
               <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white text-sm font-bold shadow-lg">
                 {{ username.charAt(0).toUpperCase() }}
               </div>
-              <div class="hidden sm:block">
+              <div class="hidden lg:block">
                 <div class="text-white text-sm font-medium drop-shadow">{{ username }}</div>
                 <div class="text-white/60 text-xs drop-shadow">{{ isAdmin ? '管理员' : '玩家' }}</div>
               </div>
             </div>
-            <router-link to="/dashboard" class="btn-ghost text-sm hidden sm:block">控制台</router-link>
-            <router-link v-if="isAdmin" to="/admin" class="btn-ghost text-sm hidden sm:block">管理</router-link>
+            <router-link to="/dashboard" class="btn-ghost text-sm hidden xl:inline-block">控制台</router-link>
+            <router-link v-if="isAdmin" to="/admin" class="btn-ghost text-sm hidden xl:inline-block">管理</router-link>
             <button @click="logout" class="btn-ghost text-sm">退出</button>
           </template>
           <template v-else>
