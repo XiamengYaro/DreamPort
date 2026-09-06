@@ -34,16 +34,9 @@ CREATE TABLE dp_chat_message (
   KEY idx_chat_origin (origin, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 服务器当前快照(每服一行,心跳 upsert)
-CREATE TABLE dp_server (
-  server_id     VARCHAR(64) PRIMARY KEY,
-  server_name   VARCHAR(64) NULL,
-  role          VARCHAR(16)  NULL,
-  version       VARCHAR(32)  NULL,
-  online_players INT NOT NULL DEFAULT 0,
-  max_players    INT NOT NULL DEFAULT 0,
-  last_seen_at  BIGINT NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- 服务器当前快照:复用 V1 已有的 dp_server 注册表(id/server_id(UNIQUE)/name/role/
+-- token_hash/last_heartbeat/enabled,此前未启用),V3 仅 ALTER 补三列
+-- (version/online_players/max_players),心跳 upsert 按 server_id 唯一键
 
 -- 在线人数历史(5 分钟粒度采样,7 天保留,曲线数据源)
 CREATE TABLE dp_online_history (

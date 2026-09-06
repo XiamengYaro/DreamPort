@@ -134,7 +134,7 @@ public class QqBridgeService {
         String display = senderName == null || senderName.isBlank()
                 ? (senderId == null || senderId.isBlank() ? "QQ用户" : senderId)
                 : senderName;
-        chatService.broadcast("[QQ] " + display, content);
+        chatService.broadcast("qq", "[QQ] " + display, content, null);
         gameInbox.offer(render(template(KEY_TPL_GAME_CHAT, DEFAULT_TPL_GAME_CHAT),
                 Map.of("sender", display, "message", content)));
         return null;

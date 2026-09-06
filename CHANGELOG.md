@@ -25,6 +25,10 @@
 - AstrBot 集成 v1.1 门禁（docs/ASTRBOT_PLAN.md §5.4）：新增 `astrbot.enabled` 总开关（默认关闭，关闭时 `/api/astrbot/**` 全部 403）；开关与 `astrbot.api_token` 均可在管理后台配置
 - `GET /api/astrbot/players` 契约定版为 `{count, players:[{name, server}], servers:[…]}`（原仅 `{servers}`）
 - `POST /api/astrbot/unbind` 改为按 QQ 解绑（`{qq}`），无绑定时返回失败提示
+- **聊天历史落库**（docs/CHAT_SERVERINFO_PLAN.md，M6）：新增 Flyway V3（`dp_chat_message` 表 + `dp_server` 注册表补列 + `dp_online_history` 采样表）；`ChatService` 从 dp_setting JSON 全量重写改为单条落库（四源 origin：game/web/qq/system，SSE payload 同步携带），消除写放大与 500 条上限；旧 `chat.history` 键停写弃用（按决策不迁移）
+- `GET /api/chat/history` 重定义：`{success, data:{history, nextBefore}}`，支持 `?before=`（游标向前翻页）/`?limit=`（≤500）/`?origin=`（过滤四源），一律限 7 天窗口；此前响应结构 `{history}` 与前端读取 `data.data` 不匹配、历史从未成功加载（本次一并修复）
+- 保留策略：聊天消息 7 天 + 5 万条硬顶，每小时定时清理
+- ChatBox 历史浏览：进入加载最近 200 条、「加载更早」游标翻页（保持视口位置）、跨天消息显示日期、裸 fetch 全部收口至 `services/api.ts`（修复 Rules §7 违规）
 
 ### Fixed
 - `/api/astrbot/lookup/qq/{qq}`、`/api/astrbot/lookup/mc/{mc}` 参数绑定错误：误用 `@RequestParam` 导致路径风格恒 400、查询风格 404，端点完全不可调用；已修复为真路径参数，`lookup/mc` 响应补充 `bound` 字段

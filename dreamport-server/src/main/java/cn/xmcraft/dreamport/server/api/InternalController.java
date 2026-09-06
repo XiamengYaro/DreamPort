@@ -193,14 +193,15 @@ public class InternalController {
         }
         switch (body.type() == null ? "" : body.type()) {
             case "chat" -> {
-                chatService.broadcast(body.player() == null ? "?" : body.player(),
-                        body.message() == null ? "" : body.message());
+                chatService.broadcast("game", body.player() == null ? "?" : body.player(),
+                        body.message() == null ? "" : body.message(), body.serverId());
                 qqBridge.onGameChat(body.serverId(), body.player(), body.message());
             }
             case "join", "quit" -> {
-                chatService.broadcast("[系统]",
+                chatService.broadcast("system", "[系统]",
                         (body.player() == null ? "?" : body.player())
-                                + ("join".equals(body.type()) ? " 加入了服务器" : " 离开了服务器"));
+                                + ("join".equals(body.type()) ? " 加入了服务器" : " 离开了服务器"),
+                        body.serverId());
                 qqBridge.onGameEvent(body.serverId(), body.type(), body.player());
             }
             default -> {

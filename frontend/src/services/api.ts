@@ -456,6 +456,20 @@ class ApiService {
     return this.request('/user/qq/unbind', { method: 'POST' })
   }
 
+  // 聊天室（docs/CHAT_SERVERINFO_PLAN.md）
+  async getChatHistory(params?: { before?: number; limit?: number; origin?: string }) {
+    const q = new URLSearchParams()
+    if (params?.before != null) q.set('before', String(params.before))
+    if (params?.limit != null) q.set('limit', String(params.limit))
+    if (params?.origin) q.set('origin', params.origin)
+    const qs = q.toString()
+    return this.request(`/chat/history${qs ? '?' + qs : ''}`)
+  }
+
+  async sendChat(message: string) {
+    return this.request('/chat/send', { method: 'POST', body: JSON.stringify({ message }) })
+  }
+
   async updateUserProfile(data: { avatar?: string }) {
     return this.request('/user/profile', {
       method: 'POST',

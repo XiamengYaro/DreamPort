@@ -53,14 +53,37 @@ public class ChatController {
         if (body.message() == null || body.message().isBlank() || body.message().length() > 256) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("消息为空或过长"));
         }
-        chatService.broadcast(me, body.message());
+        chatService.broadcast("web", me, body.message(), null);
         qqBridge.onWebChat(me, body.message());
         return ResponseEntity.ok(ApiResponse.success("已发送"));
     }
 
+    /**
+     * 历史消息（dp_chat_message，7 天窗口，docs/CHAT_SERVERINFO_PLAN.md §2.3）：
+     * ?before= 游标向前翻页,?origin= 过滤,默认最近 200 条。
+     */
     @GetMapping("/history")
-    public ResponseEntity<Object> history() {
-        return ResponseEntity.ok(Map.of("history", chatService.history()));
+    public ResponseEntity<Object> history(HttpServletRequest request) {
+        Long before = null;
+        try {
+            String raw = request.getParameter("before");
+            if (raw != null && !raw.isBlank()) {
+                before = Long.parseLong(raw);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        String origin = request.getParameter("origin");
+        int limit = ChatService.DEFAULT_PAGE_SIZE;
+        try {
+            String raw = request.getParameter("limit");
+            if (raw != null && !raw.isBlank()) {
+                limit = Integer.parseInt(raw);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        Map<String, Object> data = chatService.historyPage(before, limit,
+                origin == null || origin.isBlank() ? null : origin);
+        return ResponseEntity.ok(Map.of("success", true, "data", data));
     }
 
     @PostMapping("/save")
