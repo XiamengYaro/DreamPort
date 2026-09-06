@@ -1,7 +1,7 @@
 # DreamPort 使用文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 适用版本：v0.2.1+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
+> 适用版本：v1.0.0+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
 
 ---
 
@@ -29,10 +29,10 @@
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 1. 首次启动 —— 自动在工作目录生成 config.yml（数据库需先在 config.yml 填好）
-java -jar dreamport-server-0.1.0.jar
+java -jar dreamport-server-1.0.0.jar
 
 # 2. 编辑 config.yml：填 MySQL 连接（[必改]），改 jwt-secret / server-token，重启
-nano config.yml && java -jar dreamport-server-0.1.0.jar
+nano config.yml && java -jar dreamport-server-1.0.0.jar
 
 # 3. 浏览器打开 http://localhost:18898/setup 进入初始化向导：
 #    ① 创建管理员账号  ② 选择「全新部署」或「上传旧库 .sql 导入」
@@ -63,13 +63,13 @@ open http://localhost:18898/setup
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # ② 首次启动 —— 自动生成 config.yml（数据库未就绪时本次启动失败属预期，文件已生成）
-java -jar dreamport-server-0.1.0.jar
+java -jar dreamport-server-1.0.0.jar
 
 # ③ 编辑 config.yml（[必改]：spring.datasource 数据库、jwt-secret、server-token、SMTP）
 nano config.yml
 
 # ④ 再次启动 → 打开 http://域名:18898/setup 完成初始化向导
-java -jar dreamport-server-0.1.0.jar
+java -jar dreamport-server-1.0.0.jar
 ```
 
 向导完成两件事：**创建管理员账号**（写入管理员名单）+ **选择部署方式**（全新部署 / 上传旧库 .sql 导入）。
@@ -82,7 +82,7 @@ java -jar dreamport-server-0.1.0.jar
 **systemd（推荐）**：`deploy/dreamport-server.service` 无需环境变量，只需确认路径：
 
 ```bash
-sudo cp dreamport-server-0.1.0.jar /opt/dreamport/
+sudo cp dreamport-server-1.0.0.jar /opt/dreamport/
 sudo cp deploy/dreamport-server.service /etc/systemd/system/
 sudo systemctl enable --now dreamport-server
 ```
@@ -165,7 +165,7 @@ web-register-url: "https://你的域名"
 
 ### proxy（Velocity 代理端）
 
-Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-0.1.0.jar`（不是 Paper 版！二者不可混装）。
+Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-1.0.0.jar`（不是 Paper 版！二者不可混装）。
 首次启动自动生成 `plugins/dreamport-proxy/config.properties`：
 
 ```properties
@@ -177,7 +177,7 @@ check.fail-policy=cache
 ```
 
 功能：代理端统一白名单拦截（后端 login-check）+ 60 秒决策缓存 + fail_policy 兜底 + 心跳上报。
-Paper 子服从装 `dreamport-plugin-0.1.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
+Paper 子服从装 `dreamport-plugin-1.0.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
 
 ### 校验连通
 

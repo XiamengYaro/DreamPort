@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  *   heartbeat-interval=60
  */
 @Plugin(id = "dreamport-proxy", name = "DreamPort Proxy",
-        version = "0.1.0", description = "DreamPort Velocity 代理端：统一白名单拦截与状态上报",
+        version = "1.0.0", description = "DreamPort Velocity 代理端：统一白名单拦截与状态上报",
         authors = {"Xia_Meng_"})
 public class DreamPortProxyPlugin {
 
@@ -108,7 +108,7 @@ public class DreamPortProxyPlugin {
 
     private void printStartupReport(long startMillis) {
         logger.info("┌──────────────────── 启动记录 ────────────────────┐");
-        report("插件版本", "v0.1.0");
+        report("插件版本", "v1.0.0");
         report("后端地址", backendUrl);
         report("服务器标识", serverId);
         report("白名单拦截", enforceWhitelist ? "开启（fail-policy: " + failPolicy + "）" : "关闭");

@@ -11,7 +11,7 @@ Type=simple
 User=dreamport
 WorkingDirectory=/opt/dreamport
 # 所有配置在工作目录 config.yml 中编辑（首次启动自动生成）
-ExecStart=/usr/bin/java -jar /opt/dreamport/dreamport-server-0.1.0.jar
+ExecStart=/usr/bin/java -jar /opt/dreamport/dreamport-server-1.0.0.jar
 Restart=on-failure
 RestartSec=5
 

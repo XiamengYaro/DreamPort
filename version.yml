@@ -1,0 +1,41 @@
+version: 1.0.0
+release_notes: |
+  # DreamPort · 夏日小镇 · 梦港 v1.0.0 正式版
+
+  ## 简体中文
+
+  DreamPort 是面向 Minecraft 服务器的门户与玩家管理系统。首个正式版本：
+
+  ### 门户与玩家
+  - 官网门户：轮播/特性/时间线/团队/公告，全部后台可视化配置
+  - 注册与登录：邮箱验证码、图形验证码、邀请码注册、域名白名单
+  - 入服问卷：单选/多选/填空（QQ 号/邮箱自动识别）/问答，AI 自动评分 + 人工复核
+  - ID 验证：Java/基岩版游戏 ID 绑定，进服 3 分钟窗口验证（UUID 比对）
+  - 社区功能：邀请系统、站内通知、排行榜（财富/时长/活跃）、村民族谱、公共机器、网页聊天
+  - 个人中心：资料/头像/换绑邮箱/密码管理
+
+  ### 管理端
+  - 审核工作台：注册/申诉/村谱/机器统一审核，WebSocket 实时推送
+  - 问卷管理：问卷平台式题库编辑器，整卷保存
+  - 门户/文档/下载中心：全后台可视化管理
+  - 系统设置：注册/AI 评分/邀请/游戏/下载中心，热生效
+  - 维护模式（持久化）、审计日志、CSV/JSON 导出
+  - 旧版 XMWhitelist 数据一键迁移（后台上传 .sql 或同库自动），密码无缝兼容
+
+  ### 架构与部署
+  - 独立后端（Spring Boot 3.4 / Java 21 虚拟线程）+ Paper 薄插件 + Velocity 代理端插件
+  - config.yml 单文件部署，初始化向导（管理员注册/全新部署/导入旧库）
+  - 邮件模板品牌化（logo/站名/官网链接），Gmail/Outlook/QQ 兼容
+  - 终端：字符画 Banner + 中文启动记录 + 双向连接状态实时日志
+
+  ## English
+
+  DreamPort is a portal & player management system for Minecraft servers. First stable release:
+  - Portal website with fully visual configuration
+  - Registration (email code, captcha, invite codes), questionnaire with AI scoring
+  - Java/Bedrock ID verification via in-game login (UUID comparison)
+  - Community: invites, notifications, leaderboards, village trades, public machines, web chat
+  - Admin: unified review workspace, questionnaire editor, live settings, maintenance mode, audit logs
+  - One-click migration from legacy XMWhitelist (password-compatible)
+  - Standalone backend (Spring Boot 3.4 / Java 21 virtual threads) + Paper & Velocity plugins
+  - Single config.yml deployment with first-run setup wizard

@@ -1,7 +1,7 @@
 # DreamPort 完整项目文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 版本 `0.1.0-dev` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
+> 版本 `1.0.0` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
 > 实时进度：[IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md)
 
 ---
