@@ -7,6 +7,10 @@
 
 ## [Unreleased]
 
+### Changed
+- **v0.5.12 README 重写**：面向用户的展示型 README（产品定位/功能总览/三步快速开始/
+  迁移能力/FAQ 折叠/路线图），开发者向内容移至 docs/ 文档体系
+
 ### Fixed
 - **管理员无法进入后台（v0.4.2）**：普通登录接口恒返回 isAdmin=false，前端路由守卫
   依据 localStorage isAdmin 拦截 /admin。修复为语义对齐旧版：dp_setting admins.list
