@@ -204,6 +204,7 @@ public class VerificationController {
         var userOpt = userRepository.findByUsernameIgnoreCase(me);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("minecraftName", userOpt.map(UserRecord::minecraftName).orElse(null));
+        data.put("minecraftUuid", userOpt.map(UserRecord::minecraftUuid).orElse(null));
         data.put("verified", userOpt.map(u -> u.minecraftName() != null && u.status().equals("approved")).orElse(false));
         data.put("status", userOpt.map(UserRecord::status).orElse(null));
         return ResponseEntity.ok(ApiResponse.success(null, data));
@@ -418,9 +419,16 @@ public class VerificationController {
     }
 
     private ResponseEntity<Map<String, Object>> wrap(MinecraftVerifyService.Result result) {
-        return result.success()
-                ? ResponseEntity.ok(ApiResponse.success(result.message()))
-                : ResponseEntity.badRequest().body(ApiResponse.failure(result.message()));
+        if (result.success()) {
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("verified", true);
+            data.put("message", result.message());
+            return ResponseEntity.ok(ApiResponse.success(result.message(), data));
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("verified", false);
+        data.put("message", result.message());
+        return ResponseEntity.badRequest().body(ApiResponse.failure(result.message(), data));
     }
 
     private ResponseEntity<Map<String, Object>> unauthorized() {

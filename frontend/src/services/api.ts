@@ -680,6 +680,9 @@ class ApiService {
   async getDownloadsAdmin() { return this.request('/admin/settings/downloads') }
   async saveDownloadsAdmin(body: any) { return this.request('/admin/settings/downloads', { method: 'PUT', body: JSON.stringify(body) }) }
 
+  async getQuestionnaireSettings() { return this.request('/admin/settings/questionnaire') }
+  async saveQuestionnaireSettings(body: any) { return this.request('/admin/settings/questionnaire', { method: 'PUT', body: JSON.stringify(body) }) }
+
   async getMigrationReport() {
     return this.request('/admin/migration/report')
   }

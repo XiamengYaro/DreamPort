@@ -1,6 +1,8 @@
 package cn.xmcraft.dreamport.server.economy;
 
 import cn.xmcraft.dreamport.server.settings.SettingService;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -18,6 +20,7 @@ import java.util.Map;
 public class EconomyService {
 
     private final SettingService settingService;
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public EconomyService(SettingService settingService) {
         this.settingService = settingService;
@@ -33,8 +36,14 @@ public class EconomyService {
     }
 
     public List<PlayerEconomy> snapshot() {
-        List<PlayerEconomy> list = settingService.get(SettingService.KEY_ECONOMY_SNAPSHOT, List.class);
-        return list == null ? List.of() : list;
+        List<?> raw = settingService.get(SettingService.KEY_ECONOMY_SNAPSHOT, List.class);
+        if (raw == null || raw.isEmpty()) {
+            return List.of();
+        }
+        // JSON 还原为 LinkedHashMap，须转换为 PlayerEconomy 记录（修复 ClassCastException）
+        return raw.stream()
+                .map(item -> mapper.convertValue(item, PlayerEconomy.class))
+                .toList();
     }
 
     public List<PlayerEconomy> leaderboard(String metric, int limit) {

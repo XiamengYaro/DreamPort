@@ -7,6 +7,18 @@
 
 ## [Unreleased]
 
+### Fixed
+- **v0.5.14 ID 验证重构（UUID 比对优先）+ Economy 崩溃 + 问卷设置**：
+  - 验证改为 UUID 比对优先：进服记录与绑定 UUID 不一致时拒绝（防同名冒充）；
+    首次验证采用进服记录中的真实 UUID（原 setMinecraftId 伪造随机 UUID 已移除）；
+    重复验证幂等返回「已完成验证」（原 400）
+  - /api/user/minecraft/status 补 minecraftUuid 字段；verify 响应统一带 data.verified
+    （修复 Verify.vue "Cannot read properties of undefined (reading 'verified')"）
+  - /api/cmi/player 500（ClassCastException）：快照 JSON 反序列化为 LinkedHashMap
+    后显式转换为 PlayerEconomy
+  - 问卷设置面板：启用开关 + 通过线（dp_setting questionnaire.config 热生效）；
+    问卷未启用时玩家侧显示友好提示卡而非踢回登录
+
 ### Changed
 - **v0.5.12 README 重写**：面向用户的展示型 README（产品定位/功能总览/三步快速开始/
   迁移能力/FAQ 折叠/路线图），开发者向内容移至 docs/ 文档体系

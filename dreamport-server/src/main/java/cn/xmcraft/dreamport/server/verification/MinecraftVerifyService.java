@@ -68,9 +68,8 @@ public class MinecraftVerifyService {
             return Result.fail("用户不存在");
         }
         UserRecord user = userOpt.get();
-        UserRecord updated = withMinecraft(user, minecraftName,
-                user.minecraftUuid() == null ? UUID.randomUUID().toString() : user.minecraftUuid(),
-                "pending_verify");
+        // 不在此处生成 UUID：真 UUID 以玩家实际进服记录为准（verifyMinecraft 时采用）
+        UserRecord updated = withMinecraft(user, minecraftName, user.minecraftUuid(), "pending_verify");
         userRepository.save(updated);
         return Result.ok("已绑定，请在 3 分钟内使用该 ID 进服完成验证");
     }
@@ -85,20 +84,29 @@ public class MinecraftVerifyService {
         if (user.minecraftName() == null) {
             return Result.fail("请先绑定 Minecraft ID");
         }
+        // 幂等：已完成验证的直接返回成功
+        if (user.minecraftUuid() != null && "approved".equals(user.status())) {
+            return Result.ok("已完成验证");
+        }
         Optional<PendingLoginRecord> login = pendingLoginRepository
                 .findLatestVerifiable(user.minecraftName(), System.currentTimeMillis());
         if (login.isEmpty()) {
             return Result.fail("未检测到该 ID 的进服记录，请使用 " + user.minecraftName() + " 进服后重试");
         }
         PendingLoginRecord record = login.get();
+        // UUID 比对优先：已绑定 UUID 时进服记录必须一致（防同名冒充）
+        if (user.minecraftUuid() != null && !user.minecraftUuid().equalsIgnoreCase(record.minecraftUuid())) {
+            return Result.fail("进服记录与绑定账号不匹配（UUID 不一致），请确认使用同一账号进服");
+        }
         pendingLoginRepository.save(new PendingLoginRecord(record.id(), record.minecraftName(),
                 record.minecraftUuid(), record.ipAddress(), record.loginTime(), true, record.expireTime()));
+        // 采用进服记录中的真实 UUID
         boolean wasPendingVerify = "pending_verify".equals(user.status());
         UserRecord updated = withMinecraft(user, user.minecraftName(),
                 record.minecraftUuid(), wasPendingVerify ? "approved" : user.status());
         userRepository.save(updated);
         enqueueWhitelist("main", "whitelist add " + user.minecraftName());
-        log.info("[验证] {} 完成MC ID验证（{}）", username, user.minecraftName());
+        log.info("[验证] {} 完成MC ID验证（{} / {}）", username, user.minecraftName(), record.minecraftUuid());
         return Result.ok("验证成功");
     }
 

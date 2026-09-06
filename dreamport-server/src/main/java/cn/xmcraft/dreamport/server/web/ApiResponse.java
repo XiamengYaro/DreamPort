@@ -32,4 +32,10 @@ public final class ApiResponse {
         body.put("msg", message);
         return body;
     }
+
+    public static Map<String, Object> failure(String message, Object data) {
+        Map<String, Object> body = failure(message);
+        body.put("data", data);
+        return body;
+    }
 }

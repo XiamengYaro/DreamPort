@@ -275,6 +275,18 @@
         </div>
 
         <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="pencil-square" class="w-5 h-5" /> 问卷设置</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="qnCfg.enabled" class="accent-orange-500" />
+            启用入服问卷（关闭后注册用户直接进入审核）
+          </label>
+          <div class="flex items-center gap-2 text-sm text-stone-300">
+            通过线 <input v-model.number="qnCfg.passScore" type="number" min="0" max="100" class="input w-20 text-center" /> 分（百分制）
+          </div>
+          <button @click="saveQnSettings" class="btn-primary text-sm">保存问卷设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="envelope" class="w-5 h-5" /> 邀请设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
             <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">

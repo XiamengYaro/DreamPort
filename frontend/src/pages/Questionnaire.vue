@@ -165,6 +165,7 @@ const router = useRouter()
 const notify = inject('notify') as any
 
 const loading = ref(false)
+const qnDisabled = ref(false)
 const questions = ref<any[]>([])
 const answers = ref<Record<string, any>>({})
 const passScore = ref(60)
@@ -200,7 +201,12 @@ const loadQuestionnaire = async () => {
   try {
     const res = await fetch('/api/config'); const configData = await res.json(); if (configData.success) { passScore.value = configData.data.questionnairePassScore || 60; if (configData.data.portal?.logo) logoUrl.value = configData.data.portal.logo }
     const response: any = await fetch('/api/questionnaire/config'); const data = await response.json()
-    if (data.success && data.data.enabled) { questions.value = data.data.questions || [] } else { notify?.error('问卷未启用'); router.push('/login') }
+    if (data.success && data.data.enabled) {
+      questions.value = data.data.questions || []
+    } else {
+      qnDisabled.value = true
+      notify?.info('当前未启用入服问卷')
+    }
   } catch (error) { notify?.error('加载问卷失败'); router.push('/login') }
 }
 

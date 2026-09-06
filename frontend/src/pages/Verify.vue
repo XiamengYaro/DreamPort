@@ -350,15 +350,13 @@ const verifyJava = async () => {
   javaMessage.value = ''
   try {
     const r: any = await api.verifyMinecraft()
-    if (r.success) {
-      if (r.data.verified) {
-        javaMessage.value = '验证成功！'
-        javaSuccess.value = true
-        await loadJavaStatus()
-      } else {
-        javaMessage.value = r.data.message || '未找到登录记录，请先登录服务器'
-        javaSuccess.value = false
-      }
+    if (r.success && r.data?.verified) {
+      javaMessage.value = '验证成功！'
+      javaSuccess.value = true
+      await loadJavaStatus()
+    } else {
+      javaMessage.value = r.data?.message || r.message || '未找到登录记录，请先登录服务器'
+      javaSuccess.value = false
     }
   } catch (e: any) {
     javaMessage.value = e.message || '验证失败'
