@@ -44,3 +44,4 @@ logs/
 # ---- Maven shade ----
 dependency-reduced-pom.xml
 astrbot-plugin/*.zip
+.zcode/
