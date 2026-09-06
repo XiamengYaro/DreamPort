@@ -53,7 +53,8 @@ curl http://localhost:18898/api/health     # 健康检查
 
 ## 5. Git 工作流
 
-- remote：`origin = http://10.0.0.6:11488/Xiameng/DreamPort.git`（Gitea，凭据在 `~/.git-credentials`，免密推送）
+- 远端：`origin` = Gitea（http://10.0.0.6:11488/Xiameng/DreamPort.git，主仓）与 `github` = GitHub（github.com/XiamengYaro/DreamPort，镜像，凭据在 macOS 钥匙串）
+- 推送：`git push origin main --tags && git push github main --tags`（两边都推）
 - **每个阶段完成 = 一次提交 + push**，禁止巨型混合提交
 - 提交信息：`type(scope): 摘要`（正文中文说明）；type ∈ feat / fix / chore / docs / refactor / test / build
 - 首个可运行构建通过 → 打 `v0.1.0` 标签 + `git push --tags`
