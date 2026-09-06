@@ -32,6 +32,10 @@
 - **服务器信息落库**（docs/CHAT_SERVERINFO_PLAN.md，M7）：心跳到达即 upsert `dp_server` 快照（name/role/version/online/max/last_heartbeat，实时保存重启不丢）；在线采样（5 分钟）落 `dp_online_history`（7 天保留）；`GET /api/server/player-history?days=7`（1–7，新增分服 `data.servers` 曲线，数据源改库）；`GET /api/server/status` 重启后心跳未到时从 `dp_server` 快照兜底（标记 `stale: true`，不再返回空白）
 - 插件 `tasks.*` 配置接线（此前模板存在但未生效）：`heartbeat-interval`（≥10s）/`whitelist-poll-interval`（≥5s）/`economy-interval`（≥30s）可调，默认值不变
 - Dashboard「在线人数趋势」图支持近 7 天（`PlayerChart :days="7"`，X 轴标签随天数自适应）
+- **孤儿 UI 清理**：聊天室组件 ChatBox 挂载至个人中心（此前无任何页面引用，网页端从未有聊天入口）；删除孤儿页面 `Home.vue`（旧版简版首页，已被 Portal 取代）；注册 `/status` 路由并在导航「更多」菜单加入口（免登录申请状态查询）
+
+### Fixed
+- `/status` 申请状态查询页响应消费契约错误：期望 `{success, data}` 而后端返回裸 `{found, username, status, ...}`，导致即使可访问也永远提示"查询失败"；已按裸结构消费，并新增"未找到申请记录"提示与拒绝原因展示；查询改走 `api.getReviewStatus`（消除裸 fetch）
 
 ### Fixed
 - `/api/astrbot/lookup/qq/{qq}`、`/api/astrbot/lookup/mc/{mc}` 参数绑定错误：误用 `@RequestParam` 导致路径风格恒 400、查询风格 404，端点完全不可调用；已修复为真路径参数，`lookup/mc` 响应补充 `bound` 字段

@@ -470,6 +470,11 @@ class ApiService {
     return this.request('/chat/send', { method: 'POST', body: JSON.stringify({ message }) })
   }
 
+  // 免登录申请状态查询（/status 页；后端返回裸 {found, ...} 结构）
+  async getReviewStatus(username: string) {
+    return this.request(`/review/status?username=${encodeURIComponent(username)}`)
+  }
+
   async updateUserProfile(data: { avatar?: string }) {
     return this.request('/user/profile', {
       method: 'POST',

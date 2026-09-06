@@ -22,6 +22,11 @@ const routes = [
     component: () => import('./pages/Whitelist.vue')
   },
   {
+    path: '/status',
+    name: 'Status',
+    component: () => import('./pages/Status.vue')
+  },
+  {
     path: '/setup',
     name: 'Setup',
     component: () => import('./pages/Setup.vue')

@@ -36,7 +36,13 @@
 
             <div class="text-white/60 text-sm mb-2">状态</div>
             <span :class="getStatusClass(result.status)">{{ getStatusText(result.status) }}</span>
+            <p v-if="result.status === 'rejected' && result.banReason" class="text-stone-400 text-xs mt-3">
+              原因：{{ result.banReason }}
+            </p>
           </div>
+        </div>
+        <div v-else-if="searched" class="mt-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-center">
+          <span class="text-amber-400 text-sm">未找到该用户名的申请记录</span>
         </div>
       </div>
 
@@ -58,17 +64,19 @@ const notify = inject('notify') as any
 const loading = ref(false)
 const username = ref('')
 const result = ref<any>(null)
+const searched = ref(false)
 
 const queryStatus = async () => {
   loading.value = true
   result.value = null
+  searched.value = false
   try {
-    const response: any = await fetch(`/api/review/status?username=${encodeURIComponent(username.value)}`)
-    const data = await response.json()
-    if (data.success) {
-      result.value = data.data
+    // 后端返回裸结构 {found, username, status, ...}（ReviewStatusController 契约）
+    const data: any = await api.getReviewStatus(username.value.trim())
+    if (data.found) {
+      result.value = data
     } else {
-      notify?.error(data.message || '查询失败')
+      searched.value = true
     }
   } catch (error: any) {
     notify?.error(error.message || '查询失败')
