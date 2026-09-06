@@ -43,6 +43,9 @@
       <!-- 在线人数趋势图 -->
       <PlayerChart :days="7" class="mb-6" />
 
+      <!-- 服务器聊天（网页 ↔ 服内消息互通，docs/CHAT_SERVERINFO_PLAN.md） -->
+      <ChatBox class="mb-6" />
+
       <!-- 个人游戏数据 -->
       <div v-if="cmiEnabled && playerData.name" class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4">我的游戏数据</h2>
@@ -349,6 +352,7 @@ import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
+import ChatBox from '@/components/ChatBox.vue'
 
 const notify = inject('notify') as any
 
