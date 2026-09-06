@@ -14,27 +14,26 @@
 
         <!-- 中间导航 -->
         <div class="hidden md:flex items-center gap-1">
-          <router-link to="/" class="nav-item" :class="{ active: $route.path === '/' }">首页</router-link>
-          <router-link to="/docs" class="nav-item" :class="{ active: $route.path.startsWith('/docs') }">文档</router-link>
-          <router-link to="/whitelist" class="nav-item" :class="{ active: $route.path === '/whitelist' }">白名单</router-link>
-          <router-link to="/leaderboard" class="nav-item" :class="{ active: $route.path === '/leaderboard' }">排行榜</router-link>
-          <router-link to="/map" class="nav-item" :class="{ active: $route.path === '/map' }">地图</router-link>
-          
+          <router-link to="/" class="nav-item" :class="{ active: $route.path === '/' }"><AppIcon name="home" class="w-4 h-4" />首页</router-link>
+          <router-link to="/docs" class="nav-item" :class="{ active: $route.path.startsWith('/docs') }"><AppIcon name="document-text" class="w-4 h-4" />文档</router-link>
+          <router-link to="/announcements" class="nav-item" :class="{ active: $route.path === '/announcements' }"><AppIcon name="megaphone" class="w-4 h-4" />公告</router-link>
+          <router-link to="/whitelist" class="nav-item" :class="{ active: $route.path === '/whitelist' }"><AppIcon name="shield-check" class="w-4 h-4" />白名单</router-link>
+          <router-link to="/players" class="nav-item" :class="{ active: $route.path === '/players' }"><AppIcon name="users" class="w-4 h-4" />玩家</router-link>
+          <router-link to="/bans" class="nav-item" :class="{ active: $route.path === '/bans' }"><AppIcon name="no-symbol" class="w-4 h-4" />封禁</router-link>
+          <router-link to="/chat" class="nav-item" :class="{ active: $route.path === '/chat' }"><AppIcon name="chat-bubble" class="w-4 h-4" />聊天</router-link>
+
           <!-- 更多下拉菜单（样式与其余导航项一致） -->
           <div class="relative group">
-            <span class="nav-item cursor-pointer flex items-center gap-1"
-              :class="{ active: ['/village', '/players', '/machines', '/chat', '/bans', '/status'].includes($route.path) }">
-              更多
+            <span class="nav-item cursor-pointer flex items-center gap-1.5"
+              :class="{ active: ['/leaderboard', '/map', '/village', '/machines'].includes($route.path) }">
+              <AppIcon name="ellipsis-horizontal" class="w-4 h-4" />更多
               <svg class="w-3 h-3 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </span>
-            <div class="absolute top-full left-0 pt-2 w-40 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
-              <router-link to="/village" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">村民族谱</router-link>
-              <router-link to="/players" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">玩家</router-link>
-              <router-link to="/machines" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公共机器</router-link>
-              <router-link to="/announcements" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公告资讯</router-link>
-              <router-link to="/bans" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">封禁名单</router-link>
-              <router-link to="/chat" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">聊天广场</router-link>
-              <router-link to="/status" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">申请状态查询</router-link>
+            <div class="absolute top-full left-0 pt-2 w-44 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
+              <router-link to="/leaderboard" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="chart-bar" class="w-4 h-4" />排行榜</router-link>
+              <router-link to="/map" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="cursor-arrow-rays" class="w-4 h-4" />地图</router-link>
+              <router-link to="/village" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="squares-2x2" class="w-4 h-4" />村民族谱</router-link>
+              <router-link to="/machines" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="cpu" class="w-4 h-4" />公共机器</router-link>
             </div>
           </div>
         </div>
@@ -75,27 +74,26 @@
         <!-- 移动端菜单 -->
     <div v-if="mobileMenuOpen" class="md:hidden border-t border-white/10 menu-glass">
       <nav class="px-4 py-3 space-y-1">
-        <router-link to="/" class="mobile-nav-item" @click="mobileMenuOpen = false">首页</router-link>
-        <router-link to="/docs" class="mobile-nav-item" @click="mobileMenuOpen = false">文档</router-link>
-        <router-link to="/whitelist" class="mobile-nav-item" @click="mobileMenuOpen = false">白名单申请</router-link>
-        <router-link to="/leaderboard" class="mobile-nav-item" @click="mobileMenuOpen = false">排行榜</router-link>
-        <router-link to="/map" class="mobile-nav-item" @click="mobileMenuOpen = false">世界地图</router-link>
-        
+        <router-link to="/" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="home" class="w-4 h-4" />首页</router-link>
+        <router-link to="/docs" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="document-text" class="w-4 h-4" />文档</router-link>
+        <router-link to="/announcements" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="megaphone" class="w-4 h-4" />公告</router-link>
+        <router-link to="/whitelist" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="shield-check" class="w-4 h-4" />白名单申请</router-link>
+        <router-link to="/players" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="users" class="w-4 h-4" />玩家</router-link>
+        <router-link to="/bans" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="no-symbol" class="w-4 h-4" />封禁名单</router-link>
+        <router-link to="/chat" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="chat-bubble" class="w-4 h-4" />聊天广场</router-link>
+
         <!-- 更多分组 -->
         <button @click="moreGroupOpen = !moreGroupOpen" class="w-full flex items-center justify-between px-4 py-3 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-all">
-          <span>更多 ▸</span>
+          <span class="flex items-center gap-2"><AppIcon name="ellipsis-horizontal" class="w-4 h-4" />更多</span>
           <svg :class="{'rotate-90': moreGroupOpen}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
         </button>
         <div v-if="moreGroupOpen" class="pl-6 space-y-1">
+          <router-link to="/leaderboard" class="block mobile-nav-item" @click="mobileMenuOpen = false">排行榜</router-link>
+          <router-link to="/map" class="block mobile-nav-item" @click="mobileMenuOpen = false">世界地图</router-link>
           <router-link to="/village" class="block mobile-nav-item" @click="mobileMenuOpen = false">村民族谱</router-link>
-          <router-link to="/players" class="block mobile-nav-item" @click="mobileMenuOpen = false">玩家</router-link>
           <router-link to="/machines" class="block mobile-nav-item" @click="mobileMenuOpen = false">公共机器</router-link>
-          <router-link to="/announcements" class="block mobile-nav-item" @click="mobileMenuOpen = false">公告资讯</router-link>
-          <router-link to="/bans" class="block mobile-nav-item" @click="mobileMenuOpen = false">封禁名单</router-link>
-          <router-link to="/chat" class="block mobile-nav-item" @click="mobileMenuOpen = false">聊天广场</router-link>
-          <router-link to="/status" class="block mobile-nav-item" @click="mobileMenuOpen = false">申请状态查询</router-link>
         </div>
-        
+
         <div class="border-t border-white/10 my-2"></div>
         <template v-if="isLoggedIn">
           <router-link to="/dashboard" class="mobile-nav-item" @click="mobileMenuOpen = false">控制台</router-link>
@@ -113,6 +111,7 @@
 
 <script setup lang="ts">
 import LanguageSwitcher from './LanguageSwitcher.vue'
+import AppIcon from './AppIcon.vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
@@ -207,7 +206,7 @@ const logout = () => {
 }
 
 .nav-item {
-  @apply px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap;
+  @apply px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap flex items-center gap-1.5;
   color: rgba(255, 255, 255, 0.7);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
