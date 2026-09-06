@@ -1,8 +1,5 @@
 # ============================================================
 #   DreamPort · 夏日小镇 · 梦港   部署配置
-#   本文件仅保留基础设施项（数据库/JWT/SMTP/端口）。
-#   业务设置（注册/AI评分/邀请/问卷/游戏/下载中心）在管理后台
-#   「外观设置」页配置（存数据库，热生效），无需改本文件。
 # ------------------------------------------------------------
 #   首次启动自动生成；修改本文件后重启生效。
 #   标注 [必改] 的项在生产环境必须修改。
@@ -25,12 +22,13 @@ wl:
     jwt-ttl-days: 7                     # 登录令牌有效期（天）
 
   internal:
-    server-token: "change-me-server-token"  # [必改] 服务器↔后端令牌（ASCII），需与插件 backend.server-token 一致
+    server-token: "change-me-server-token"        # [必改] 服务器↔后端令牌，需与插件 backend.server-token 一致
 
   cors:
     allowed-origins: "*"                # 生产建议改为 "https://你的域名"
 
   web-register-url: "http://localhost:18898"   # 注册页地址（进服提示/邮件链接用）
+  admin-notify-email: ""                # 管理员通知邮箱（问卷通过提醒）
 
   mail:                                 # host 留空 = 日志模式（不发信，验证码打印在日志）
     host: ""
@@ -41,8 +39,28 @@ wl:
     ssl: true
     subject: ""
 
+  register:
+    require-email-code: false
+    captcha-enabled: true
+    max-accounts-per-email: 5
+    domain-whitelist-enabled: false
+    auto-approve: false
+  questionnaire:
+    enabled: true                       # 注册流程是否要求问卷
+    pass-score: 60                      # 通过线（百分制）
 
+  llm:                                  # 问卷 AI 评分（OpenAI 兼容接口；不启用时文本题按长度评分）
+    enabled: false
+    api-base: "https://api.deepseek.com/v1"
+    api-key: ""
+    model: "deepseek-chat"
+    timeout-ms: 10000
+    max-concurrency: 4
 
+  invite:
+    enabled: true
+    code-expiry-days: 7
+    max-invites-per-user: 3
 
   migration:                            # 旧版 XMWhitelist 数据自动迁移（幂等）
     enabled: true
@@ -55,6 +73,6 @@ wl:
 # ============================================================
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:3306/dreamport?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
-    username: dreamport
-    password: "数据库密码"
+    url: jdbc:mysql://127.0.0.1:3306/dp_setup_test?useSSL=false&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: root
+    password: ""

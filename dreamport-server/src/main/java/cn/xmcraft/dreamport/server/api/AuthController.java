@@ -35,7 +35,7 @@ public class AuthController {
     private final cn.xmcraft.dreamport.server.verification.CaptchaService captchaService;
     private final cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService;
     private final cn.xmcraft.dreamport.server.invite.InviteService inviteService;
-    private final cn.xmcraft.dreamport.server.config.WlProps props;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
     private final UserRepository userRepository;
 
     public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
@@ -43,7 +43,7 @@ public class AuthController {
                           cn.xmcraft.dreamport.server.verification.CaptchaService captchaService,
                           cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService,
                           cn.xmcraft.dreamport.server.invite.InviteService inviteService,
-                          cn.xmcraft.dreamport.server.config.WlProps props,
+                          cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings,
                           cn.xmcraft.dreamport.server.user.UserRepository userRepository) {
         this.userService = userService;
         this.tokenService = tokenService;
@@ -52,7 +52,7 @@ public class AuthController {
         this.captchaService = captchaService;
         this.verifyCodeService = verifyCodeService;
         this.inviteService = inviteService;
-        this.props = props;
+        this.systemSettings = systemSettings;
         this.userRepository = userRepository;
     }
 
@@ -92,9 +92,10 @@ public class AuthController {
         if ((username == null || username.isBlank()) && req.bedrockName() != null && !req.bedrockName().isBlank()) {
             username = req.bedrockName().startsWith(".") ? req.bedrockName().substring(1) : req.bedrockName();
         }
-        // 邮箱验证码（邀请码注册豁免；Admin 后台初始化不受影响）
+        // 邮箱验证码（邀请码注册豁免；开关来自管理面板 dp_setting，热生效）
         boolean hasInvite = req.inviteCode() != null && !req.inviteCode().isBlank();
-        boolean requireCode = props.register() == null || props.register().requireEmailCode();
+        var regCfg = systemSettings.registerConfig();
+        boolean requireCode = Boolean.TRUE.equals(regCfg.getOrDefault("requireEmailCode", true));
         if (requireCode && !hasInvite
                 && !verifyCodeService.check(req.email(), req.verifyCode())) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("邮箱验证码错误或已过期"));
@@ -164,7 +165,8 @@ public class AuthController {
         data.put("username", u.username());
         // 问卷未答（pending 且 0 分）→ 前端引导去答题
         String status = "pending".equals(u.status())
-                && props.questionnaire().enabled() && u.questionnaireScore() == 0
+                && Boolean.TRUE.equals(systemSettings.questionnaireConfig().getOrDefault("enabled", true))
+                && u.questionnaireScore() == 0
                 ? "needs_questionnaire" : u.status();
         data.put("status", status);
         data.put("isAdmin", admin);

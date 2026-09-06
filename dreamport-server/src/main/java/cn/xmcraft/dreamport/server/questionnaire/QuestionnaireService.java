@@ -1,7 +1,7 @@
 package cn.xmcraft.dreamport.server.questionnaire;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
-import cn.xmcraft.dreamport.server.config.WlProps;
+
 import cn.xmcraft.dreamport.server.infra.MailService;
 import cn.xmcraft.dreamport.server.review.ReviewService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
@@ -35,7 +35,7 @@ public class QuestionnaireService {
     private final ReviewService reviewService;
     private final AuditService auditService;
     private final MailService mailService;
-    private final WlProps props;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
     private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
 
     public QuestionnaireService(QuestionnaireRepository questionnaireRepository,
@@ -43,8 +43,9 @@ public class QuestionnaireService {
                                 QuestionOptionRepository optionRepository,
                                 LlmScoringClient llmClient, UserRepository userRepository,
                                 ReviewService reviewService, AuditService auditService,
-                                MailService mailService, WlProps props,
-                                cn.xmcraft.dreamport.server.settings.SettingService settingService) {
+                                MailService mailService,
+                                cn.xmcraft.dreamport.server.settings.SettingService settingService,
+                                cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.questionnaireRepository = questionnaireRepository;
         this.questionRepository = questionRepository;
         this.optionRepository = optionRepository;
@@ -53,7 +54,7 @@ public class QuestionnaireService {
         this.reviewService = reviewService;
         this.auditService = auditService;
         this.mailService = mailService;
-        this.props = props;
+        this.systemSettings = systemSettings;
         this.settingService = settingService;
     }
 
@@ -64,7 +65,7 @@ public class QuestionnaireService {
             return list.get(0);
         }
         QuestionnaireRecords.Questionnaire q = new QuestionnaireRecords.Questionnaire(
-                null, "默认问卷", true, props.questionnaire().passScore(), null);
+                null, "默认问卷", true, defaultPassScore(), null);
         return questionnaireRepository.save(q);
     }
 
@@ -76,8 +77,14 @@ public class QuestionnaireService {
         return optionRepository.findByQuestionIdOrderBySortOrderAsc(questionId);
     }
 
+    /** 默认及格分（dp_setting questionnaire.config，热生效） */
+    public int defaultPassScore() {
+        return ((Number) systemSettings.questionnaireConfig().getOrDefault("passScore", 60)).intValue();
+    }
+
     public boolean enabled() {
-        return props.questionnaire().enabled();
+        return Boolean.TRUE.equals(systemSettings.questionnaireConfig()
+                .getOrDefault("enabled", true));
     }
 
     public record QuestionResult(long questionId, String questionText, int score, int maxScore,

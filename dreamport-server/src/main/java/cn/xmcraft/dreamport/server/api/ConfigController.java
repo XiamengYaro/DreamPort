@@ -1,6 +1,7 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.settings.SettingService;
+import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -16,9 +17,11 @@ import java.util.Map;
 public class ConfigController {
 
     private final SettingService settingService;
+    private final SystemSettingsService systemSettings;
 
-    public ConfigController(SettingService settingService) {
+    public ConfigController(SettingService settingService, SystemSettingsService systemSettings) {
         this.settingService = settingService;
+        this.systemSettings = systemSettings;
     }
 
     /** 站点公开配置（Portal/Admin/Dashboard 均读 data.portal / data.announcement / data.verifyPage / data.bedrockEnabled） */
@@ -38,7 +41,8 @@ public class ConfigController {
         data.put("announcement", announcement == null ? "欢迎来到夏日小镇！" : announcement);
         data.put("registerEnabled", true);
         data.put("authMethods", java.util.List.of("email"));
-        data.put("bedrockEnabled", settingService.getBool("bedrock.enabled", false));
+        data.put("bedrockEnabled", Boolean.TRUE.equals(
+                systemSettings.gameConfig().getOrDefault("bedrockEnabled", false)));
         data.put("verifyPage", settingService.getMap("verify.config"));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", true);

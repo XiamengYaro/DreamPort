@@ -1,6 +1,6 @@
 package cn.xmcraft.dreamport.server.questionnaire;
 
-import cn.xmcraft.dreamport.server.config.WlProps;
+import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -19,6 +19,7 @@ import java.util.concurrent.Semaphore;
  * LLM 评分客户端（OpenAI 兼容 /chat/completions，吸收自 参考项目 的评分抽象——吸收项 3-15）。
  * 结果携带 confidence 与 manualReview 标记（置信度 <0.6 转人工复核队列），
  * 并附 provider/model/latency 观测字段；熔断：连续 5 次失败开 30 秒（对齐旧版参数）。
+ * 配置来源：dp_setting llm.config（管理面板「AI 评分设置」，热生效）。
  */
 @Component
 public class LlmScoringClient {
@@ -34,23 +35,34 @@ public class LlmScoringClient {
         }
     }
 
+    private final SystemSettingsService systemSettings;
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
     private final ObjectMapper mapper = new ObjectMapper();
-    private final WlProps props;
-    private final Semaphore permits;
+    private Semaphore permits;
 
     private int consecutiveFailures;
     private long openUntil;
 
-    public LlmScoringClient(WlProps props) {
-        this.props = props;
-        this.permits = new Semaphore(Math.max(1, props.llm().maxConcurrency()));
+    public LlmScoringClient(SystemSettingsService systemSettings) {
+        this.systemSettings = systemSettings;
+        this.permits = new Semaphore(Math.max(1, maxConcurrency()));
+    }
+
+    private Map<String, Object> config() {
+        return systemSettings.llmConfig();
+    }
+
+    public int maxConcurrency() {
+        return ((Number) config().getOrDefault("maxConcurrency", 4)).intValue();
     }
 
     public boolean enabled() {
-        return props.llm().enabled() && props.llm().apiKey() != null && !props.llm().apiKey().isBlank();
+        var c = config();
+        boolean enabled = Boolean.TRUE.equals(c.get("enabled"));
+        String apiKey = String.valueOf(c.getOrDefault("apiKey", ""));
+        return enabled && !apiKey.isBlank() && !"***".equals(apiKey);
     }
 
     public boolean circuitOpen() {
@@ -65,24 +77,32 @@ public class LlmScoringClient {
         if (circuitOpen()) {
             return ScoringResult.unavailable();
         }
-        if (!permits.tryAcquire()) {
+        Semaphore semaphore = permits();
+        if (!semaphore.tryAcquire()) {
             return ScoringResult.unavailable();
         }
         long start = System.currentTimeMillis();
         try {
+            var c = config();
+            String apiBase = String.valueOf(c.getOrDefault("apiBase", ""));
+            String apiKey = String.valueOf(c.getOrDefault("apiKey", ""));
+            String model = String.valueOf(c.getOrDefault("model", ""));
+            long timeoutMs = ((Number) c.getOrDefault("timeoutMs", 10_000)).longValue();
+            String systemPrompt = String.valueOf(c.getOrDefault("systemPrompt", ""));
+
             String userPrompt = "评分规则：" + nullSafe(scoringRule) + "\n问题：" + nullSafe(question)
                     + "\n回答：" + truncate(nullSafe(answer), 2000)
                     + "\n满分：" + maxScore
                     + "\n请仅返回 JSON：{\"score\": 数字, \"reason\": \"评语\", \"confidence\": 0到1}";
             var request = HttpRequest.newBuilder()
-                    .uri(URI.create(props.llm().apiBase() + "/chat/completions"))
-                    .timeout(Duration.ofMillis(props.llm().timeoutMs()))
+                    .uri(URI.create(apiBase + "/chat/completions"))
+                    .timeout(Duration.ofMillis(timeoutMs))
                     .header("Content-Type", "application/json")
-                    .header("Authorization", "Bearer " + props.llm().apiKey())
+                    .header("Authorization", "Bearer " + apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(Map.of(
-                            "model", props.llm().model(),
+                            "model", model,
                             "messages", java.util.List.of(
-                                    Map.of("role", "system", "content", props.llm().systemPrompt()),
+                                    Map.of("role", "system", "content", systemPrompt),
                                     Map.of("role", "user", "content", userPrompt)),
                             "temperature", 0.2))))
                     .build();
@@ -104,15 +124,31 @@ public class LlmScoringClient {
             double confidence = Math.max(0, Math.min(1, parsed.path("confidence").asDouble(0.5)));
             consecutiveFailures = 0;
             return new ScoringResult(score, parsed.path("reason").asText(""), confidence,
-                    confidence < 0.6, "openai-compatible", props.llm().model(), latency, 0);
+                    confidence < 0.6, "openai-compatible", model, latency, 0);
         } catch (Exception e) {
             recordFailure();
             log.warn("LLM 评分失败: {}", e.getMessage());
             return ScoringResult.unavailable();
         } finally {
-            permits.release();
+            semaphore.release();
         }
     }
+
+    /** 面板可改并发数：配置变化时重建信号量 */
+    private Semaphore permits() {
+        int max = Math.max(1, maxConcurrency());
+        if (lastMax != max) {
+            synchronized (this) {
+                if (lastMax != max) {
+                    permits = new Semaphore(max);
+                    lastMax = max;
+                }
+            }
+        }
+        return permits;
+    }
+
+    private volatile int lastMax;
 
     private void recordFailure() {
         consecutiveFailures++;

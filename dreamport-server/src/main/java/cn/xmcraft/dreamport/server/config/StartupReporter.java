@@ -36,19 +36,22 @@ public class StartupReporter {
     private final SettingService settingService;
     private final cn.xmcraft.dreamport.server.questionnaire.LlmScoringClient llmClient;
     private final cn.xmcraft.dreamport.server.infra.MailService mailService;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
 
     private volatile int webPort = -1;
 
     public StartupReporter(WlProps props, JdbcTemplate jdbc, UserRepository userRepository,
                            SettingService settingService,
                            cn.xmcraft.dreamport.server.questionnaire.LlmScoringClient llmClient,
-                           cn.xmcraft.dreamport.server.infra.MailService mailService) {
+                           cn.xmcraft.dreamport.server.infra.MailService mailService,
+                           cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.props = props;
         this.jdbc = jdbc;
         this.userRepository = userRepository;
         this.settingService = settingService;
         this.llmClient = llmClient;
         this.mailService = mailService;
+        this.systemSettings = systemSettings;
     }
 
     /** 字符画 Banner（figlet Standard 字体，纯 ASCII，任何终端都能正确显示） */
@@ -97,11 +100,18 @@ public class StartupReporter {
                 : "已完成（用户 " + users + " 名，管理员名单 " + adminCount() + " 人）"));
 
         boolean llmOn = llmClient.enabled();
-        sb.append(row("问卷 AI 评分", llmOn ? "已启用（" + props.llm().model() + "）" : "未启用（文本题按长度降级评分）"));
+        String llmModel = String.valueOf(systemSettings.llmConfig().getOrDefault("model", ""));
+        sb.append(row("问卷 AI 评分", llmOn ? "已启用（" + llmModel + "）" : "未启用（文本题按长度降级评分）"));
         sb.append(row("邮件服务", mailService.configured()
                 ? "SMTP：" + props.mail().host() : "日志模式（SMTP 未配置，验证码打印在日志）"));
-        sb.append(row("邀请系统", props.invite().enabled()
-                ? "已启用（每人 " + props.invite().maxInvitesPerUser() + " 个活跃码 / " + props.invite().codeExpiryDays() + " 天有效）"
+        var inviteCfg = systemSettings.inviteConfig();
+        sb.append(row("邀请系统", Boolean.TRUE.equals(inviteCfg.getOrDefault("enabled", true))
+                ? "已启用（每人 " + inviteCfg.getOrDefault("maxInvitesPerUser", 3) + " 个活跃码 / "
+                + inviteCfg.getOrDefault("codeExpiryDays", 7) + " 天有效）"
+                : "未启用"));
+        var questCfg = systemSettings.questionnaireConfig();
+        sb.append(row("问卷系统", Boolean.TRUE.equals(questCfg.getOrDefault("enabled", true))
+                ? "已启用（及格分 " + questCfg.getOrDefault("passScore", 60) + "）"
                 : "未启用"));
         sb.append(row("维护模式", settingService.getBool(SettingService.KEY_MAINTENANCE, false) ? "⚠ 开启中" : "关闭"));
 

@@ -34,8 +34,22 @@ public class SystemSettingsService {
         def.put("apiBase", "https://api.deepseek.com/v1");
         def.put("apiKey", "");
         def.put("model", "deepseek-chat");
-        def.put("systemPrompt", "");
+        def.put("timeoutMs", 10000);
+        def.put("maxConcurrency", 4);
+        def.put("systemPrompt", "你是一位公正的 Minecraft 白名单问卷评分员。严格根据问题、候选人回答和评分规则进行评分。仅返回 JSON。");
         return merge(SettingService.KEY_LLM_CONFIG, def);
+    }
+
+    /** 问卷设置（启用开关 + 默认及格分） */
+    public Map<String, Object> questionnaireConfig() {
+        Map<String, Object> def = new LinkedHashMap<>();
+        def.put("enabled", true);
+        def.put("passScore", 60);
+        return merge(SettingService.KEY_QUESTIONNAIRE_CONFIG, def);
+    }
+
+    public void saveQuestionnaireConfig(Map<String, Object> config) {
+        settingService.set(SettingService.KEY_QUESTIONNAIRE_CONFIG, config);
     }
 
     public Map<String, Object> inviteConfig() {

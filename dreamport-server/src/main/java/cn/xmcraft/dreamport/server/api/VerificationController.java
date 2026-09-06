@@ -42,6 +42,7 @@ public class VerificationController {
     private final SettingService settingService;
     private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
     private final cn.xmcraft.dreamport.server.config.WlProps props;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
 
     public VerificationController(CaptchaService captchaService, VerifyCodeService verifyCodeService,
                                   MinecraftVerifyService minecraftVerifyService,
@@ -49,7 +50,8 @@ public class VerificationController {
                                   UserRepository userRepository, MailService mailService,
                                   RateLimiter rateLimiter, SettingService settingService,
                                   cn.xmcraft.dreamport.server.security.PasswordService passwordService,
-                                  cn.xmcraft.dreamport.server.config.WlProps props) {
+                                  cn.xmcraft.dreamport.server.config.WlProps props,
+                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.captchaService = captchaService;
         this.verifyCodeService = verifyCodeService;
         this.minecraftVerifyService = minecraftVerifyService;
@@ -60,6 +62,7 @@ public class VerificationController {
         this.settingService = settingService;
         this.passwordService = passwordService;
         this.props = props;
+        this.systemSettings = systemSettings;
     }
 
     public record EmailBody(String email, String language) {
@@ -127,8 +130,12 @@ public class VerificationController {
             PasswordResetRecord token = new PasswordResetRecord(null, userOpt.get().username(),
                     PasswordResetRecord.generateToken(), null, null, null);
             passwordResetRepository.save(token);
+            String base = String.valueOf(systemSettings.gameConfig().getOrDefault("webRegisterUrl", ""));
+            if (base.isBlank()) {
+                base = props.webRegisterUrl(); // config.yml 兜底
+            }
             mailService.sendPasswordReset(userOpt.get().username(), userOpt.get().email(),
-                    props.webRegisterUrl() + "/reset-password?token=" + token.token(), "zh");
+                    base + "/reset-password?token=" + token.token(), "zh");
         }
         return ResponseEntity.ok(ApiResponse.success("如果该邮箱已注册，重置链接已发送"));
     }

@@ -671,6 +671,8 @@ class ApiService {
   async saveRegisterSettings(body: any) { return this.request('/admin/settings/register', { method: 'PUT', body: JSON.stringify(body) }) }
   async getLlmSettings() { return this.request('/admin/settings/llm') }
   async saveLlmSettings(body: any) { return this.request('/admin/settings/llm', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getQuestionnaireSettings() { return this.request('/admin/settings/questionnaire') }
+  async saveQuestionnaireSettings(body: any) { return this.request('/admin/settings/questionnaire', { method: 'PUT', body: JSON.stringify(body) }) }
   async getInviteSettings() { return this.request('/admin/settings/invite') }
   async saveInviteSettings(body: any) { return this.request('/admin/settings/invite', { method: 'PUT', body: JSON.stringify(body) }) }
   async getGameSettings() { return this.request('/admin/settings/game') }

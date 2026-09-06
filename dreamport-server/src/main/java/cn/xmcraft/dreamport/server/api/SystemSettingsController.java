@@ -82,6 +82,20 @@ public class SystemSettingsController {
         return ResponseEntity.ok(ApiResponse.success("AI 评分设置已保存"));
     }
 
+    @GetMapping("/questionnaire")
+    public ResponseEntity<Object> getQuestionnaire(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        return ResponseEntity.ok(Map.of("success", true, "data", settingsService.questionnaireConfig()));
+    }
+
+    @PutMapping("/questionnaire")
+    public ResponseEntity<Object> saveQuestionnaire(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        settingsService.saveQuestionnaireConfig(body);
+        auditService.log("settings_questionnaire", op(request), "", body.toString());
+        return ResponseEntity.ok(ApiResponse.success("问卷设置已保存"));
+    }
+
     @GetMapping("/invite")
     public ResponseEntity<Object> getInvite(HttpServletRequest request) {
         var g = guard(request); if (g != null) return g;

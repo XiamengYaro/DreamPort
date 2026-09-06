@@ -171,7 +171,8 @@ public class UserService {
     }
 
     private boolean isQuestionnaireEnabled() {
-        try { return settingService.getBool("questionnaire.enabled", true); } catch (Exception e) { return true; }
+        return Boolean.TRUE.equals(systemSettings.questionnaireConfig()
+                .getOrDefault("enabled", true));
     }
 
     private boolean maintenance() {

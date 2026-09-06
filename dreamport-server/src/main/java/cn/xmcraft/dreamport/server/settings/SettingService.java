@@ -29,6 +29,7 @@ public class SettingService {
     public static final String KEY_INVITE_CONFIG = "invite.config";
     public static final String KEY_GAME_CONFIG = "game.config";
     public static final String KEY_SETUP_COMPLETED = "setup.completed";
+    public static final String KEY_QUESTIONNAIRE_CONFIG = "questionnaire.config";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

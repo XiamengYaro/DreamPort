@@ -825,11 +825,13 @@ const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser
 const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
 const downloadsJson = ref('{}')
 
+const questCfg = ref<any>({ enabled: true, passScore: 60 })
+
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
-      api.getGameSettings(), api.getDownloadsAdmin()
+      api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -837,6 +839,7 @@ const loadSystemSettings = async () => {
     if (inv.success) Object.assign(inviteCfg.value, inv.data)
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
+    if (quest.success) Object.assign(questCfg.value, quest.data)
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -845,8 +848,9 @@ const saveRegisterSettings = async () => {
     const body: any = { ...sysCfg.value,
       emailDomainWhitelist: sysCfg.value.emailDomainWhitelistStr.split(',').map((x: string) => x.trim()).filter(Boolean) }
     delete body.emailDomainWhitelistStr
+    const rq: any = await api.saveQuestionnaireSettings(questCfg.value)
     const r: any = await api.saveRegisterSettings(body)
-    if (r.success) notify?.success('注册设置已保存')
+    if (r.success && rq.success) notify?.success('注册设置已保存')
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
 const saveLlmSettings = async () => {
