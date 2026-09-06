@@ -3,18 +3,24 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.chat.ChatService;
 import cn.xmcraft.dreamport.server.qq.BindCodeService;
 import cn.xmcraft.dreamport.server.qq.QqBindingService;
+import cn.xmcraft.dreamport.server.qq.QqBridgeService;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,8 +29,8 @@ import java.util.Map;
 
 /**
  * AstrBot 机器人端点（v1.1 契约，docs/ASTRBOT_PLAN.md §5.4，X-API-Token 鉴权）：
- * 服务器状态、玩家列表、QQ 绑定查询/解绑、消息进服广播。
- * astrbot.enabled 关闭时全部 403；免验证直绑已移除（绑定走 M2 验证码流程）。
+ * 服务器状态、玩家列表、QQ 绑定验证码/查询/解绑、群服消息互通（上行 chat + 下行 stream/messages）。
+ * astrbot.enabled 关闭时全部 403。
  */
 @RestController
 @RequestMapping("/api/astrbot")
@@ -36,16 +42,19 @@ public class AstrBotController {
     private final SettingService settingService;
     private final BindCodeService bindCodeService;
     private final QqBindingService bindingService;
+    private final QqBridgeService qqBridge;
 
     public AstrBotController(UserRepository userRepository, ChatService chatService,
                              ServerStatsService statsService, SettingService settingService,
-                             BindCodeService bindCodeService, QqBindingService bindingService) {
+                             BindCodeService bindCodeService, QqBindingService bindingService,
+                             QqBridgeService qqBridge) {
         this.userRepository = userRepository;
         this.chatService = chatService;
         this.statsService = statsService;
         this.settingService = settingService;
         this.bindCodeService = bindCodeService;
         this.bindingService = bindingService;
+        this.qqBridge = qqBridge;
     }
 
     public record UnbindBody(String qq) {
@@ -54,7 +63,10 @@ public class AstrBotController {
     public record BindRequestBody(String qq) {
     }
 
-    public record ChatBody(String sender, String message) {
+    public record ChatBody(Long group,
+                           @JsonProperty("sender_id") String senderId,
+                           @JsonProperty("sender_name") String senderName,
+                           String message) {
     }
 
     /** 总开关：关闭时先于 token 校验返回 403，不泄露 token 有效性 */
@@ -182,14 +194,62 @@ public class AstrBotController {
                 .orElseGet(() -> Map.of("found", false)));
     }
 
+    /** 群消息上行（群→服）：群绑定/前缀校验 → 网页 SSE + 游戏收件箱 */
     @PostMapping("/chat")
     public ResponseEntity<Object> chat(@RequestBody ChatBody body, HttpServletRequest request) {
         ResponseEntity<Object> blocked = gate(request);
         if (blocked != null) {
             return blocked;
         }
-        String sender = body.sender() == null || body.sender().isBlank() ? "QQ用户" : body.sender();
-        chatService.broadcast("[QQ] " + sender, body.message() == null ? "" : body.message());
+        if (body == null || body.group() == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("缺少 group 参数"));
+        }
+        if (body.message() == null || body.message().isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("消息为空"));
+        }
+        if (body.message().length() > 512) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("消息过长（上限 512 字）"));
+        }
+        String error = qqBridge.onQqGroupMessage(body.group(), body.senderId(),
+                body.senderName(), body.message());
+        if (error != null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(error));
+        }
         return ResponseEntity.ok(ApiResponse.success("已广播"));
+    }
+
+    /** 下行 SSE 流（服→群，事件 {seq, group, text}）；反代缓冲禁用（v0.5.22 同款方案） */
+    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter stream(HttpServletRequest request, HttpServletResponse response) {
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Cache-Control", "no-store");
+        if (!enabled() || !authorized(request)) {
+            SseEmitter emitter = new SseEmitter();
+            emitter.completeWithError(new IllegalStateException("未启用或 X-API-Token 无效"));
+            return emitter;
+        }
+        return qqBridge.subscribeBot();
+    }
+
+    /** 下行轮询 fallback（SSE 不可用时），?since=seq → {messages, latest} */
+    @GetMapping("/messages")
+    public ResponseEntity<Object> messages(@RequestParam(required = false, defaultValue = "0") long since,
+                                           HttpServletRequest request) {
+        ResponseEntity<Object> blocked = gate(request);
+        if (blocked != null) {
+            return blocked;
+        }
+        List<Map<String, Object>> messages = new ArrayList<>();
+        for (var item : qqBridge.outboundSince(since)) {
+            Map<String, Object> m = new LinkedHashMap<>();
+            m.put("seq", item.seq());
+            m.put("group", item.payload().group());
+            m.put("text", item.payload().text());
+            messages.add(m);
+        }
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("messages", messages);
+        body.put("latest", qqBridge.outboundLatest());
+        return ResponseEntity.ok(body);
     }
 }

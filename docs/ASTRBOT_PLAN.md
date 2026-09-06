@@ -104,6 +104,7 @@
 | `astrbot.template.qq_chat` | string | `[{server}] {player}: {message}` | 服→群模板 |
 | `astrbot.template.qq_join` / `qq_quit` | string | `{player} 加入了服务器` / `{player} 离开了服务器` | |
 | `astrbot.template.game_chat` | string | `[QQ] {sender}: {message}` | 群→服模板(后端渲染后广播进游戏) |
+| `astrbot.template.web_chat` | string | `[网页] {player}: {message}` | 网页→服模板(渲染后进游戏收件箱) |
 
 所有跨端文本由**后端统一模板渲染**,两端插件不做格式拼装(便于双语与管理)。config.yml 模板与 config_help 增加对应说明,消除现状问题 #1/#6。
 

@@ -1,6 +1,7 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.chat.ChatService;
+import cn.xmcraft.dreamport.server.qq.QqBridgeService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,9 +24,11 @@ import java.util.Map;
 public class ChatController {
 
     private final ChatService chatService;
+    private final QqBridgeService qqBridge;
 
-    public ChatController(ChatService chatService) {
+    public ChatController(ChatService chatService, QqBridgeService qqBridge) {
         this.chatService = chatService;
+        this.qqBridge = qqBridge;
     }
 
     public record SendBody(String message) {
@@ -51,6 +54,7 @@ public class ChatController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("消息为空或过长"));
         }
         chatService.broadcast(me, body.message());
+        qqBridge.onWebChat(me, body.message());
         return ResponseEntity.ok(ApiResponse.success("已发送"));
     }
 

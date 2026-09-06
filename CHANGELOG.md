@@ -15,6 +15,8 @@
 - 用户侧端点（JWT）：`GET /api/user/qq/status`（QQ 脱敏展示）、`POST /api/user/qq/bind`、`POST /api/user/qq/unbind`，绑定/解绑写入审计日志
 - 服务器间端点 `POST /internal/v1/qq/bind`（X-Server-Token 鉴权），供 Paper 插件游戏内确认通道调用
 - BindCodeService 状态机单元测试 9 例（验证码生命周期/频控/覆盖/锁定窗口/空码安全）
+- **群服消息互通后端**（docs/ASTRBOT_PLAN.md §5.3）：QqBridgeService 双向队列（各 200 条，瞬态）+ 模板渲染（单遍扫描防占位符二次替换）+ 群绑定解析（mode: all/prefix、forward_join_quit）；游戏聊天/进出服、网页聊天自动出站到绑定群；`POST /api/astrbot/chat {group, sender_id, sender_name, message}` 群消息上行（群白名单/前缀校验，防回环：入站消息不写出站队列）；下行 `GET /api/astrbot/stream`（SSE，X-Accel-Buffering: no）+ `GET /api/astrbot/messages?since=`（轮询 fallback）；游戏收件箱轮询端点 `GET /internal/v1/messages/pending?since=`（X-Server-Token，M4 插件接入）；配置键 `astrbot.group_bindings`、`astrbot.forward.{game_to_qq,web_to_qq,qq_to_game}`、`astrbot.template.{qq_chat,qq_join,qq_quit,game_chat,web_chat}` 全部热生效
+- SeqQueue 有界序号队列 + 渲染/群绑定解析单元测试 7 例
 
 ### Changed
 - AstrBot 集成 v1.1 门禁（docs/ASTRBOT_PLAN.md §5.4）：新增 `astrbot.enabled` 总开关（默认关闭，关闭时 `/api/astrbot/**` 全部 403）；开关与 `astrbot.api_token` 均可在管理后台配置

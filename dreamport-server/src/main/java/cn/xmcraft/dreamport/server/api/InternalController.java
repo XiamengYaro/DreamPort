@@ -8,6 +8,7 @@ import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
 import cn.xmcraft.dreamport.server.qq.BindCodeService;
 import cn.xmcraft.dreamport.server.qq.QqBindingService;
+import cn.xmcraft.dreamport.server.qq.QqBridgeService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.user.UserService;
@@ -43,6 +44,7 @@ public class InternalController {
     private final UserRepository userRepository;
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
+    private final QqBridgeService qqBridge;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -52,7 +54,8 @@ public class InternalController {
                               cn.xmcraft.dreamport.server.review.ReviewService reviewService,
                               UserRepository userRepository,
                               BindCodeService bindCodeService,
-                              QqBindingService qqBindingService) {
+                              QqBindingService qqBindingService,
+                              QqBridgeService qqBridge) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -63,6 +66,7 @@ public class InternalController {
         this.userRepository = userRepository;
         this.bindCodeService = bindCodeService;
         this.qqBindingService = qqBindingService;
+        this.qqBridge = qqBridge;
     }
 
     @PostMapping("/login-check")
@@ -188,11 +192,17 @@ public class InternalController {
             return auth;
         }
         switch (body.type() == null ? "" : body.type()) {
-            case "chat" -> chatService.broadcast(body.player() == null ? "?" : body.player(),
-                    body.message() == null ? "" : body.message());
-            case "join", "quit" -> chatService.broadcast("[系统]",
-                    (body.player() == null ? "?" : body.player())
-                            + ("join".equals(body.type()) ? " 加入了服务器" : " 离开了服务器"));
+            case "chat" -> {
+                chatService.broadcast(body.player() == null ? "?" : body.player(),
+                        body.message() == null ? "" : body.message());
+                qqBridge.onGameChat(body.serverId(), body.player(), body.message());
+            }
+            case "join", "quit" -> {
+                chatService.broadcast("[系统]",
+                        (body.player() == null ? "?" : body.player())
+                                + ("join".equals(body.type()) ? " 加入了服务器" : " 离开了服务器"));
+                qqBridge.onGameEvent(body.serverId(), body.type(), body.player());
+            }
             default -> {
                 return badRequest("未知事件类型");
             }
@@ -224,6 +234,26 @@ public class InternalController {
         String serverId = request.getParameter("serverId");
         return ResponseEntity.ok(Map.of("commands",
                 minecraftVerifyService.drainWhitelistCommands(serverId == null ? "main" : serverId)));
+    }
+
+    /** 游戏收件箱轮询：网页/QQ 消息下行进服（插件定时拉取后 broadcastMessage，docs/ASTRBOT_PLAN.md §5.3） */
+    @GetMapping("/messages/pending")
+    public ResponseEntity<Object> pendingMessages(HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        long since;
+        try {
+            since = Long.parseLong(request.getParameter("since"));
+        } catch (NumberFormatException e) {
+            since = 0;
+        }
+        var items = qqBridge.gameInboxSince(since);
+        List<Map<String, Object>> messages = items.stream()
+                .map(i -> Map.<String, Object>of("seq", i.seq(), "text", i.payload()))
+                .toList();
+        return ResponseEntity.ok(Map.of("messages", messages, "latest", qqBridge.gameInboxLatest()));
     }
 
     // ---------- 游戏内管理命令（/xmw 经服务器令牌调用，替代旧版进程内直调） ----------
