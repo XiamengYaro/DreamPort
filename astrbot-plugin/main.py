@@ -8,14 +8,11 @@
 #   3. 服务器状态/玩家查询:/dp 状态、/dp 玩家
 import asyncio
 import json
-import logging
 
 import aiohttp
-from astrbot.api import AstrBotConfig
+from astrbot.api import AstrBotConfig, logger
 from astrbot.api.event import AstrMessageEvent, MessageChain, filter
 from astrbot.api.star import Context, Star, register
-
-logger = logging.getLogger("astrbot.plugin.dreamport")
 
 HELP_TEXT = (
     "DreamPort 指令(夏日小镇·梦港):\n"
