@@ -1,41 +1,33 @@
-version: 1.0.0
+version: 1.1.0
 release_notes: |
-  # DreamPort · 夏日小镇 · 梦港 v1.0.0 正式版
+  # DreamPort · 夏日小镇 · 梦港 v1.1.0
 
   ## 简体中文
 
-  DreamPort 是面向 Minecraft 服务器的门户与玩家管理系统。首个正式版本：
+  本版本包含 API 破坏性变更（机器人端点契约 v1.1，免验证绑定端点移除）。
 
-  ### 门户与玩家
-  - 官网门户：轮播/特性/时间线/团队/公告，全部后台可视化配置
-  - 注册与登录：邮箱验证码、图形验证码、邀请码注册、域名白名单
-  - 入服问卷：单选/多选/填空（QQ 号/邮箱自动识别）/问答，AI 自动评分 + 人工复核
-  - ID 验证：Java/基岩版游戏 ID 绑定，进服 3 分钟窗口验证（UUID 比对）
-  - 社区功能：邀请系统、站内通知、排行榜（财富/时长/活跃）、村民族谱、公共机器、网页聊天
-  - 个人中心：资料/头像/换绑邮箱/密码管理
+  ### QQ 互通（AstrBot）
+  - QQ 验证绑定：群内 /dp 绑定 → 私聊验证码 → 网页个人中心或游戏内 /xmw qq bind 确认，单 QQ 单账号
+  - 群服消息互通：绑定群消息进游戏与网页，游戏聊天/进出服/网页聊天实时发群（SSE），防回环
+  - 自研 AstrBot 插件 astrbot_plugin_dreamport v1.0.1（部署见 astrbot-plugin/README.md）
+  - 管理后台「QQ 互通」卡：总开关、API 令牌生成、群绑定编辑，全部热生效
 
-  ### 管理端
-  - 审核工作台：注册/申诉/村谱/机器统一审核，WebSocket 实时推送
-  - 问卷管理：问卷平台式题库编辑器，整卷保存
-  - 门户/文档/下载中心：全后台可视化管理
-  - 系统设置：注册/AI 评分/邀请/游戏/下载中心，热生效
-  - 维护模式（持久化）、审计日志、CSV/JSON 导出
-  - 旧版 XMWhitelist 数据一键迁移（后台上传 .sql 或同库自动），密码无缝兼容
+  ### 消息历史与服务器信息
+  - 聊天消息落库（dp_chat_message，四源 origin 标记），网页聊天室可翻页查看近 7 天
+  - 服务器心跳快照与在线采样落库（dp_server / dp_online_history），重启不丢
+  - Dashboard 在线趋势支持近 7 天；服务器状态在重启后以快照兜底（stale 标记）
 
-  ### 架构与部署
-  - 独立后端（Spring Boot 3.4 / Java 21 虚拟线程）+ Paper 薄插件 + Velocity 代理端插件
-  - config.yml 单文件部署，初始化向导（管理员注册/全新部署/导入旧库）
-  - 邮件模板品牌化（logo/站名/官网链接），Gmail/Outlook/QQ 兼容
-  - 终端：字符画 Banner + 中文启动记录 + 双向连接状态实时日志
+  ### 架构与修复
+  - Flyway V3：dp_chat_message / dp_server 补列 / dp_online_history
+  - 修复 lookup 端点参数绑定、插件 GET 鉴权头缺失、/status 页契约消费等存量 bug
+  - 插件配置 items.* 心跳间隔可调；孤儿 UI 清理（ChatBox 挂载 /status 注册）
 
   ## English
 
-  DreamPort is a portal & player management system for Minecraft servers. First stable release:
-  - Portal website with fully visual configuration
-  - Registration (email code, captcha, invite codes), questionnaire with AI scoring
-  - Java/Bedrock ID verification via in-game login (UUID comparison)
-  - Community: invites, notifications, leaderboards, village trades, public machines, web chat
-  - Admin: unified review workspace, questionnaire editor, live settings, maintenance mode, audit logs
-  - One-click migration from legacy XMWhitelist (password-compatible)
-  - Standalone backend (Spring Boot 3.4 / Java 21 virtual threads) + Paper & Velocity plugins
-  - Single config.yml deployment with first-run setup wizard
+  Includes breaking API changes (bot endpoints contract v1.1; unverified bind endpoint removed).
+
+  - QQ verification binding: one-time code via bot DM, confirmed on web dashboard or in-game (/xmw qq bind)
+  - Group-server message bridge via custom AstrBot plugin (astrbot_plugin_dreamport) with SSE downlink
+  - Chat history persisted 7 days (dp_chat_message) with paginated web browsing; server heartbeat snapshots
+    and online samples persisted (dp_server / dp_online_history), stale fallback after restart
+  - Flyway V3 migrations; admin UI group-binding editor; several long-standing bugs fixed

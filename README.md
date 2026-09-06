@@ -10,7 +10,7 @@
 
 [快速开始](#-快速开始) · [功能总览](#-功能总览) · [旧版数据迁移](#-旧版数据一键迁移) · [常见问题](#-常见问题)
 
-`v1.0.0` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
+`v1.1.0` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
 
 </div>
 
@@ -75,11 +75,11 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 首次启动 → 自动生成 config.yml
-java -jar dreamport-server-1.0.0.jar
+java -jar dreamport-server-1.1.0.jar
 # （数据库未配置时启动失败属预期，文件已生成）
 
 # 编辑 config.yml 后再次启动
-nano config.yml && java -jar dreamport-server-1.0.0.jar
+nano config.yml && java -jar dreamport-server-1.1.0.jar
 ```
 
 `config.yml` 中 `[必改]` 项：**数据库连接**、**jwt-secret**、**server-token**（生成随机串：`openssl rand -base64 48`）。所有部署配置集中在这一个文件，无需环境变量。
@@ -99,8 +99,8 @@ nano config.yml && java -jar dreamport-server-1.0.0.jar
 
 | 服务器 | 安装文件 | 说明 |
 |--------|----------|------|
-| **Paper/Folia 子服** | `dreamport-plugin-1.0.0.jar` | 进服拦截、聊天互通、经济采集 |
-| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.0.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
+| **Paper/Folia 子服** | `dreamport-plugin-1.1.0.jar` | 进服拦截、聊天互通、经济采集 |
+| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.1.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
 
 插件首次启动自动生成配置，把 `server-token` 改成与后端一致、`backend.url` 指向后端即可。启动控制台会打印**同款字符画 Banner + 中文启动记录**（角色/后端连通/拦截状态一目了然）。
 
@@ -182,9 +182,9 @@ mysqldump -uroot xmc > xmc-backup.sql
 ```bash
 ./scripts/build.sh        # 前端 + 后端 + 两个插件一次构建
 # 产物:
-#   dreamport-server/target/dreamport-server-1.0.0.jar
-#   dreamport-plugin/target/dreamport-plugin-1.0.0.jar
-#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.0.0.jar
+#   dreamport-server/target/dreamport-server-1.1.0.jar
+#   dreamport-plugin/target/dreamport-plugin-1.1.0.jar
+#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.1.0.jar
 ```
 
 ## 🗺️ 路线图

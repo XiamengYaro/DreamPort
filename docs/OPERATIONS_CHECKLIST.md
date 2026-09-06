@@ -1,6 +1,6 @@
 # DreamPort 部署与运维检查清单
 
-> 供生产部署与日常运维逐项核对。适用版本 v1.0.1+
+> 供生产部署与日常运维逐项核对。适用版本 v1.1.0+
 
 ---
 
@@ -10,7 +10,7 @@
 - [ ] 创建数据库：`CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`
 - [ ] 数据库账号使用强密码，且只授予 dreamport 库权限
 
-### 后端（dreamport-server-1.0.1.jar）
+### 后端（dreamport-server-1.1.0.jar）
 - [ ] 首次启动生成 `config.yml`，完成全部 `[必改]` 项：
   - [ ] `spring.datasource`：MySQL 连接
   - [ ] `wl.security.jwt-secret`：`openssl rand -base64 48` 生成
