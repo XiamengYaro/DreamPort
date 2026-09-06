@@ -95,7 +95,12 @@ public class MailService {
         try {
             Path external = Path.of("email", type + "_" + lang + ".html");
             if (Files.exists(external)) {
-                return Files.readString(external, StandardCharsets.UTF_8);
+                String externalHtml = Files.readString(external, StandardCharsets.UTF_8);
+                // 旧版模板（无 {logo_cell} 品牌页眉占位符）不再采用，避免外置旧文件覆盖新设计
+                if (externalHtml.contains("{logo_cell}")) {
+                    return externalHtml;
+                }
+                log.info("外置模板 {}_{} 为旧版（缺少品牌页眉占位符），使用内置新版模板", type, lang);
             }
             return new String(new ClassPathResource("email/" + type + "_" + lang + ".html")
                     .getInputStream().readAllBytes(), StandardCharsets.UTF_8);
