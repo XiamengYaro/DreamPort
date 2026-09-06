@@ -1,7 +1,7 @@
 # DreamPort 完整项目文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 版本 `1.0.0` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
+> 版本 `1.1.0` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
 > 实时进度：[IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md)
 
 ---
@@ -244,10 +244,10 @@ mvn clean package                                   # 后端 + 插件
 cd frontend && npm ci && npm run build              # 前端 → dreamport-server 托管
 
 # 运行（首次启动自动执行旧库迁移）
-java -jar dreamport-server/target/dreamport-server-1.0.1.jar --spring.profiles.active=mysql
+java -jar dreamport-server/target/dreamport-server-1.1.0.jar --spring.profiles.active=mysql
 
 # 插件
-cp dreamport-plugin/target/dreamport-plugin-1.0.1.jar <服务器>/plugins/
+cp dreamport-plugin/target/dreamport-plugin-1.1.0.jar <服务器>/plugins/
 ```
 
 交付物规划（P8）：systemd unit、Dockerfile、插件 jar、迁移演练报告、压测报告。
