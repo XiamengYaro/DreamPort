@@ -21,9 +21,10 @@ public final class ScheduledTasks {
     public static void start(DreamPortPlugin plugin) {
         var scheduler = plugin.getServer().getAsyncScheduler();
         var console = plugin.getServer().getConsoleSender();
+        var cfg = plugin.pluginConfig();
 
-        // 心跳
-        runAtRate(plugin, 60, task -> {
+        // 心跳(tasks.heartbeat-interval,默认 60s)
+        runAtRate(plugin, cfg.heartbeatIntervalSeconds(), task -> {
             int online = plugin.getServer().getOnlinePlayers().size();
             int max = plugin.getServer().getMaxPlayers();
             java.util.List<String> players = plugin.getServer().getOnlinePlayers().stream()
@@ -32,8 +33,8 @@ public final class ScheduledTasks {
                     plugin.getServer().getBukkitVersion(), players);
         });
 
-        // whitelist 指令队列（bukkit 白名单模式）
-        runAtRate(plugin, 30, task -> {
+        // whitelist 指令队列(tasks.whitelist-poll-interval,默认 30s,bukkit 白名单模式)
+        runAtRate(plugin, cfg.whitelistPollSeconds(), task -> {
             String body = plugin.backendClient().whitelistCommands();
             if (body == null || !body.contains("commands")) {
                 return;
@@ -51,8 +52,8 @@ public final class ScheduledTasks {
             }
         });
 
-        // 经济快照
-        runAtRate(plugin, 300, task -> new cn.xmcraft.dreamport.plugin.internal.EconomyCollector(plugin)
+        // 经济快照(tasks.economy-interval,默认 300s)
+        runAtRate(plugin, cfg.economyIntervalSeconds(), task -> new cn.xmcraft.dreamport.plugin.internal.EconomyCollector(plugin)
                 .collectAndReport());
 
         // 游戏收件箱轮询：网页/QQ 消息下行进服（docs/ASTRBOT_PLAN.md §5.3/§5.6）

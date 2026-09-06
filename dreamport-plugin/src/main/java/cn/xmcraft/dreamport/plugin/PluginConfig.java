@@ -19,6 +19,9 @@ public record PluginConfig(
         boolean reportJoinQuit,
         boolean receiveChat,
         int messagePollSeconds,
+        int heartbeatIntervalSeconds,
+        int whitelistPollSeconds,
+        int economyIntervalSeconds,
         String webRegisterUrl
 ) {
 
@@ -37,6 +40,9 @@ public record PluginConfig(
                 config.getBoolean("features.report-join-quit", false),
                 config.getBoolean("features.receive-chat", true),
                 Math.max(1, config.getInt("features.message-poll-seconds", 2)),
+                Math.max(10, config.getInt("tasks.heartbeat-interval", 60)),
+                Math.max(5, config.getInt("tasks.whitelist-poll-interval", 30)),
+                Math.max(30, config.getInt("tasks.economy-interval", 300)),
                 config.getString("web-register-url", "http://localhost:18898")
         );
     }

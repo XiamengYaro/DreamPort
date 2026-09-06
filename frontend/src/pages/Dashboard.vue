@@ -41,7 +41,7 @@
       </div>
 
       <!-- 在线人数趋势图 -->
-      <PlayerChart class="mb-6" />
+      <PlayerChart :days="7" class="mb-6" />
 
       <!-- 个人游戏数据 -->
       <div v-if="cmiEnabled && playerData.name" class="card p-6 mb-6">

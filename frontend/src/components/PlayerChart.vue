@@ -1,6 +1,6 @@
 <template>
   <div class="card p-6">
-    <h3 class="text-lg font-semibold text-white mb-4">在线人数趋势（24小时）</h3>
+    <h3 class="text-lg font-semibold text-white mb-4">{{ title }}</h3>
     <div v-if="loading" class="text-center py-8 text-stone-500">
       <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
         <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -45,11 +45,7 @@
       
       <!-- X轴标签 -->
       <div class="flex justify-between text-xs text-stone-500 mt-2">
-        <span>24h前</span>
-        <span>18h</span>
-        <span>12h</span>
-        <span>6h</span>
-        <span>现在</span>
+        <span v-for="label in xLabels" :key="label">{{ label }}</span>
       </div>
     </div>
   </div>
@@ -58,6 +54,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+
+const props = defineProps<{ days?: number }>()
+
+const days = computed(() => Math.max(1, Math.min(props.days ?? 1, 7)))
+const title = computed(() => (days.value >= 7 ? '在线人数趋势（近 7 天）' : '在线人数趋势（24小时）'))
+const xLabels = computed(() =>
+  days.value >= 7
+    ? ['7天前', '5天', '3天', '1天', '现在']
+    : ['24h前', '18h', '12h', '6h', '现在'])
 
 const loading = ref(false)
 const data = ref<Array<{players: number; time: number}>>([])
@@ -71,7 +76,7 @@ onMounted(async () => {
 const loadData = async () => {
   loading.value = true
   try {
-    const r: any = await api.getPlayerHistory()
+    const r: any = await api.getPlayerHistory(days.value)
     if (r.success) {
       data.value = r.data.list || []
     }

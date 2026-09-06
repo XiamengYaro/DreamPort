@@ -625,8 +625,8 @@ class ApiService {
   }
 
   // Player History
-  async getPlayerHistory() {
-    return this.request('/server/player-history')
+  async getPlayerHistory(days?: number) {
+    return this.request(`/server/player-history${days ? `?days=${days}` : ''}`)
   }
 
   // Player Profile
