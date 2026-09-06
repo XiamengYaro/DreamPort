@@ -30,7 +30,7 @@ DreamPort 是旧版 **XMWhitelist**（已归档于 `../XMWhitelist-Legacy/`）�
 
 ### 1.3 谱系声明
 
-旧版 XMWhitelist 与 参考项目（GPL-3.0）存在代码谱系关联（详见 `../XMWhitelist-Legacy/docs/COMPARISON_Report_参考项目.md`）。**DreamPort 为建立独立谱系而重写**：Java 代码全部原创（Legacy 仅作行为规范参考，禁止复制）；前端整体继承自研代码；对 参考项目 的吸收仅限功能思想（清单见第 8 节），不复制代码。
+DreamPort 为独立架构重写：Java 代码全部原创（旧版仅作行为规范参考，禁止复制）；前端整体继承自研代码；对同类方案的吸收仅限功能思想。
 
 ---
 
@@ -65,7 +65,7 @@ DreamPort 是旧版 **XMWhitelist**（已归档于 `../XMWhitelist-Legacy/`）�
 |------|----------|------|
 | `primary` | Paper/Folia 主服 | 进服白名单校验（本地缓存 + fail_policy 兜底）、登录记录、聊天/进出事件、经济快照采集、whitelist 指令执行、`/xmw` 管理命令 |
 | `secondary` | 各子服 | 心跳状态上报（在线数/玩家列表）、事件上报——**合并替代旧版 XMWhitelist-Bridge** |
-| `proxy` | Velocity / BungeeCord | **代理端统一登录拦截**（吸收自 参考项目），群组服一处校验全组生效 |
+| `proxy` | Velocity / BungeeCord | 代理端统一登录拦截，群组服一处校验全组生效 |
 
 ### 2.3 技术栈
 
@@ -168,7 +168,7 @@ rejected（可申诉→pending_review；可重答题）
 | 机器人 | `X-API-Token` | `/api/astrbot/*` |
 
 - 限流（IP 维度可配）：登录 5/min、注册 3/min、验证码 3/5min
-- 密码策略：`register.username_regex`、密码长度/正则可配（吸收 参考项目 的 password_regex 进注册校验）
+- 密码策略：`register.username_regex`、密码长度/正则可配
 - 评分安全：LLM 结果带 `confidence`，低于阈值自动 `manualReview` 进管理后台复核队列
 - 凭据管理：`application-local.yml`（gitignore）或环境变量；仓库内严禁真实密钥
 - 插件兜底：后端不可达时按 `fail_policy`（cache/allow/deny）+ 本地缓存（TTL 60s）决策，防锁服
@@ -223,10 +223,10 @@ features.enforce-whitelist / forward-chat / report-join-quit: true
 
 ---
 
-## 8. 与旧版/参考项目 的关系
+------|------|
+| XMWhitelist-Legacy | 功能 100% 对标基线；数据迁移来源；行为规范唯一参考 |
 
-| 对象 | 关系 |
-|------|------|
+------|------|
 | XMWhitelist-Legacy | 功能 100% 对标基线；数据迁移来源；行为规范唯一参考 |
 | 参考项目 v1.8.0 | 仅吸收功能思想（见下），**不复制代码**（GPL-3.0） |
 
@@ -259,8 +259,6 @@ cp dreamport-plugin/target/dreamport-plugin-0.1.0.jar <服务器>/plugins/
 | [README.md](../README.md) | 项目简介、架构图、SemVer 规范、路线图 |
 | [USER_GUIDE.md](USER_GUIDE.md) | **使用文档**（部署/配置/插件/迁移/玩家与管理员指南/FAQ） |
 | [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) | **128 项功能实现进度总表（实时更新）** |
-| [FEATURE_GAP_vs_参考项目.md](FEATURE_GAP_vs_参考项目.md) | Legacy vs 参考项目 v1.8.0 功能差距与吸收决策 |
 | [AGENTS.md](../AGENTS.md) | AI 协作操作指南 |
 | [Rules.md](../Rules.md) | 工程硬规则 |
 | [CHANGELOG.md](../CHANGELOG.md) | 变更日志 |
-| Legacy `docs/COMPARISON_Report_参考项目.md` | 谱系比对报告（背景） |

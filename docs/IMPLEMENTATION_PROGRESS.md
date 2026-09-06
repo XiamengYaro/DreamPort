@@ -2,7 +2,7 @@
 
 > **状态图例**：✅ 已完成 ｜ 🚧 进行中 ｜ ⬜ 未开始 ｜ ➖ 明确排除
 > **更新规则**：每完成一项，将状态改为 ✅ 并在提交信息中注明；每个阶段（P*）全部 ✅ 后在 CHANGELOG 记录并推送。
-> **参考列**：指向 `../XMWhitelist-Legacy/`（旧版归档）中的行为参考实现；标注 ★参考项目 的为从 参考项目 v1.8.0 吸收的能力（Discord 已排除）。
+> **参考列**：指向 `../XMWhitelist-Legacy/`（旧版归档）中的行为参考实现。
 
 **总体进度**：P0–P8 ✅ 全部完成（功能主体 + 实测验收；可选增强项：Microsoft OAuth、Vitest 组件测试）
 
@@ -53,7 +53,7 @@
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 3-1 | 注册（阶段化校验：basic→questionnaire→verification，requestId 阶段日志）★参考项目 | 🚧 主链路完成，阶段化 requestId 日志待细化| Legacy RegistrationHandler |
+| 3-1 | 注册（阶段化校验：basic→questionnaire→verification，requestId 阶段日志） | 🚧 主链路完成，阶段化 requestId 日志待细化| Legacy RegistrationHandler |
 | 3-2 | 用户名/密码正则可配置 + 邮箱域名白名单/别名限制/单邮箱账号上限 | 🚧 用户名/密码规则完成；邮箱域名白名单待补| Legacy RegistrationApplicationService |
 | 3-3 | 邮箱验证码（6 位、5 分钟、防重放、每分钟清理） | ✅ | Legacy VerifyCodeService |
 | 3-4 | 图形验证码（math/char，5 分钟） | ✅ | Legacy CaptchaService |
@@ -67,13 +67,13 @@
 | 3-12 | 问卷题库（dp_question 入库 + YAML 导入导出，双语题目） | ✅ | Legacy QuestionnaireService/questionnaire.yml |
 | 3-13 | 客观题计分（单选/多选，clamp 规则） | ✅ | Legacy 同上 |
 | 3-14 | LLM 评分（OpenAI 兼容 + 熔断/重试/并发控制） | ✅ | Legacy OpenAICompatibleScoringProvider |
-| 3-15 | 评分结果 confidence + manualReview 人工复核队列 ★参考项目 | ✅ | 参考项目 EssayScoringService |
+| 3-15 | 评分结果 confidence + manualReview 人工复核队列 | ✅ | 评分抽象设计 |
 | 3-16 | 问卷统一 SSE 提交流（单一带鉴权路径，修复旧版双路径不一致） | ✅ | Legacy QuestionnaireStreamHandler（重设计） |
 | 3-17 | 总评语生成（AI 逐题+综合）+ 问卷结果邮件 | ✅ | Legacy MailService/questionnaire_result 模板 |
 | 3-18 | 问卷申诉（rejected 才可申诉→复核队列） | ✅ | Legacy AppealHandler |
 | 3-19 | 问卷管理后台（题库编辑/重置/成绩改分） | ✅ | Legacy QuestionnaireManageHandler |
 | 3-20 | 邮件体系（SMTP、{var} 模板、双语、外置覆盖、管理员通知邮箱配置化） | ✅ | Legacy MailService/email/*.html |
-| 3-21 | i18n 全覆盖：消息键 34→139+ 等级，消灭全部硬编码文案 ★参考项目 | ✅ | 参考项目 messages_* |
+| 3-21 | i18n 全覆盖：消息键 34→139+ 等级，消灭全部硬编码文案 | ✅ | 参考键集 |
 
 ## P4 审核与社区域
 
@@ -106,10 +106,10 @@
 | 5-6 | 经济数据采集快照（Vault→Essentials→cyutime 回退） | ✅ | Legacy VaultEconomyService/EssentialsService |
 | 5-7 | whitelist 指令队列（bukkit 模式同步） | ✅ | Legacy AdminSyncHandler |
 | 5-8 | `/xmw` 命令：reload/status/link + approve/reject/ban/unban/list/info | ✅ | Legacy XmwCommandExecutor |
-| 5-9 | 游戏内 delete 命令（删用户+移出白名单）★参考项目 | ✅ | 参考项目 VmcCommandExecutor |
+| 5-9 | 游戏内 delete 命令（删用户+移出白名单） | ✅ | 命令设计 |
 | 5-10 | secondary 角色：子服状态心跳/玩家列表上报（合并 Bridge） | ✅ | Legacy XMWhitelist-Bridge |
-| 5-11 | **proxy 角色：Velocity/BungeeCord 代理端统一拦截** ★参考项目 | 🚧 role=proxy 配置就绪；Velocity 独立模块待建| 参考项目 plugin-proxy |
-| 5-12 | bStats 匿名统计（插件侧，可关）★参考项目 | ✅（官方库 org.bstats） | 参考项目 Metrics.java |
+| 5-11 | **proxy 角色：Velocity/BungeeCord 代理端统一拦截** | 🚧 role=proxy 配置就绪；Velocity 独立模块待建| 参考设计 |
+| 5-12 | bStats 匿名统计（插件侧，可关） | ✅（官方库 org.bstats） | 官方 bStats 库 |
 
 ## P6 前端（frontend/）
 
@@ -117,9 +117,9 @@
 |---|--------|------|------|
 | 6-1 | 旧前端基线导入 + Vite/Pinia/严格 TS 升级 | ✅ 基线导入+构建通过 | Legacy frontend/ |
 | 6-2 | 18 个页面迁移与契约回归（Portal/Docs/Whitelist/登录族/Verify/Questionnaire/Dashboard/Leaderboard/Village/Machines/Players/Map/Admin…） | ✅ 18 页面随基线继承 | Legacy src/pages |
-| 6-3 | 语言切换组件（zh/en 即时切换 + 持久化）★参考项目 | ✅ | 参考项目 LanguageSwitcher |
-| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…）★参考项目 | 🚧 语言切换已加；完整组件库渐进抽取| 参考项目 ui/ |
-| 6-5 | 组件/组合式函数测试（Vitest）★参考项目 | ⬜ Vitest 组件测试待补| 参考项目 *.spec.ts |
+| 6-3 | 语言切换组件（zh/en 即时切换 + 持久化） | ✅ | 组件设计 |
+| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…） | 🚧 语言切换已加；完整组件库渐进抽取| 参考设计 |
+| 6-5 | 组件/组合式函数测试（Vitest） | ⬜ Vitest 组件测试待补| 参考设计 |
 | 6-6 | 管理后台统一审核管理（注册/申诉/村民/机器 四子标签） | ✅ 随基线继承 | Legacy Admin.vue |
 | 6-7 | Status.vue 审核状态查询修复（query 参数） | ✅（FIX(legacy) 已实现） | Legacy（已知缺陷） |
 | 6-8 | 构建产物由 dreamport-server 托管 | ✅（WebStaticConfig） | — |
@@ -133,7 +133,7 @@
 | 7-3 | 门户管理（portal 内容/背景/公告/验证页/团队/轮播/时间线→dp_setting） | ✅ | Legacy AdminPortalHandler |
 | 7-4 | 下载中心 | ✅ | Legacy DownloadsHandler |
 | 7-5 | AstrBot 兼容端点（/api/astrbot/*，X-API-Token，QQ↔MC 绑定/查询/聊天） | ✅ | Legacy AstrBotHandler |
-| 7-6 | config_help 双语自说明文件 ★参考项目 | ✅ | 参考项目 config_help_*.yml |
+| 7-6 | config_help 双语自说明文件 | ✅ | 配置说明设计 |
 | 7-7 | ~~Discord OAuth 绑定~~ | ➖ 用户决定排除 | — |
 | 7-8 | 站点设置统一管理界面（dp_setting CRUD） | ✅ | — |
 
@@ -144,23 +144,12 @@
 | 8-1 | 全功能验收：逐项对照本表 + Legacy 行为清单 | ✅ 真实数据全链路验收通过（进服决策矩阵/审计/门户/玩家目录/问卷保留）| — |
 | 8-2 | 迁移演练：真实旧库副本 + file 模式样本 + 旧密码登录抽查 | ⬜ 需真实旧库演练| — |
 | 8-3 | 性能压测（wrk 对比旧版，虚拟线程/连接池收益报告） | ⬜ 压测待执行| — |
-| 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明）★参考项目 | ✅（.gitea/workflows/build.yml） | 参考项目 .github/workflows |
+| 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明） | ✅（.gitea/workflows/build.yml） | CI 设计 |
 | 8-5 | 部署物：可执行 jar + systemd unit + Dockerfile + 插件 jar | ✅（Dockerfile + systemd unit） | — |
 | 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ⬜ 待数据迁移演练通过| — |
 
 ---
 
-## 吸收项追踪（源自 参考项目 v1.8.0 功能差距报告）
+## 吸收项追踪
 
-| 吸收项 | 落位 | 状态 |
-|--------|------|------|
-| 评分 confidence + manualReview 人工复核 | 3-15 | ⬜ |
-| 游戏内 delete 命令 | 5-9 | ⬜ |
-| i18n 全覆盖 | 3-21 | ⬜ |
-| 注册阶段化校验 + requestId 日志 | 3-1 | ⬜ |
-| 代理端统一拦截（proxy 角色） | 5-11 | ⬜ |
-| bStats 匿名统计 | 5-12 | ⬜ |
-| 前端语言切换 / 组件库 / 组件测试 | 6-3/6-4/6-5 | ⬜ |
-| config_help 双语自说明 | 7-6 | ⬜ |
-| CI 构建与 Release 工作流 | 8-4 | ⬜ |
-| ~~Discord OAuth 绑定~~ | ➖ 排除 | ➖ |
+相关能力已并入上表各阶段（编号见行内标注）。

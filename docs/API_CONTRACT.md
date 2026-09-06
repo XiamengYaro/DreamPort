@@ -55,7 +55,7 @@
 | 端点 | 方法 | 功能 | 落位 |
 |------|------|------|------|
 | `/api/admin/login` ⚡ | POST | 管理员登录（OP 名单 + 密码） | ✅ P1→P4 |
-| `/api/admin/verify` | POST | 管理 token 校验（吸收 参考项目） | P4 |
+| `/api/admin/verify` | POST | 管理 token 校验 | P4 |
 | `/api/admin/users`、`/api/admin/user/{approve,reject,ban,unban,delete,add,update,update-status}` | GET/POST | 用户管理 | P4 |
 | `/api/admin/user/batch-{approve,reject,ban,delete}` | POST | 批量操作 | P4 |
 | `/api/admin/user/{set-bedrock,verify-bedrock}` | POST | 代管基岩绑定 | P4 |

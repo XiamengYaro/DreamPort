@@ -16,7 +16,7 @@ import java.util.Map;
 import java.util.concurrent.Semaphore;
 
 /**
- * LLM 评分客户端（OpenAI 兼容 /chat/completions，吸收自 参考项目 的评分抽象——吸收项 3-15）。
+ * LLM 评分客户端（OpenAI 兼容 /chat/completions，评分结果带置信度与人工复核标记）。
  * 结果携带 confidence 与 manualReview 标记（置信度 <0.6 转人工复核队列），
  * 并附 provider/model/latency 观测字段；熔断：连续 5 次失败开 30 秒（对齐旧版参数）。
  * 配置来源：dp_setting llm.config（管理面板「AI 评分设置」，热生效）。

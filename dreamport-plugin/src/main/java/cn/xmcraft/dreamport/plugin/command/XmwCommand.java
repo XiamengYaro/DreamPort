@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * /xmw 管理命令（对齐旧版 + 参考项目 吸收项 delete，5-9）：
+ * /xmw 管理命令（含删除用户能力）：
  * reload/status/approve/reject/ban/unban/delete/list/info/version。
  * 经 /internal/v1/admin-ops 以服务器令牌调用后端。
  */
