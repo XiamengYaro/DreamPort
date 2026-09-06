@@ -145,7 +145,13 @@ public class QuestionnaireController {
 
     /** SSE 流式提交（逐题推送，最终写库/发邮件，与 submit 同一评分路径） */
     @PostMapping(value = "/questionnaire/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(@RequestBody SubmitBody body, HttpServletRequest request) {
+    public SseEmitter stream(@RequestBody SubmitBody body, HttpServletRequest request,
+                             jakarta.servlet.http.HttpServletResponse response) {
+        // 反向代理（nginx 等）默认缓冲 SSE 响应，导致前端收不到实时进度；
+        // X-Accel-Buffering: no 指示 nginx 对本响应逐块转发
+        response.setHeader("X-Accel-Buffering", "no");
+        response.setHeader("Cache-Control", "no-store");
+        response.setCharacterEncoding("UTF-8");
         String me = AuthUtil.currentUser(request);
         SseEmitter emitter = new SseEmitter(0L); // 不限时：LLM 逐题评分可能超 2 分钟
         if (me == null) {

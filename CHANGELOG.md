@@ -8,6 +8,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.22 生产环境问卷评分不实时（反向代理缓冲）**：
+  - 生产实测（xmcraft.cn 真实浏览器）证实：16 个 SSE 事件在流结束时同一毫秒
+    一次性到达 —— 反向代理默认缓冲整个 SSE 响应（本机直连为渐进到达）
+  - 修复：/api/questionnaire/stream 响应加 X-Accel-Buffering: no
+    （nginx 标准机制，对该响应禁用缓冲逐块转发）+ Cache-Control: no-store
+  - 注意：若反向代理非 nginx，需在代理配置禁用响应缓冲（nginx: proxy_buffering off）
+
+### Fixed
 - **v0.5.21 问卷进度显示与前端缓存**：
   - 进度改为「已评分 X/Y 题」（原 0 起始 index 显示成 0/15 似卡死）
   - 评分中实时显示当前题干；逐题卡片增加题干行
