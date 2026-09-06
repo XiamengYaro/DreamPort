@@ -8,6 +8,11 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.18 管理面板「验证页面」「数据迁移」不显示**：前次编辑误删问卷管理
+  区块的闭合 div，导致这两个标签被嵌进问卷管理的 v-if 内部（仅问卷标签激活
+  时才可能渲染）。已补回闭合 div 并移除尾部多余的对应闭合，模板深度平衡恢复
+
+### Fixed
 - **v0.5.16 完成验证后刷新仍显示等待验证**：
   - verified 改为身份验证语义（minecraftUuid != null），与白名单审核状态解耦
   - 验证成功状态流转：pending_verify → approved；pending 且问卷未启用 → approved

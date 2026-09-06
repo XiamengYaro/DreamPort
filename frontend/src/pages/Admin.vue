@@ -601,6 +601,8 @@
         </div>
       </div>
 
+      </div>
+
       <!-- 验证页面配置 Tab -->
       <div v-if="activeTab === 'migration' && !loading" class="card p-6 space-y-6">
         <div>
@@ -675,7 +677,6 @@
           {{ saving ? '保存中...' : '保存验证页面配置' }}
         </button>
       </div>
-    </div>
 
     <!-- 确认对话框 -->
     <div v-if="showConfirmDialog" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showConfirmDialog = false">
