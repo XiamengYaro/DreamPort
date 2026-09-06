@@ -414,7 +414,8 @@ public class QuestionnaireController {
 
     // ===== 整卷保存（问卷平台式编辑器：一次性提交全部题目） =====
 
-    public record BulkOption(String textZh, Integer score) {
+    public record BulkOption(@com.fasterxml.jackson.annotation.JsonAlias("text_zh") String textZh,
+                             Integer score) {
     }
 
     public record BulkQuestion(String type,
