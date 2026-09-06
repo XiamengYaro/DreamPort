@@ -11,6 +11,7 @@ import json
 import logging
 
 import aiohttp
+from astrbot.api import AstrBotConfig
 from astrbot.api.event import AstrMessageEvent, MessageChain, filter
 from astrbot.api.star import Context, Star, register
 
@@ -31,16 +32,26 @@ HELP_TEXT = (
     "astrbot_plugin_dreamport",
     "XiaMeng",
     "DreamPort(夏日小镇·梦港)QQ 验证绑定与群服消息互通",
-    "1.0.0",
+    "1.0.1",
 )
 class DreamPortPlugin(Star):
 
-    def __init__(self, context: Context):
+    def __init__(self, context: Context, config: AstrBotConfig = None):
         super().__init__(context)
+        # AstrBot 在插件目录含 _conf_schema.json 时,实例化时传入 config(官方文档 §插件配置)
+        self.config = config
         self._sse_task = None
         self._stopping = False
         self._reconnect_delay = 3
         self._umo_cache = {}  # 群号 → 实际会话 umo(来自真实消息,优先于构造 umo)
+        token = self._api_token()
+        logger.info(
+            "DreamPort 插件加载自检: backend=%s | api_token=%s | platform_id=%s | forward_groups=%s",
+            self._backend_url(),
+            f"已设置(长度 {len(token)})" if token else "!! 未设置 —— 将无法通过后端鉴权",
+            self._platform_id(),
+            self._forward_groups() or "(空,群消息不会转发)",
+        )
 
     # ---------- 配置(惰性读取,后台改配置重载后即生效) ----------
 

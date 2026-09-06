@@ -10,9 +10,9 @@
     "default": ""
   },
   "platform_id": {
-    "description": "AstrBot 平台适配器 ID(用于主动发消息构造 umo,可在 AstrBot WebUI 消息平台页查看)",
+    "description": "AstrBot 平台适配器 ID(用于主动发消息构造 umo,可在 AstrBot WebUI 消息平台页查看;默认部署通常为 default)",
     "type": "string",
-    "default": "aiocqhttp"
+    "default": "default"
   },
   "forward_groups": {
     "description": "参与互通的 QQ 群号(逗号分隔,须与后端管理后台的群绑定一致)",
