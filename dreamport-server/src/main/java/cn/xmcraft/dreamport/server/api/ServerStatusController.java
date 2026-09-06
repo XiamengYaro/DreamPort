@@ -67,6 +67,7 @@ public class ServerStatusController {
                         s.put("onlinePlayers", hb.onlinePlayers());
                         s.put("maxPlayers", hb.maxPlayers());
                         s.put("lastSeen", hb.receivedAt());
+                        s.put("players", hb.players());
                         servers.add(s);
                     });
         }

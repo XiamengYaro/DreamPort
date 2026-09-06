@@ -43,7 +43,7 @@
           </div>
         </button>
       </div>
-      <EmptyState v-if="filteredTimeline.length === 0" icon="document-text" text="暂无相关内容" />
+      <EmptyState v-if="filteredTimeline.length === 0" icon="document-text" text="暂无照片 —— 请在管理后台 → 门户管理 → 时光照片墙 中添加" />
     </div>
 
     <!-- 灯箱:大图 + 详情 + 留言 -->

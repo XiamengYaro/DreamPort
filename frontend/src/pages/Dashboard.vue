@@ -17,24 +17,6 @@
         </div>
       </div>
 
-      <!-- 概览行：服务器状态 + 在线趋势 -->
-      <div class="mb-6 grid gap-6 md:grid-cols-2">
-        <div class="card p-6">
-          <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
-          <div class="grid grid-cols-2 gap-3">
-            <StatCard :value="serverStatus.onlinePlayers || 0" label="在线玩家" />
-            <StatCard :value="serverStatus.maxPlayers || 0" label="最大人数" />
-            <StatCard :value="serverStatus.tps?.toFixed(1) || '0.0'" label="TPS" />
-            <StatCard :value="serverStatus.minecraftVersion || '-'" label="版本" />
-          </div>
-        </div>
-        <!-- 在线人数趋势图 -->
-        <PlayerChart :days="7" />
-      </div>
-
-      <!-- 服务器聊天（网页 ↔ 服内消息互通，docs/CHAT_SERVERINFO_PLAN.md） -->
-      <ChatBox class="mb-6" />
-
       <!-- 个人游戏数据 -->
       <div v-if="cmiEnabled" class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4">我的游戏数据</h2>
@@ -83,6 +65,22 @@
         </div>
         </template>
       </div>
+
+      <!-- 概览行：服务器状态 + 在线趋势 -->
+      <div class="mb-6 grid gap-6 md:grid-cols-2">
+        <div class="card p-6">
+          <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <StatCard :value="serverStatus.onlinePlayers || 0" label="在线玩家" />
+            <StatCard :value="serverStatus.maxPlayers || 0" label="最大人数" />
+            <StatCard :value="serverStatus.tps?.toFixed(1) || '0.0'" label="TPS" />
+            <StatCard :value="serverStatus.minecraftVersion || '-'" label="版本" />
+          </div>
+        </div>
+        <!-- 在线人数趋势图 -->
+        <PlayerChart :days="7" />
+      </div>
+
 
       <!-- 账户绑定区（桌面双栏） -->
       <div class="mb-6 grid gap-6 lg:grid-cols-2">
@@ -344,7 +342,6 @@ import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
-import ChatBox from '@/components/ChatBox.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 

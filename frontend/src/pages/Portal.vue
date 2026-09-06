@@ -55,7 +55,7 @@
     <FeaturesSection v-if="portalConfig.features?.length" :features="portalConfig.features" />
 
     <!-- 历史时刻（垂直时间轴） -->
-    <TimelineSection v-if="portalConfig.timeline?.length" :timeline="portalConfig.timeline" />
+    <TimelineSection :timeline="portalConfig.timeline" />
 
     <!-- 底部 CTA -->
     <section class="py-16 px-4 bg-stone-800/30">

@@ -37,6 +37,37 @@
 
       <!-- 网站内容 Tab -->
       <div v-if="activeTab === 'portal' && !loading" class="space-y-6">
+        <!-- 时光照片墙(首页展示,玩家可留言) -->
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white">时光照片墙</h3>
+            <p class="text-xs text-stone-500 mb-3">这里上传的图片与内容会展示在首页照片墙,玩家点击照片可放大并留言;分类用于首页筛选</p>
+            <button @click="addTimelineEvent" class="btn-secondary text-sm">+ 添加事件</button>
+          </div>
+          <div class="space-y-4">
+            <div v-for="(event, index) in portalData.timeline" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                <input v-model="event.date" type="text" class="input text-sm" placeholder="日期 (如: 2024-01-01)" />
+                <input v-model="event.title" type="text" class="input text-sm" placeholder="标题" />
+                <select v-model="event.type" class="input text-sm">
+                  <option value="">分类: 其他</option>
+                  <option value="announcement">公告更新</option>
+                  <option value="event">活动赛事</option>
+                  <option value="milestone">成就纪念</option>
+                </select>
+              </div>
+              <textarea v-model="event.description" class="input text-sm mb-2" rows="2" placeholder="描述"></textarea>
+              <div class="flex items-center gap-2">
+                <input v-model="event.image" type="text" class="input text-sm flex-1" placeholder="图片路径" />
+                <label class="btn-secondary text-xs cursor-pointer">
+                  上传图片
+                  <input type="file" accept="image/*" class="hidden" @change="uploadTimelineImage($event, index)" />
+                </label>
+                <button @click="removeTimelineEvent(index)" class="text-rose-400 hover:text-rose-300 p-2">删除</button>
+              </div>
+            </div>
+          </div>
+          <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存照片墙</button>
         <!-- 基础信息 -->
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">基础信息</h3>
@@ -170,36 +201,6 @@
           <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存特色</button>
         </div>
 
-        <!-- 历史事件 -->
-        <div class="card p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">历史事件</h3>
-            <button @click="addTimelineEvent" class="btn-secondary text-sm">+ 添加事件</button>
-          </div>
-          <div class="space-y-4">
-            <div v-for="(event, index) in portalData.timeline" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
-                <input v-model="event.date" type="text" class="input text-sm" placeholder="日期 (如: 2024-01-01)" />
-                <input v-model="event.title" type="text" class="input text-sm" placeholder="标题" />
-                <select v-model="event.type" class="input text-sm">
-                  <option value="">分类: 其他</option>
-                  <option value="announcement">公告更新</option>
-                  <option value="event">活动赛事</option>
-                  <option value="milestone">成就纪念</option>
-                </select>
-              </div>
-              <textarea v-model="event.description" class="input text-sm mb-2" rows="2" placeholder="描述"></textarea>
-              <div class="flex items-center gap-2">
-                <input v-model="event.image" type="text" class="input text-sm flex-1" placeholder="图片路径" />
-                <label class="btn-secondary text-xs cursor-pointer">
-                  上传图片
-                  <input type="file" accept="image/*" class="hidden" @change="uploadTimelineImage($event, index)" />
-                </label>
-                <button @click="removeTimelineEvent(index)" class="text-rose-400 hover:text-rose-300 p-2">删除</button>
-              </div>
-            </div>
-          </div>
-          <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存历史事件</button>
         </div>
       </div>
 

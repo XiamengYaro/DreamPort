@@ -20,7 +20,7 @@
           <!-- 更多下拉菜单（样式与其余导航项一致） -->
           <div class="relative group">
             <span class="nav-item cursor-pointer flex items-center gap-1"
-              :class="{ active: ['/village', '/players', '/machines', '/status'].includes($route.path) }">
+              :class="{ active: ['/village', '/players', '/machines', '/chat', '/status'].includes($route.path) }">
               更多
               <svg class="w-3 h-3 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </span>
@@ -28,6 +28,7 @@
               <router-link to="/village" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">村民族谱</router-link>
               <router-link to="/players" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">玩家</router-link>
               <router-link to="/machines" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公共机器</router-link>
+              <router-link to="/chat" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">聊天广场</router-link>
               <router-link to="/status" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">申请状态查询</router-link>
             </div>
           </div>
@@ -84,6 +85,7 @@
           <router-link to="/village" class="block mobile-nav-item" @click="mobileMenuOpen = false">村民族谱</router-link>
           <router-link to="/players" class="block mobile-nav-item" @click="mobileMenuOpen = false">玩家</router-link>
           <router-link to="/machines" class="block mobile-nav-item" @click="mobileMenuOpen = false">公共机器</router-link>
+          <router-link to="/chat" class="block mobile-nav-item" @click="mobileMenuOpen = false">聊天广场</router-link>
           <router-link to="/status" class="block mobile-nav-item" @click="mobileMenuOpen = false">申请状态查询</router-link>
         </div>
         
@@ -160,6 +162,9 @@ const logout = () => {
 .transparent {
   background: transparent;
   border-bottom: 1px solid transparent;
+  /* blur 常驻:滚动切换背景时不再反复创建/销毁玻璃合成层(黑闪诱因) */
+  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
 }
 
 .scrolled {

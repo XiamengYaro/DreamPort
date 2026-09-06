@@ -17,7 +17,7 @@
     </div>
 
     <!-- 消息列表 -->
-    <div ref="chatContainer" class="h-64 overflow-y-auto mb-4 p-3 bg-stone-800/50 rounded-xl border border-stone-700">
+    <div ref="chatContainer" :class="tall ? 'h-[55vh]' : 'h-64'" class="overflow-y-auto mb-4 p-3 bg-stone-800/50 rounded-xl border border-stone-700">
       <div class="text-center mb-2">
         <button v-if="canLoadEarlier" @click="loadEarlier" :disabled="loadingEarlier"
           class="text-xs text-orange-400 hover:text-orange-300 px-3 py-1 rounded-full bg-stone-800/80">
@@ -26,10 +26,21 @@
         <div v-else-if="historyLoaded" class="text-xs text-stone-600">已到 7 天窗口最早记录</div>
       </div>
       <EmptyState v-if="messages.length === 0" icon="chat-bubble" text="暂无消息" />
-      <div v-for="(msg, index) in messages" :key="msg.id ?? index" class="mb-2">
-        <span class="text-orange-400 font-medium text-sm">{{ msg.player }}</span>
-        <span class="text-stone-300">: {{ msg.message }}</span>
-        <span class="text-stone-600 text-xs ml-2">{{ formatTime(msg.timestamp) }}</span>
+      <div v-for="(msg, index) in messages" :key="msg.id ?? index" class="flex gap-3 mb-4">
+        <img v-if="originOf(msg) === 'game'" :src="`https://crafthead.net/avatar/${displayName(msg)}/64`"
+          :alt="displayName(msg)" class="w-9 h-9 rounded-full shrink-0" loading="lazy" />
+        <div v-else class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold"
+          :class="avatarBg(originOf(msg))">
+          {{ (displayName(msg) || '?').charAt(0).toUpperCase() }}
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline gap-2 flex-wrap">
+            <span class="text-orange-400 font-medium text-sm">{{ displayName(msg) }}</span>
+            <span v-if="serverLabel(msg)" class="text-xs text-stone-500">{{ serverLabel(msg) }}</span>
+            <span class="text-stone-600 text-xs">{{ formatTime(msg.timestamp) }}</span>
+          </div>
+          <div class="text-stone-200 text-sm mt-0.5 break-words">{{ msg.message }}</div>
+        </div>
       </div>
     </div>
 
@@ -59,7 +70,36 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { api } from '../services/api'
 import EmptyState from './ui/EmptyState.vue'
 
-interface ChatMessage { id?: number; player: string; message: string; timestamp: number; origin?: string }
+interface ChatMessage { id?: number; player: string; message: string; timestamp: number; origin?: string; server_id?: string | null }
+
+const props = withDefaults(defineProps<{
+  /** 独立聊天页使用加高消息区 */
+  tall?: boolean
+  /** 服务器 ID → 显示名映射(聊天页传入) */
+  serverNames?: Record<string, string>
+}>(), { tall: false, serverNames: () => ({}) })
+
+const originOf = (m: any) =>
+  m.origin || (String(m.player || '').startsWith('[QQ]') ? 'qq'
+    : String(m.player || '').startsWith('[系统]') ? 'system' : 'game')
+
+const displayName = (m: any) => {
+  const raw = String(m.player || '')
+  const stripped = raw.replace(/^\[(QQ|系统|网页)\]\s*/, '')
+  if (stripped) return stripped
+  return originOf(m) === 'system' ? '系统' : (raw || '未知')
+}
+
+const avatarBg = (origin: string) =>
+  (({ web: 'bg-sky-500/70', qq: 'bg-rose-500/70', system: 'bg-stone-500' }) as Record<string, string>)[origin] || 'bg-stone-500'
+
+const serverLabel = (m: any) => {
+  const o = originOf(m)
+  if (o === 'web') return '网页'
+  if (o === 'qq') return 'QQ'
+  if (o === 'game') return props.serverNames?.[String(m.server_id)] || String(m.server_id || '') || ''
+  return ''
+}
 
 const messages = ref<ChatMessage[]>([])
 const newMessage = ref('')

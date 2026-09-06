@@ -141,6 +141,24 @@ public class MinecraftVerifyService {
         return Result.ok("已绑定基岩 ID，请使用基岩版进服完成验证");
     }
 
+    /** 取消基岩验证:整体清空基岩字段(修复取消后残留"."陷入待验证态) */
+    public Result clearBedrock(String username) {
+        var userOpt = userRepository.findByUsernameIgnoreCase(username);
+        if (userOpt.isEmpty()) {
+            return Result.fail("用户不存在");
+        }
+        UserRecord user = userOpt.get();
+        UserRecord updated = new UserRecord(user.id(), user.username(), user.email(), user.status(),
+                user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
+                user.qqNumber(), user.qqBoundAt(), user.questionnaireScore(), user.questionnairePassed(),
+                user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
+                user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
+                user.verifiedAt(), user.verifyType(), user.invitedBy(), null, null, false, null,
+                user.banReason(), user.banTime(), user.avatar());
+        userRepository.save(updated);
+        return Result.ok("已取消基岩版验证");
+    }
+
     public Result verifyBedrock(String username) {
         var userOpt = userRepository.findByUsernameIgnoreCase(username);
         if (userOpt.isEmpty() || userOpt.get().bedrockName() == null) {

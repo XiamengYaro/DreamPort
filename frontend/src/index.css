@@ -68,8 +68,9 @@ body::before {
   background-image: var(--bg-image);
   background-size: cover;
   background-position: center;
-  background-attachment: fixed;
   background-repeat: no-repeat;
+  /* 层隔离 + 去掉 background-attachment:fixed:两者叠加是滚动黑闪的已知诱因 */
+  transform: translateZ(0);
   filter: blur(var(--bg-blur));
   transition: filter var(--lg-duration) var(--lg-ease);
 }

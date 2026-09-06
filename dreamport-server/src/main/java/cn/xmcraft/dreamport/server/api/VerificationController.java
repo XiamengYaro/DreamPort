@@ -236,7 +236,7 @@ public class VerificationController {
         if (me == null) {
             return unauthorized();
         }
-        return wrap(minecraftVerifyService.setBedrockId(me, "", "."));
+        return wrap(minecraftVerifyService.clearBedrock(me));
     }
 
     @GetMapping("/user/bedrock/status")

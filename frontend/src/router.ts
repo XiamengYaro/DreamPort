@@ -96,6 +96,11 @@ const routes = [
     component: () => import('./pages/PlayerProfile.vue')
   },
   {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('./pages/Chat.vue')
+  },
+  {
     path: '/machines',
     name: 'PublicMachines',
     component: () => import('./pages/PublicMachines.vue')
