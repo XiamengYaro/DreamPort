@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -54,4 +55,17 @@ public class ConfigController {
         body.put("data", data);
         return body;
     }
+
+    /** 公告页公开数据(资讯中心 + 更新日志) */
+    @GetMapping("/announcements")
+    public Map<String, Object> announcements() {
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("news", settingService.get(SettingService.KEY_NEWS, List.class));
+        data.put("changelog", settingService.get(SettingService.KEY_CHANGELOG, List.class));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", data);
+        return body;
+    }
+
 }

@@ -31,6 +31,7 @@
               <router-link to="/village" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">村民族谱</router-link>
               <router-link to="/players" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">玩家</router-link>
               <router-link to="/machines" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公共机器</router-link>
+              <router-link to="/announcements" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公告资讯</router-link>
               <router-link to="/chat" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">聊天广场</router-link>
               <router-link to="/status" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">申请状态查询</router-link>
             </div>
@@ -88,6 +89,7 @@
           <router-link to="/village" class="block mobile-nav-item" @click="mobileMenuOpen = false">村民族谱</router-link>
           <router-link to="/players" class="block mobile-nav-item" @click="mobileMenuOpen = false">玩家</router-link>
           <router-link to="/machines" class="block mobile-nav-item" @click="mobileMenuOpen = false">公共机器</router-link>
+          <router-link to="/announcements" class="block mobile-nav-item" @click="mobileMenuOpen = false">公告资讯</router-link>
           <router-link to="/chat" class="block mobile-nav-item" @click="mobileMenuOpen = false">聊天广场</router-link>
           <router-link to="/status" class="block mobile-nav-item" @click="mobileMenuOpen = false">申请状态查询</router-link>
         </div>

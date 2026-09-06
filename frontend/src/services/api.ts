@@ -475,6 +475,19 @@ class ApiService {
     return this.request(`/review/status?username=${encodeURIComponent(username)}`)
   }
 
+  // 公告页(资讯中心 + 更新日志)
+  async getAnnouncements() {
+    return this.request('/announcements')
+  }
+
+  async getAnnouncementsAdmin() {
+    return this.request('/admin/settings/announcements')
+  }
+
+  async saveAnnouncementsAdmin(body: any) {
+    return this.request('/admin/settings/announcements', { method: 'PUT', body: JSON.stringify(body) })
+  }
+
   // 照片墙留言（首页时光照片墙）
   async getPhotoComments(photoKey: string) {
     return this.request(`/portal/comments/${encodeURIComponent(photoKey)}`)

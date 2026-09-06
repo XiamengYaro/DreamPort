@@ -94,6 +94,28 @@ public class SystemSettingsService {
         settingService.set(SettingService.KEY_GAME_CONFIG, config);
     }
 
+    /** 公告页(资讯中心 + 更新日志):两个 JSON 数组键 */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> announcementsConfig() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        List<Map<String, Object>> news = settingService.get(SettingService.KEY_NEWS, List.class);
+        List<Map<String, Object>> changelog = settingService.get(SettingService.KEY_CHANGELOG, List.class);
+        result.put("news", news == null ? List.of() : news);
+        result.put("changelog", changelog == null ? List.of() : changelog);
+        return result;
+    }
+
+    public void saveAnnouncementsConfig(Map<String, Object> config) {
+        if (config.containsKey("news")) {
+            settingService.set(SettingService.KEY_NEWS,
+                    config.get("news") == null ? List.of() : config.get("news"));
+        }
+        if (config.containsKey("changelog")) {
+            settingService.set(SettingService.KEY_CHANGELOG,
+                    config.get("changelog") == null ? List.of() : config.get("changelog"));
+        }
+    }
+
     /** QQ 互通（AstrBot）：enabled / api_token / 群绑定 JSON 分键存储，AstrBotController 与 QqBridgeService 直接按键读取 */
     public Map<String, Object> astrbotConfig() {
         Map<String, Object> result = new LinkedHashMap<>();

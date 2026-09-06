@@ -362,6 +362,54 @@
         </div>
       </div>
 
+      <!-- 公告管理 Tab -->
+      <div v-if="activeTab === 'announcements' && !loading" class="space-y-6">
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="chat-bubble" class="w-5 h-5" /> 资讯中心</h3>
+            <button @click="addNews" class="btn-secondary text-sm">+ 添加资讯</button>
+          </div>
+          <div v-if="newsList.length === 0" class="text-sm text-stone-500">暂无资讯,点右上角添加</div>
+          <div class="space-y-4">
+            <div v-for="(n, i) in newsList" :key="n.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                <input v-model="n.title" class="input text-sm" placeholder="标题" />
+                <input v-model="n.date" type="date" class="input text-sm" />
+                <label class="flex items-center justify-center gap-2 text-xs text-stone-400">
+                  <input type="checkbox" v-model="n.pinned" class="accent-orange-500" /> 置顶展示
+                </label>
+              </div>
+              <textarea v-model="n.content" class="input text-sm" rows="5" placeholder="内容(支持 Markdown)"></textarea>
+              <div class="text-right mt-2"><button @click="newsList.splice(i, 1)" class="text-rose-400 hover:text-rose-300 text-sm">删除</button></div>
+            </div>
+          </div>
+          <button @click="saveAnnouncements" class="btn-primary mt-4" :disabled="savingAnnouncements">
+            {{ savingAnnouncements ? '保存中...' : '保存资讯中心' }}
+          </button>
+        </div>
+
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="document-text" class="w-5 h-5" /> 更新日志</h3>
+            <button @click="addChangelog" class="btn-secondary text-sm">+ 添加版本记录</button>
+          </div>
+          <div v-if="changelogList.length === 0" class="text-sm text-stone-500">暂无版本记录</div>
+          <div class="space-y-4">
+            <div v-for="(c, i) in changelogList" :key="c.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <input v-model="c.version" class="input text-sm" placeholder="版本(如: v1.1.0)" />
+                <input v-model="c.date" type="date" class="input text-sm" />
+              </div>
+              <textarea v-model="c.content" class="input text-sm" rows="5" placeholder="更新内容(支持 Markdown,一行一条)"></textarea>
+              <div class="text-right mt-2"><button @click="changelogList.splice(i, 1)" class="text-rose-400 hover:text-rose-300 text-sm">删除</button></div>
+            </div>
+          </div>
+          <button @click="saveAnnouncements" class="btn-primary mt-4" :disabled="savingAnnouncements">
+            {{ savingAnnouncements ? '保存中...' : '保存更新日志' }}
+          </button>
+        </div>
+      </div>
+
       <!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
@@ -798,6 +846,7 @@ const menuItems = [
   { key: 'portal', icon: 'home', label: '门户管理' },
   { key: 'settings', icon: 'cog', label: '外观设置' },
   { key: 'system', icon: 'cpu', label: '系统设置' },
+  { key: 'announcements', icon: 'chat-bubble', label: '公告管理' },
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
@@ -821,10 +870,10 @@ const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
-      api.getAstrbotSettings()
+      api.getAstrbotSettings(), api.getAnnouncementsAdmin()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -1275,6 +1324,24 @@ const removeTeamMember = (i: number) => { portalData.value.team.splice(i, 1) }
 const addFeature = () => { portalData.value.features.push({ icon: 'star', title: '', description: '' }) }
 const removeFeature = (i: number) => { portalData.value.features.splice(i, 1) }
 const newTimelineId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+
+// ===== 公告管理(资讯中心 + 更新日志) =====
+const newsList = ref<any[]>([])
+const changelogList = ref<any[]>([])
+const savingAnnouncements = ref(false)
+const newItemId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+const addNews = () => newsList.value.unshift({ id: newItemId(), title: '', date: new Date().toISOString().slice(0, 10), content: '', pinned: false })
+const addChangelog = () => changelogList.value.unshift({ id: newItemId(), version: '', date: new Date().toISOString().slice(0, 10), content: '' })
+const saveAnnouncements = async () => {
+  savingAnnouncements.value = true
+  try {
+    for (const n of newsList.value) if (!n.id) n.id = newItemId()
+    for (const c of changelogList.value) if (!c.id) c.id = newItemId()
+    const r: any = await api.saveAnnouncementsAdmin({ news: newsList.value, changelog: changelogList.value })
+    if (r.success) notify?.success('公告内容已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingAnnouncements.value = false
+}
 const addTimelineEvent = () => { portalData.value.timeline.push({ id: newTimelineId(), date: '', title: '', description: '', image: '', type: '' }) }
 const removeTimelineEvent = (i: number) => { portalData.value.timeline.splice(i, 1) }
 

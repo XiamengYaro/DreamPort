@@ -124,6 +124,20 @@ public class SystemSettingsController {
         return ResponseEntity.ok(ApiResponse.success("游戏设置已保存"));
     }
 
+    @GetMapping("/announcements")
+    public ResponseEntity<Object> getAnnouncements(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        return ResponseEntity.ok(Map.of("success", true, "data", settingsService.announcementsConfig()));
+    }
+
+    @PutMapping("/announcements")
+    public ResponseEntity<Object> saveAnnouncements(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        settingsService.saveAnnouncementsConfig(body);
+        auditService.log("settings_announcements", op(request), "", "");
+        return ResponseEntity.ok(ApiResponse.success("公告内容已保存"));
+    }
+
     @GetMapping("/astrbot")
     public ResponseEntity<Object> getAstrbot(HttpServletRequest request) {
         var g = guard(request); if (g != null) return g;
