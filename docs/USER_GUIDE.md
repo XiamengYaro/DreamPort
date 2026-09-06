@@ -140,6 +140,7 @@ wl:
 
 同一个插件 JAR（`dreamport-plugin-x.y.z.jar`），通过 `role` 区分三种用法：
 
+> **群组服玩家数据**:经济/时长快照由 `economy.report` 控制由哪台服推送——`auto`(默认)= 仅 `role: primary` 的主服上报,子服(secondary)不推,避免多服快照互相覆盖;`on` = 本服始终上报;`off` = 不上报。后端可另设 `wl.economy.accept-from: <serverId>` 做来源白名单双保险。
 ### primary（主服）
 
 ```yaml

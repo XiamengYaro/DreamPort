@@ -1,7 +1,10 @@
 <template>
   <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
     :class="scrolled || mobileMenuOpen ? 'scrolled' : 'transparent'">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- 玻璃层常驻(只动透明度,不开关 backdrop-filter,防滚动黑闪);页面顶端时完全透明 -->
+    <div class="nav-glass-layer absolute inset-0 pointer-events-none transition-opacity duration-300"
+      :class="scrolled || mobileMenuOpen ? 'opacity-100' : 'opacity-0'"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
       <div class="flex items-center justify-between h-16">
         <!-- Logo -->
         <router-link to="/" class="flex items-center gap-3">
@@ -162,12 +165,15 @@ const logout = () => {
 .transparent {
   background: transparent;
   border-bottom: 1px solid transparent;
-  /* blur 常驻:滚动切换背景时不再反复创建/销毁玻璃合成层(黑闪诱因) */
-  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
-  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
 }
 
 .scrolled {
+  background: transparent;
+  border-bottom: 1px solid transparent;
+}
+
+/* 玻璃层:backdrop-filter 常驻,透明度由滚动状态驱动 */
+.nav-glass-layer {
   background: linear-gradient(135deg, var(--lg-tint-strong) 0%, var(--lg-tint) 100%);
   backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
   -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));

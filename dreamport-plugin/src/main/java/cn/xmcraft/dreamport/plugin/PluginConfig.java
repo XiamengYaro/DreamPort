@@ -22,6 +22,7 @@ public record PluginConfig(
         int heartbeatIntervalSeconds,
         int whitelistPollSeconds,
         int economyIntervalSeconds,
+        String economyReport,
         String webRegisterUrl
 ) {
 
@@ -43,6 +44,7 @@ public record PluginConfig(
                 Math.max(10, config.getInt("tasks.heartbeat-interval", 60)),
                 Math.max(5, config.getInt("tasks.whitelist-poll-interval", 30)),
                 Math.max(30, config.getInt("tasks.economy-interval", 300)),
+                config.getString("economy.report", "auto").toLowerCase(),
                 config.getString("web-register-url", "http://localhost:18898")
         );
     }

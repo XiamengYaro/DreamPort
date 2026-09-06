@@ -42,6 +42,9 @@ public class InternalController {
     private final cn.xmcraft.dreamport.server.chat.ChatService chatService;
     private final cn.xmcraft.dreamport.server.review.ReviewService reviewService;
     private final UserRepository userRepository;
+    @org.springframework.beans.factory.annotation.Value("${wl.economy.accept-from:}")
+    private String economyAcceptFrom;
+
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
     private final QqBridgeService qqBridge;
