@@ -13,7 +13,7 @@
 - 架构：独立后端服务（Spring Boot 3.4 / Java 21 虚拟线程）+ Paper 薄插件 + Vue 3 前端
 - 品牌结构：夏日小镇（主品牌）· 梦港（项目名）· 夏梦（作者署名）
 - 硬性目标：**功能 100% 对标旧版**；旧 MySQL 数据、文件存储、密码哈希**无缝迁移**
-- 主分支 `main`；当前版本 `0.1.0-dev`（SemVer 0.x 开发期）
+- 主分支 `main`；当前版本 `1.0.1`（首个稳定版后的维护期）
 
 ## 2. 仓库地图
 
@@ -57,7 +57,7 @@ curl http://localhost:18898/api/health     # 健康检查
 - 推送：`git push origin main --tags && git push github main --tags`（两边都推）
 - **每个阶段完成 = 一次提交 + push**，禁止巨型混合提交
 - 提交信息：`type(scope): 摘要`（正文中文说明）；type ∈ feat / fix / chore / docs / refactor / test / build
-- 首个可运行构建通过 → 打 `v0.1.0` 标签 + `git push --tags`
+- 版本发布：更新 CHANGELOG → 打 `vX.Y.Z` 标签 → `git push --tags`（双远端 origin+github）
 - 严禁入库：真实密码/API Key/令牌、`application-local.yml`、`target/`、`node_modules/`（.gitignore 已覆盖，但仍需自查）
 
 ## 6. 代码来源红线（法律与谱系）

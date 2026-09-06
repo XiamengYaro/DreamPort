@@ -207,6 +207,7 @@ mysqldump -uroot xmc > xmc-backup.sql
 | [完整项目文档](docs/PROJECT_DOCUMENTATION.md) | 架构设计、数据模型、API 契约 |
 | [功能进度表](docs/IMPLEMENTATION_PROGRESS.md) | 128 项功能逐项实现状态 |
 | [变更日志](CHANGELOG.md) | 每个版本的详细变更 |
+| [运维检查清单](docs/OPERATIONS_CHECKLIST.md) | 部署核对、日常运维、日志速查 |
 
 ---
 

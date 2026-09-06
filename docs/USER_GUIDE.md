@@ -55,6 +55,7 @@ open http://localhost:18898/setup
 | 数据库 | `CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;` |
 | 端口 | 18898（TCP，对玩家开放）、18899（TCP，管理后台用；可走内网/反代） |
 | SMTP | 任一支持 SMTP 的邮箱（不配则验证码功能不可用） |
+| 邮件模板 | 内置品牌化模板（logo/站名自动注入）；可用 `email/` 外置目录覆盖 |
 
 ### 2.2 部署流程（config.yml 单文件 + 初始化向导）
 
@@ -314,6 +315,8 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 ---
 
 ## 附：文档索引
+
+> 部署与日常运维核对请配合 [运维检查清单](OPERATIONS_CHECKLIST.md) 使用。
 
 | 文档 | 内容 |
 |------|------|
