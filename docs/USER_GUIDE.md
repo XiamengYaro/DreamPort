@@ -16,6 +16,7 @@
 - [7. 命令与权限](#7-命令与权限)
 - [8. 常见问题 FAQ](#8-常见问题-faq)
 - [9. 安全清单](#9-安全清单)
+- [10. QQ 互通（AstrBot）](#10-qq-互通astrbot)
 - [附：文档索引](#附文档索引)
 
 ---
@@ -314,6 +315,48 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 
 ---
 
+## 10. QQ 互通（AstrBot）
+
+> 设计与契约详见 [ASTRBOT_PLAN.md](ASTRBOT_PLAN.md)；插件细节与联调清单见 [`astrbot-plugin/README.md`](../astrbot-plugin/README.md)。
+
+### 10.1 功能与架构
+
+- **QQ 验证绑定**：玩家在 QQ 群/私聊发 `/dp 绑定` → 机器人私聊送达 6 位验证码（5 分钟有效）→ 玩家在网页「个人中心 → QQ 绑定」输入，或游戏内执行 `/xmw qq bind <码>` 完成绑定。单 QQ 单账号，新绑定自动顶替旧绑定。
+- **群服消息互通**：绑定群的消息进游戏与网页聊天室；游戏聊天/进出服/网页聊天实时发群。
+- 架构：自研 AstrBot Python 插件（`astrbot-plugin/`）⇄ DreamPort 后端（`/api/astrbot/**`，X-API-Token）⇄ Paper 插件收件箱轮询。
+
+### 10.2 后端配置（管理后台 → 系统设置 → QQ 互通）
+
+| 项 | 说明 |
+|----|------|
+| 启用集成 | `astrbot.enabled` 总开关，关闭时机器人端点全部 403 |
+| API 令牌 | 「生成」按钮创建，填入 AstrBot 插件配置 `api_token` |
+| 群绑定 | 群号 + mode（`all` 全部转发 / `prefix` 前缀触发）+ 进退服转发开关 |
+| 模板 | 服→群（`[{服务器}] {玩家}: {消息}` 等）与群/网页→服格式，热生效 |
+
+### 10.3 插件部署
+
+1. 仓库 `astrbot-plugin/` 目录复制到 AstrBot `data/plugins/astrbot_plugin_dreamport/`，重启 AstrBot。
+2. 插件配置：`backend_url`（后端地址）、`api_token`（上一步生成）、`platform_id`（AstrBot 平台适配器 ID）、`forward_groups`（参与互通的群号，与后端群绑定一致）。
+3. Paper 插件侧无需额外配置（`features.receive-chat` 默认开启，游戏内自动广播网页/QQ 消息）。
+
+### 10.4 玩家指令
+
+| 位置 | 指令 | 说明 |
+|------|------|------|
+| QQ | `/dp 绑定` | 获取绑定验证码（私聊发送） |
+| QQ | `/dp 解绑` / `/dp 查询` / `/dp 状态` / `/dp 玩家` | 解绑与查询 |
+| 游戏内 | `/xmw qq bind <验证码>` | 游戏内确认绑定（备选通道） |
+
+### 10.5 常见排查
+
+- 机器人调用全部 403 → 后端未启用集成；401 → 令牌不一致。
+- 群消息不进服 → 检查该群是否在**两侧**群配置中（插件 `forward_groups` 与后端群绑定）、mode 是否为 prefix 而消息未带前缀。
+- 验证码私聊发送失败 → 插件 `platform_id` 与 AstrBot 消息平台 ID 不符。
+- SSE 频繁重连 → 反向代理需放行长连接（nginx：`proxy_buffering off` + 读超时 ≥90s）。
+
+---
+
 ## 附：文档索引
 
 > 部署与日常运维核对请配合 [运维检查清单](OPERATIONS_CHECKLIST.md) 使用。
@@ -324,6 +367,8 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 | `docs/PROJECT_DOCUMENTATION.md` | 完整项目文档（设计视角） |
 | `docs/IMPLEMENTATION_PROGRESS.md` | 功能进度总表 |
 | `docs/API_CONTRACT.md` | API 契约（80+ 端点） |
+| `docs/ASTRBOT_PLAN.md` | QQ 互通方案（验证绑定/互通架构） |
+| `astrbot-plugin/README.md` | AstrBot 插件部署与联调清单 |
 | `config_help_zh.yml` / `config_help_en.yml` | 配置键逐项说明 |
 | `AGENTS.md` / `Rules.md` | AI 协作与工程规则 |
 | `CHANGELOG.md` | 变更日志 |

@@ -1,6 +1,7 @@
 # AstrBot 重构方案 —— QQ 验证绑定 + 群服消息互通
 
 > 状态:**已定稿**(v1.1,2026-09-06;§9 决策点已由作者确认)
+> **实施进度:M1–M5 已全部完成并合入 dev 分支**(2026-09-06);真机联调(NapCat + AstrBot 环境)待部署后按 `astrbot-plugin/README.md` 清单执行。
 > 分支:`dev` · 适用版本:v1.0.1 之后的新功能开发线
 > 结论先行:现有 AstrBot 集成**不可用**(详见 §1),本方案将其重构为「AstrBot 插件 ⇄ 后端 REST/SSE」的双向架构。
 
@@ -144,7 +145,7 @@
 - 轮询间隔 `features.message-poll-seconds`(默认 2s,可配),`features.receive-chat`(默认 true)开关
 - 插件收到 → `Bukkit.broadcastMessage(text)`(已由后端格式化)
 
-**AstrBot 插件下行通道**:`GET /api/astrbot/stream?token=`(SSE,事件 `{seq, group, text}`;复用 v0.5.22 的 `X-Accel-Buffering: no` 反代方案);插件断线自动重连。备选 `GET /api/astrbot/messages?since={seq}` 轮询端点同时提供,作为 SSE 不可用时的 fallback。
+**AstrBot 插件下行通道**:`GET /api/astrbot/stream`(SSE,X-API-Token 请求头,事件 `{seq, group, text}`;复用 v0.5.22 的 `X-Accel-Buffering: no` 反代方案);插件断线自动重连。备选 `GET /api/astrbot/messages?since={seq}` 轮询端点同时提供,作为 SSE 不可用时的 fallback。
 
 **防回环三重保障**:①插件丢弃 `sender_id == bot self_id`;②消息带 origin,`origin=qq` 的不进 QQ 出站队列;③指令消息不转发。群→服默认 `all` 全部转发(作者确认),可在群绑定中改 `prefix` 模式防刷屏。
 
@@ -161,7 +162,7 @@
 | `/api/astrbot/lookup/qq/{qq}` | GET | → `{found, username, status}` | **修复**(真路径参数) |
 | `/api/astrbot/lookup/mc/{mc}` | GET | → `{found, qq, bound}` | **修复**;`bound` 表示该账号是否已绑 QQ |
 | `/api/astrbot/chat` | POST | `{group, sender_id, sender_name, message}` | 升级(结构化发送者+群号,服务端校验群白名单) |
-| `/api/astrbot/stream` | GET(SSE) | `?token=` → `{seq, group, text}` 事件流 | **新增** |
+| `/api/astrbot/stream` | GET(SSE) | X-API-Token 请求头 → `{seq, group, text}` 事件流 | **新增** |
 | `/api/astrbot/messages` | GET | `?since=seq` → `{messages:[...]}` | **新增**(轮询 fallback) |
 
 用户侧新增(JWT):`POST /api/user/qq/bind {code}`、`POST /api/user/qq/unbind`、`GET /api/user/qq/status → {bound, qq_masked, bound_at}`。游戏内通道新增(服务器间鉴权):`POST /internal/v1/qq/bind {player, code}`。实现后同步更新 `docs/API_CONTRACT.md`。
@@ -173,7 +174,7 @@
 - 行为:
   - 指令(`@filter.command`,前缀默认 `dp`):`帮助 / 绑定 / 解绑 / 查询 / 状态 / 玩家`,REST 调后端,失败给中文提示;
   - 群消息监听(`@filter.event_message_type(GROUP_MESSAGE)`):群在 `forward_groups` 中 → 过滤回环/指令/按 mode → POST `/api/astrbot/chat`(aiohttp,异常静默重试);
-  - 下行 SSE 客户端:aiohttp 流式读 `/api/astrbot/stream?token=`,按 group 找到对应 umo(`platform:message_type:session_id`)→ `context.send_message(umo, MessageChain().message(text))`;断线指数退避重连;
+  - 下行 SSE 客户端:aiohttp 流式读 `/api/astrbot/stream`(X-API-Token 请求头),按 group 找到对应 umo(`platform:message_type:session_id`)→ `context.send_message(umo, MessageChain().message(text))`;断线指数退避重连;
   - 绑定码私聊送达:群内触发时用发送者 QQ 构造私聊 umo 发码,群内只提示。
 
 ### 5.6 Paper 插件改动(最小)

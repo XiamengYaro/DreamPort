@@ -1,0 +1,22 @@
+{
+  "backend_url": {
+    "description": "DreamPort 后端地址(含端口,如 http://127.0.0.1:18898)",
+    "type": "string",
+    "default": "http://127.0.0.1:18898"
+  },
+  "api_token": {
+    "description": "API 令牌(管理后台 → QQ 互通 中生成,X-API-Token)",
+    "type": "string",
+    "default": ""
+  },
+  "platform_id": {
+    "description": "AstrBot 平台适配器 ID(用于主动发消息构造 umo,可在 AstrBot WebUI 消息平台页查看)",
+    "type": "string",
+    "default": "aiocqhttp"
+  },
+  "forward_groups": {
+    "description": "参与互通的 QQ 群号(逗号分隔,须与后端管理后台的群绑定一致)",
+    "type": "string",
+    "default": ""
+  }
+}

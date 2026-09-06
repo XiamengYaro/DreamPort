@@ -17,6 +17,8 @@
 - BindCodeService 状态机单元测试 9 例（验证码生命周期/频控/覆盖/锁定窗口/空码安全）
 - **群服消息互通后端**（docs/ASTRBOT_PLAN.md §5.3）：QqBridgeService 双向队列（各 200 条，瞬态）+ 模板渲染（单遍扫描防占位符二次替换）+ 群绑定解析（mode: all/prefix、forward_join_quit）；游戏聊天/进出服、网页聊天自动出站到绑定群；`POST /api/astrbot/chat {group, sender_id, sender_name, message}` 群消息上行（群白名单/前缀校验，防回环：入站消息不写出站队列）；下行 `GET /api/astrbot/stream`（SSE，X-Accel-Buffering: no）+ `GET /api/astrbot/messages?since=`（轮询 fallback）；游戏收件箱轮询端点 `GET /internal/v1/messages/pending?since=`（X-Server-Token，M4 插件接入）；配置键 `astrbot.group_bindings`、`astrbot.forward.{game_to_qq,web_to_qq,qq_to_game}`、`astrbot.template.{qq_chat,qq_join,qq_quit,game_chat,web_chat}` 全部热生效
 - SeqQueue 有界序号队列 + 渲染/群绑定解析单元测试 7 例
+- **自研 AstrBot 对接插件** `astrbot-plugin/`（astrbot_plugin_dreamport v1.0.0）：`/dp` 指令（绑定/解绑/查询/状态/玩家/帮助）、绑定验证码私聊送达（私聊失败回退引导）、群消息上行（self_id 防回环 + 指令过滤 + 群白名单）、下行 SSE 实时发群（指数退避重连 + umo 学习缓存）；原创实现仅运行时调用 AstrBot 公开 API；部署与真机联调清单见 `astrbot-plugin/README.md`
+- USER_GUIDE 新增第 10 章「QQ 互通（AstrBot）」；API_CONTRACT 机器人端点章节更新为 v1.1 契约（免验证 bind 移除、互通端点、internal 收件箱）
 - **插件消息下行**（docs/ASTRBOT_PLAN.md §5.6）：Paper 插件新增游戏收件箱轮询（`features.receive-chat` 默认开、`features.message-poll-seconds` 默认 2s）→ 主线程 `broadcastMessage` 广播进游戏；首次拉取仅快进游标不回放历史；common 新增 `PendingMessagesResponse` DTO 与 `Protocol.MESSAGES_PENDING/QQ_BIND` 常量
 
 ### Changed

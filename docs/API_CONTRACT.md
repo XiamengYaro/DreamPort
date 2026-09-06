@@ -83,15 +83,24 @@
 | `/internal/v1/economy/snapshot` | POST | 经济快照上传（Vault/Essentials 采集） | P5 |
 | `/internal/v1/commands/whitelist` | GET | whitelist 指令队列（bukkit 模式） | P5 |
 
-## 5. 机器人端点 🤖（X-API-Token）
+## 5. 机器人端点 🤖（X-API-Token + astrbot.enabled 门禁，v1.1）
 
-| 端点 | 方法 | 功能 | 落位 |
-|------|------|------|------|
-| `/api/astrbot/status` | GET | 服务器/白名单状态 | P7 |
-| `/api/astrbot/players` | GET | 在线玩家 | P7 |
-| `/api/astrbot/{bind,unbind}` | POST | QQ↔MC 绑定/解绑 | P7 |
-| `/api/astrbot/lookup/{qq,mc}/:id` | GET | 双向查询 | P7 |
-| `/api/astrbot/chat` | POST | 消息进服广播 | P7 |
+> v1.1 起契约重定义（docs/ASTRBOT_PLAN.md §5.4）：免验证直绑 `/api/astrbot/bind` 已移除；
+> `astrbot.enabled=false` 时全部 403。自研对接插件见 `astrbot-plugin/`。
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/astrbot/status` | GET | `{online, max, servers, version}` |
+| `/api/astrbot/players` | GET | `{count, players:[{name, server}], servers:[…]}` |
+| `/api/astrbot/bind/request` | POST | QQ 申请绑定验证码 `{qq}` → `{code, expires_in}`（1 次/分钟、5 次/天） |
+| `/api/astrbot/unbind` | POST | 按 QQ 解绑 `{qq}` |
+| `/api/astrbot/lookup/qq/{qq}` | GET | QQ→账号 `{found, username, status}` |
+| `/api/astrbot/lookup/mc/{mc}` | GET | 账号→QQ `{found, qq, bound}` |
+| `/api/astrbot/chat` | POST | 群消息上行 `{group, sender_id, sender_name, message}`（群白名单/all/prefix 校验） |
+| `/api/astrbot/stream` | GET (SSE) | 下行事件流 `{seq, group, text}`（X-API-Token 请求头，X-Accel-Buffering: no） |
+| `/api/astrbot/messages?since=` | GET | 下行轮询 fallback `{messages, latest}` |
+| `/internal/v1/qq/bind` | POST | QQ 绑定游戏内确认 `{player, code}`（X-Server-Token） |
+| `/internal/v1/messages/pending?since=` | GET | 游戏收件箱 `{messages:[{seq, text}], latest}`（X-Server-Token，插件轮询） |
 
 ## 6. 实时通道
 

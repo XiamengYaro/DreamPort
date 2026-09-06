@@ -1,0 +1,5 @@
+name: astrbot_plugin_dreamport
+desc: "DreamPort(夏日小镇·梦港)QQ 验证绑定与群服消息互通"
+version: v1.0.0
+author: XiaMeng
+repo: "(https://github.com/XiamengYaro/DreamPort)"
