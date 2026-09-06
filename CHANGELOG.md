@@ -11,6 +11,10 @@
 -  部署与运维检查清单（首次部署核对/日常运维/故障排查/终端日志速查）
 - AstrBot 重构方案定稿（docs/ASTRBOT_PLAN.md：QQ 验证绑定 + 群服消息互通，含现状实测与开源调研）
 - 管理后台「QQ 互通」设置卡：启用开关 + API 令牌生成（`GET/PUT /api/admin/settings/astrbot`，token 脱敏回读）
+- **QQ 验证绑定全流程**（docs/ASTRBOT_PLAN.md §5.2）：`POST /api/astrbot/bind/request` 申请 6 位验证码（5 分钟有效、每 QQ 1 次/分钟、5 次/天、重新申请覆盖旧码）；网页「个人中心 → QQ 绑定」卡与游戏内 `/xmw qq bind <码>` 双通道凭码确认；单绑定语义（新绑定自动清除该 QQ 旧绑定）；按提交者计错误次数，10 分钟窗口内错 3 次锁定
+- 用户侧端点（JWT）：`GET /api/user/qq/status`（QQ 脱敏展示）、`POST /api/user/qq/bind`、`POST /api/user/qq/unbind`，绑定/解绑写入审计日志
+- 服务器间端点 `POST /internal/v1/qq/bind`（X-Server-Token 鉴权），供 Paper 插件游戏内确认通道调用
+- BindCodeService 状态机单元测试 9 例（验证码生命周期/频控/覆盖/锁定窗口/空码安全）
 
 ### Changed
 - AstrBot 集成 v1.1 门禁（docs/ASTRBOT_PLAN.md §5.4）：新增 `astrbot.enabled` 总开关（默认关闭，关闭时 `/api/astrbot/**` 全部 403）；开关与 `astrbot.api_token` 均可在管理后台配置

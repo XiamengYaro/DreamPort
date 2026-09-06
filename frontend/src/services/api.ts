@@ -440,6 +440,22 @@ class ApiService {
     return this.request('/user/profile')
   }
 
+  // QQ 绑定（docs/ASTRBOT_PLAN.md §5.2）
+  async getQqBindStatus() {
+    return this.request('/user/qq/status')
+  }
+
+  async qqBind(code: string) {
+    return this.request('/user/qq/bind', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    })
+  }
+
+  async qqUnbind() {
+    return this.request('/user/qq/unbind', { method: 'POST' })
+  }
+
   async updateUserProfile(data: { avatar?: string }) {
     return this.request('/user/profile', {
       method: 'POST',

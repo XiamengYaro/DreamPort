@@ -12,14 +12,14 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * /xmw 管理命令（含删除用户能力）：
+ * /xmw 命令：玩家侧 qq bind（QQ 验证绑定游戏内确认）+ 管理侧
  * reload/status/approve/reject/ban/unban/delete/list/info/version。
- * 经 /internal/v1/admin-ops 以服务器令牌调用后端。
+ * 经 /internal/v1/** 以服务器令牌调用后端。
  */
 public final class XmwCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUB = List.of("reload", "status", "approve", "reject", "ban",
-            "unban", "delete", "list", "info", "version");
+            "unban", "delete", "list", "info", "qq", "version");
 
     private final DreamPortPlugin plugin;
 
@@ -42,6 +42,7 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender, args);
             case "approve", "reject", "ban", "unban", "delete" -> handleOp(sender, sub, args);
+            case "qq" -> handleQq(sender, args);
             default -> sender.sendMessage("§6[DreamPort] §c未知子命令: " + args[0]);
         }
         return true;
@@ -157,6 +158,35 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> runnable.run());
     }
 
+    /**
+     * QQ 验证绑定游戏内确认（docs/ASTRBOT_PLAN.md §5.2）：
+     * /xmw qq bind <验证码> —— 验证码经 QQ 机器人 /dp绑定 获取，网页或游戏内任一通道确认。
+     */
+    private void handleQq(CommandSender sender, String[] args) {
+        if (!(sender instanceof org.bukkit.entity.Player player)) {
+            sender.sendMessage("§6[DreamPort] §c只有玩家可以绑定 QQ");
+            return;
+        }
+        if (args.length < 3 || !args[1].equalsIgnoreCase("bind")) {
+            usage(sender, "/xmw qq bind <验证码>");
+            return;
+        }
+        String code = args[2];
+        async(sender, () -> {
+            String body = plugin.backendClient().post("/internal/v1/qq/bind",
+                    java.util.Map.of("player", player.getName(), "code", code));
+            if (body == null) {
+                sender.sendMessage("§6[DreamPort] §c后端不可达");
+                return;
+            }
+            JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
+            boolean ok = obj.has("success") && obj.get("success").getAsBoolean();
+            String msg = obj.has("message") && !obj.get("message").isJsonNull()
+                    ? obj.get("message").getAsString() : body;
+            sender.sendMessage("§6[DreamPort] " + (ok ? "§a" + msg : "§c" + msg));
+        });
+    }
+
     private void noPermission(CommandSender sender) {
         sender.sendMessage("§6[DreamPort] §c没有权限");
     }
@@ -169,6 +199,9 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
     public List<String> onTabComplete(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 1) {
             return SUB.stream().filter(s -> s.startsWith(args[0].toLowerCase(Locale.ROOT))).toList();
+        }
+        if (args.length == 2 && "qq".equalsIgnoreCase(args[0])) {
+            return List.of("bind");
         }
         return List.of();
     }

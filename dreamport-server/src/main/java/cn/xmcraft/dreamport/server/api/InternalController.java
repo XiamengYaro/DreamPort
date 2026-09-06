@@ -6,6 +6,8 @@ import cn.xmcraft.dreamport.common.LoginCheckRequest;
 import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
+import cn.xmcraft.dreamport.server.qq.BindCodeService;
+import cn.xmcraft.dreamport.server.qq.QqBindingService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.user.UserService;
@@ -39,6 +41,8 @@ public class InternalController {
     private final cn.xmcraft.dreamport.server.chat.ChatService chatService;
     private final cn.xmcraft.dreamport.server.review.ReviewService reviewService;
     private final UserRepository userRepository;
+    private final BindCodeService bindCodeService;
+    private final QqBindingService qqBindingService;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -46,7 +50,9 @@ public class InternalController {
                               EconomyService economyService,
                               cn.xmcraft.dreamport.server.chat.ChatService chatService,
                               cn.xmcraft.dreamport.server.review.ReviewService reviewService,
-                              UserRepository userRepository) {
+                              UserRepository userRepository,
+                              BindCodeService bindCodeService,
+                              QqBindingService qqBindingService) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -55,6 +61,8 @@ public class InternalController {
         this.chatService = chatService;
         this.reviewService = reviewService;
         this.userRepository = userRepository;
+        this.bindCodeService = bindCodeService;
+        this.qqBindingService = qqBindingService;
     }
 
     @PostMapping("/login-check")
@@ -123,6 +131,40 @@ public class InternalController {
     }
 
     public record LoginRecordBody(String name, String uuid, String ip) {
+    }
+
+    /** QQ 绑定游戏内确认通道（/xmw qq bind <码>）：docs/ASTRBOT_PLAN.md §5.2 */
+    public record QqBindBody(String player, String code) {
+    }
+
+    @PostMapping("/qq/bind")
+    public ResponseEntity<Object> qqBind(@RequestBody QqBindBody body, HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null || body.player() == null || body.code() == null || body.code().isBlank()) {
+            return badRequest("player/code 必填");
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(body.player());
+        if (userOpt.isEmpty()) {
+            userOpt = userRepository.findByMinecraftNameIgnoreCase(body.player());
+        }
+        if (userOpt.isEmpty()) {
+            return badRequest("账户不存在（需先注册白名单）");
+        }
+        var result = bindCodeService.consume(body.code().trim(), "game:" + body.player().toLowerCase());
+        if (result.status() == BindCodeService.Status.LOCKED) {
+            return badRequest("错误次数过多，请稍后再试");
+        }
+        if (result.status() == BindCodeService.Status.BAD_CODE) {
+            return badRequest("验证码无效或已过期");
+        }
+        qqBindingService.bind(userOpt.get(), result.qq());
+        LOG.info("[QQ绑定] {} 已绑定 QQ {}（游戏内确认）", userOpt.get().username(),
+                QqBindingService.mask(result.qq()));
+        return ResponseEntity.ok(cn.xmcraft.dreamport.server.web.ApiResponse.success("绑定成功",
+                Map.of("qq", QqBindingService.mask(result.qq()))));
     }
 
     @PostMapping("/login-record")

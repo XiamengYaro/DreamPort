@@ -1,9 +1,10 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.chat.ChatService;
+import cn.xmcraft.dreamport.server.qq.BindCodeService;
+import cn.xmcraft.dreamport.server.qq.QqBindingService;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
-import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,16 +34,24 @@ public class AstrBotController {
     private final ChatService chatService;
     private final ServerStatsService statsService;
     private final SettingService settingService;
+    private final BindCodeService bindCodeService;
+    private final QqBindingService bindingService;
 
     public AstrBotController(UserRepository userRepository, ChatService chatService,
-                             ServerStatsService statsService, SettingService settingService) {
+                             ServerStatsService statsService, SettingService settingService,
+                             BindCodeService bindCodeService, QqBindingService bindingService) {
         this.userRepository = userRepository;
         this.chatService = chatService;
         this.statsService = statsService;
         this.settingService = settingService;
+        this.bindCodeService = bindCodeService;
+        this.bindingService = bindingService;
     }
 
     public record UnbindBody(String qq) {
+    }
+
+    public record BindRequestBody(String qq) {
     }
 
     public record ChatBody(String sender, String message) {
@@ -112,6 +121,24 @@ public class AstrBotController {
         return ResponseEntity.ok(body);
     }
 
+    /** 验证码绑定第一步：QQ 侧申请验证码（机器人私聊送达用户,网页/游戏内凭码完成绑定） */
+    @PostMapping("/bind/request")
+    public ResponseEntity<Object> bindRequest(@RequestBody BindRequestBody body, HttpServletRequest request) {
+        ResponseEntity<Object> blocked = gate(request);
+        if (blocked != null) {
+            return blocked;
+        }
+        if (body == null || body.qq() == null || body.qq().isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("缺少 qq 参数"));
+        }
+        BindCodeService.Issue issue = bindCodeService.request(body.qq().trim());
+        if (issue == null) {
+            return ResponseEntity.status(429).body(ApiResponse.failure("申请过于频繁（每分钟 1 次、每天 5 次）"));
+        }
+        return ResponseEntity.ok(ApiResponse.success("验证码已生成，请通过 QQ 私聊发送给用户",
+                Map.of("code", issue.code(), "expires_in", issue.expiresIn())));
+    }
+
     @PostMapping("/unbind")
     public ResponseEntity<Object> unbind(@RequestBody UnbindBody body, HttpServletRequest request) {
         ResponseEntity<Object> blocked = gate(request);
@@ -121,14 +148,7 @@ public class AstrBotController {
         if (body.qq() == null || body.qq().isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("缺少 qq 参数"));
         }
-        boolean changed = false;
-        for (UserRecord u : userRepository.findAll()) {
-            if (body.qq().equals(u.qqNumber())) {
-                userRepository.save(clearQq(u));
-                changed = true;
-            }
-        }
-        return ResponseEntity.ok(changed
+        return ResponseEntity.ok(bindingService.unbindQq(body.qq())
                 ? ApiResponse.success("已解绑")
                 : ApiResponse.failure("该 QQ 未绑定任何账号"));
     }
@@ -171,15 +191,5 @@ public class AstrBotController {
         String sender = body.sender() == null || body.sender().isBlank() ? "QQ用户" : body.sender();
         chatService.broadcast("[QQ] " + sender, body.message() == null ? "" : body.message());
         return ResponseEntity.ok(ApiResponse.success("已广播"));
-    }
-
-    private UserRecord clearQq(UserRecord user) {
-        return new UserRecord(user.id(), user.username(), user.email(), user.status(),
-                user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
-                null, null, user.questionnaireScore(), user.questionnairePassed(),
-                user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
-                user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
-                user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
     }
 }

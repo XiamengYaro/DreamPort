@@ -200,6 +200,45 @@
         </div>
       </div>
 
+      <!-- QQ 绑定 -->
+      <div class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          QQ 绑定
+        </h2>
+
+        <div v-if="qqStatus.bound" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-emerald-400 font-medium">已绑定 QQ：{{ qqStatus.qq }}</p>
+              <p class="text-stone-500 text-xs mt-1">绑定时间: {{ formatTime(qqStatus.boundAt) }}</p>
+            </div>
+            <button @click="unbindQq" class="btn-secondary text-sm" :disabled="qqLoading">
+              {{ qqLoading ? '处理中...' : '解绑' }}
+            </button>
+          </div>
+        </div>
+
+        <div v-else class="space-y-3">
+          <p class="text-stone-400 text-sm">
+            在 QQ 群内向机器人发送 <code class="text-orange-400">/dp绑定</code>，验证码将私聊发送给你（5 分钟内有效）；
+            也可以在游戏内执行 <code class="text-orange-400">/xmw qq bind &lt;验证码&gt;</code> 完成绑定。
+          </p>
+          <div class="flex gap-2">
+            <input v-model="qqCode" type="text" class="input flex-1" maxlength="6" placeholder="输入 6 位验证码" />
+            <button @click="bindQq" class="btn-primary" :disabled="qqCode.trim().length !== 6 || qqLoading">
+              {{ qqLoading ? '绑定中...' : '绑定' }}
+            </button>
+          </div>
+          <div v-if="qqMessage" class="p-3 rounded-xl"
+            :class="qqSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ qqMessage }}
+          </div>
+        </div>
+      </div>
+
       <!-- 修改 Minecraft ID 弹窗 -->
       <div v-if="showChangeIdModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showChangeIdModal = false">
         <div class="card w-full max-w-md p-6">
@@ -341,6 +380,13 @@ const minecraftSuccess = ref(false)
 const changeIdMessage = ref('')
 const changeIdSuccess = ref(false)
 
+// QQ 绑定
+const qqStatus = ref<any>({ bound: false, qq: '', boundAt: 0 })
+const qqCode = ref('')
+const qqLoading = ref(false)
+const qqMessage = ref('')
+const qqSuccess = ref(false)
+
 // 邮箱修改相关
 const showEmailModal = ref(false)
 const newEmail = ref('')
@@ -357,9 +403,56 @@ onMounted(async () => {
     loadAnnouncement(),
     loadPlayerData(),
     loadBedrockStatus(),
-    loadMinecraftStatus()
+    loadMinecraftStatus(),
+    loadQqStatus()
   ])
 })
+
+const loadQqStatus = async () => {
+  try {
+    const r: any = await api.getQqBindStatus()
+    if (r.success) qqStatus.value = r.data
+  } catch (e) { console.error(e) }
+}
+
+const bindQq = async () => {
+  qqLoading.value = true
+  qqMessage.value = ''
+  try {
+    const r: any = await api.qqBind(qqCode.value.trim())
+    if (r.success) {
+      qqSuccess.value = true
+      qqMessage.value = '绑定成功'
+      qqCode.value = ''
+      await loadQqStatus()
+    } else {
+      qqSuccess.value = false
+      qqMessage.value = r.message || r.msg || '绑定失败'
+    }
+  } catch (e: any) {
+    qqSuccess.value = false
+    qqMessage.value = e.message || '绑定失败'
+  } finally {
+    qqLoading.value = false
+  }
+}
+
+const unbindQq = async () => {
+  qqLoading.value = true
+  try {
+    const r: any = await api.qqUnbind()
+    if (r.success) {
+      notify?.success('已解绑')
+      await loadQqStatus()
+    } else {
+      notify?.error(r.message || r.msg || '解绑失败')
+    }
+  } catch (e: any) {
+    notify?.error(e.message || '解绑失败')
+  } finally {
+    qqLoading.value = false
+  }
+}
 
 const loadServerStatus = async () => {
   try {
