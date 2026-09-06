@@ -41,6 +41,11 @@ public class LoginListener implements Listener {
         InetAddress address = event.getAddress();
         String ip = address != null ? address.getHostAddress() : "unknown";
 
+        // 无条件记录进服尝试（供网页 ID 验证比对）——对齐旧版：先记录后校验。
+        // 关键场景：玩家用绑定的 MC ID（≠网站账号名）进服完成 ID 验证，
+        // 此时 login-check 会拒绝，但记录必须落库，网页验证才能成功。
+        plugin.backendClient().recordLogin(username, uuid, ip);
+
         LoginCheckResponse decision = plugin.backendClient().loginCheck(username, uuid, ip);
 
         if (decision.maintenance() && !player.isOp()) {
@@ -48,8 +53,6 @@ public class LoginListener implements Listener {
             return;
         }
         if (decision.allowed()) {
-            // 记录登录尝试（供网页 ID 验证），异步不阻塞进服
-            plugin.backendClient().recordLogin(username, uuid, ip);
             return;
         }
         String reasonKey = decision.reasonKey() == null ? "login.unknown_status" : decision.reasonKey();

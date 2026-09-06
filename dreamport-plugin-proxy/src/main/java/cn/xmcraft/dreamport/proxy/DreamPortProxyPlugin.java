@@ -224,24 +224,69 @@ public class DreamPortProxyPlugin {
         }
         Player player = event.getPlayer();
         String username = player.getUsername();
+        String ip = player.getRemoteAddress().getAddress().getHostAddress();
 
-        Boolean decision = checkAllowed(username, player.getRemoteAddress().getAddress().getHostAddress());
-        if (decision == null || decision) {
+        // 无条件记录进服尝试（供网页 ID 验证比对）——对齐旧版：先记录后校验。
+        // 关键场景：玩家用绑定的 MC ID（≠网站账号名）进服完成 ID 验证，
+        // 此时 login-check 会拒绝，但记录必须落库，网页验证才能成功。
+        recordLogin(username, player.getUniqueId().toString(), ip);
+
+        CacheEntry decision = checkAllowed(username, ip);
+        if (decision == null || decision.allowed()) {
             return; // 放行（null = 后端不可达且 fail-policy=allow）
         }
-        // 拒绝：断开并提示
-        player.disconnect(Component.text("你还未注册白名单，请先在官网注册\n", NamedTextColor.RED)
-                .append(Component.text(backendUrl.replace("http://", "http://"), NamedTextColor.YELLOW)));
+        // 拒绝：断开并提示（按 reasonKey 映射友好文案）
+        player.disconnect(disconnectMessage(decision.reasonKey()));
         event.setResult(ServerPreConnectEvent.ServerResult.denied());
     }
 
-    /** @return true=允许, false=拒绝, null=后端不可达 */
-    private Boolean checkAllowed(String username, String ip) {
+    /** 上报进服尝试（fire-and-forget，异步线程） */
+    private void recordLogin(String name, String uuid, String ip) {
+        proxy.getScheduler().buildTask(this, () -> {
+            try {
+                String body = "{\"name\":\"" + escape(name) + "\",\"uuid\":\"" + escape(uuid)
+                        + "\",\"ip\":\"" + escape(ip) + "\"}";
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(backendUrl + "/internal/v1/login-record"))
+                        .timeout(Duration.ofMillis(2000))
+                        .header("Content-Type", "application/json")
+                        .header(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID, serverId)
+                        .header(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN, serverToken)
+                        .POST(HttpRequest.BodyPublishers.ofString(body))
+                        .build();
+                http.send(request, HttpResponse.BodyHandlers.ofString());
+            } catch (Exception e) {
+                logger.warn("login-record 上报失败: {}", e.getMessage());
+            }
+        }).schedule();
+    }
+
+    /** reasonKey → 玩家可见踢出文案 */
+    private Component disconnectMessage(String reasonKey) {
+        String msg = switch (reasonKey == null ? "" : reasonKey) {
+            case "login.pending" -> "你的白名单申请正在等待审核，请耐心等待";
+            case "login.pending_review" -> "问卷已通过，等待管理员审核";
+            case "login.invited_pending" -> "等待邀请人确认";
+            case "login.pending_verify", "verify.recorded" -> "服务器已记录您的信息，请返回网页继续 ID 验证";
+            case "login.rejected" -> "你的白名单申请已被拒绝，可前往网页重新答题或申诉";
+            case "login.banned", "login.banned_reason" -> "你已被封禁";
+            case "maintenance.kick" -> "服务器正在维护中，请耐心等待";
+            default -> "你还未注册白名单，请先在官网注册";
+        };
+        Component text = Component.text(msg + "\n", NamedTextColor.RED);
+        if (reasonKey == null || reasonKey.equals("login.not_registered") || reasonKey.isEmpty()) {
+            text = text.append(Component.text(backendUrl, NamedTextColor.YELLOW));
+        }
+        return text;
+    }
+
+    /** @return 允许/拒绝决策（null 不会出现；后端不可达由 failDecision 决定） */
+    private CacheEntry checkAllowed(String username, String ip) {
         String key = username.toLowerCase();
         long now = System.currentTimeMillis();
         CacheEntry cached = decisionCache.get(key);
         if (cached != null && now - cached.cachedAt() < cacheTtlSeconds * 1000L) {
-            return cached.allowed();
+            return cached;
         }
         try {
             String body = "{\"username\":\"" + escape(username) + "\",\"ip\":\"" + escape(ip) + "\"}";
@@ -257,8 +302,9 @@ public class DreamPortProxyPlugin {
             if (response.statusCode() == 200) {
                 String json = response.body();
                 boolean allowed = json.contains("\"decision\":\"allow\"");
-                decisionCache.put(key, new CacheEntry(allowed, null, now));
-                return allowed;
+                String reasonKey = extractReasonKey(json);
+                decisionCache.put(key, new CacheEntry(allowed, reasonKey, now));
+                return new CacheEntry(allowed, reasonKey, now);
             }
             logger.warn("login-check 非法响应 {} {}", response.statusCode(), response.body());
             return failDecision(cached);
@@ -268,11 +314,17 @@ public class DreamPortProxyPlugin {
         }
     }
 
-    private Boolean failDecision(CacheEntry cached) {
+    private static String extractReasonKey(String json) {
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("\"reasonKey\":\"([^\"]+)\"").matcher(json);
+        return m.find() ? m.group(1) : "";
+    }
+
+    private CacheEntry failDecision(CacheEntry cached) {
         return switch (failPolicy) {
-            case "allow" -> true;
-            case "deny" -> false;
-            default -> cached != null ? cached.allowed() : false;
+            case "allow" -> new CacheEntry(true, null, 0);
+            case "deny" -> new CacheEntry(false, "error.backend_down", 0);
+            default -> cached != null ? cached : new CacheEntry(false, "error.backend_down", 0);
         };
     }
 

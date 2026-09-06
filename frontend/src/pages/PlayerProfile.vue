@@ -27,9 +27,15 @@
               class="w-32 h-32 rounded-2xl border-4 border-orange-500/30 shadow-xl"
               @error="handleAvatarError" />
             <div class="flex-1">
-              <h1 class="text-3xl font-bold text-white mb-2">{{ profile.username }}</h1>
+              <h1 class="text-3xl font-bold text-white mb-2">{{ profile.username }}
+                <span class="ml-2 align-middle text-sm px-2.5 py-1 rounded-lg align-middle"
+                  :class="profile.status === 'banned' ? 'bg-rose-500/15 text-rose-400' : 'bg-emerald-500/15 text-emerald-400'">
+                  {{ getStatusText(profile.status) }}
+                </span>
+              </h1>
               <div class="space-y-1 text-sm text-stone-400">
-                <p>UUID: <span class="text-stone-300 font-mono">{{ profile.uuid }}</span></p>
+                <p>游戏 ID: <span class="text-stone-300 font-mono">{{ profile.minecraftName || profile.username }}</span></p>
+                <p>UUID: <span class="text-stone-300 font-mono">{{ profile.uuid || '未绑定' }}</span></p>
                 <p>首次加入: <span class="text-stone-300">{{ formatDate(profile.regTime) }}</span></p>
                 <p>已陪伴服务器 <span class="text-orange-400 font-bold">{{ profile.daysSinceReg || 0 }}</span> 天</p>
               </div>
@@ -54,6 +60,17 @@
           <div class="card p-4 text-center">
             <div class="text-2xl font-bold text-orange-400">{{ profile.loginCount || '-' }}</div>
             <div class="text-xs text-stone-400 mt-1">登录次数</div>
+          </div>
+        </div>
+
+        <!-- 封禁提示 -->
+        <div v-if="profile.status === 'banned'" class="card p-6 border-2 border-rose-500/30 bg-rose-500/5">
+          <div class="flex items-start gap-3">
+            <AppIcon name="x-circle" class="w-6 h-6 text-rose-400 shrink-0 mt-0.5" />
+            <div>
+              <div class="text-rose-400 font-semibold mb-1">该玩家已被封禁</div>
+              <div class="text-sm text-stone-400">封禁原因：{{ profile.banReason || '未填写' }}</div>
+            </div>
           </div>
         </div>
 
@@ -92,6 +109,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
+import { getStatusText } from '@/lib/status'
 import AppIcon from '@/components/AppIcon.vue'
 
 const route = useRoute()

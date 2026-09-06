@@ -43,9 +43,7 @@
             @error="handleAvatarError" />
           <div class="text-white font-medium text-sm truncate">{{ player.username }}</div>
           <div class="text-xs text-stone-500 mt-1">
-            <span v-if="player.status === 'approved'" class="text-green-400">已通过</span>
-            <span v-else-if="player.status === 'pending'" class="text-yellow-400">待审核</span>
-            <span v-else class="text-stone-500">{{ player.status }}</span>
+            <span :class="statusColorClass(player.status)">{{ getStatusText(player.status) }}</span>
           </div>
         </router-link>
       </div>
@@ -56,6 +54,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import { getStatusText } from '@/lib/status'
+
+const statusColorClass = (status: string) => ({
+  approved: 'text-green-400',
+  pending: 'text-yellow-400',
+  pending_review: 'text-sky-400',
+  rejected: 'text-rose-400',
+  banned: 'text-rose-400 font-medium'
+}[status] || 'text-stone-500')
 import AppIcon from '@/components/AppIcon.vue'
 
 const loading = ref(false)

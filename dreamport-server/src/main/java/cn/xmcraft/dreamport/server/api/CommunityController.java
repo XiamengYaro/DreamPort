@@ -277,6 +277,8 @@ public class CommunityController {
         profile.put("regTime", u.regTime());
         profile.put("daysSinceReg", (System.currentTimeMillis() - u.regTime()) / 86_400_000L);
         profile.put("qqNumber", u.qqNumber());
+        profile.put("banReason", u.banReason());
+        profile.put("status", u.status());
         return ResponseEntity.ok(profile);
     }
 
