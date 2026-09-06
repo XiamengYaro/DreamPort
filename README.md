@@ -210,6 +210,12 @@ mysqldump -uroot xmc > xmc-backup.sql
 
 ---
 
+## 🤖 AI 辅助声明
+
+本项目在开发过程中使用了 AI 编程助手（ZCode / GLM）辅助完成：架构设计讨论、代码实现、问题排查与文档撰写。所有代码均经人工审核、测试与验收，产品方向与全部设计决策由项目作者（Xia_Meng_）确定。
+
+---
+
 <div align="center">
 
 **DreamPort** · MIT License · 由 Xia_Meng_ 为夏日小镇服务器打造
