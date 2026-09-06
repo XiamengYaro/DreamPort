@@ -70,7 +70,15 @@ public class QuestionnaireController {
     @GetMapping("/questionnaire/config")
     public ResponseEntity<Object> config() {
         if (!questionnaireService.enabled()) {
-            return ResponseEntity.ok(Map.of("enabled", false, "questions", List.of(), "passScore", 0));
+            Map<String, Object> data = new LinkedHashMap<>();
+            data.put("enabled", false);
+            data.put("questions", List.of());
+            data.put("passScore", 0);
+            data.put("questionnairePassScore", 0);
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("success", true);
+            body.put("data", data);
+            return ResponseEntity.ok(body);
         }
         var questionnaire = questionnaireService.activeQuestionnaire();
         List<Map<String, Object>> questions = new ArrayList<>();
@@ -109,11 +117,14 @@ public class QuestionnaireController {
             qm.put("options", options);
             questions.add(qm);
         }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("enabled", true);
+        data.put("questions", questions);
+        data.put("passScore", questionnaire.passScore());
+        data.put("questionnairePassScore", questionnaire.passScore());
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("enabled", true);
-        body.put("questions", questions);
-        body.put("passScore", questionnaire.passScore());
-        body.put("questionnairePassScore", questionnaire.passScore());
+        body.put("success", true);
+        body.put("data", data);
         return ResponseEntity.ok(body);
     }
 

@@ -44,6 +44,9 @@ public class ConfigController {
         data.put("bedrockEnabled", Boolean.TRUE.equals(
                 systemSettings.gameConfig().getOrDefault("bedrockEnabled", false)));
         data.put("verifyPage", settingService.getMap("verify.config"));
+        var qnCfg = systemSettings.questionnaireConfig();
+        data.put("questionnaireEnabled", qnCfg.getOrDefault("enabled", true));
+        data.put("questionnairePassScore", qnCfg.getOrDefault("passScore", 60));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", true);
         body.put("data", data);
