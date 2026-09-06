@@ -13,8 +13,8 @@ public interface UserRepository extends CrudRepository<UserRecord, Long> {
 
     boolean existsByEmailIgnoreCase(String email);
 
-    /** ID 验证中：按绑定的 MC ID 查 pending_verify 账户 */
-    Optional<UserRecord> findByMinecraftNameIgnoreCaseAndStatus(String minecraftName, String status);
+    /** ID 验证中/已验证：按绑定的 MC ID 查账户 */
+    Optional<UserRecord> findByMinecraftNameIgnoreCase(String minecraftName);
 
     /** findAll() 返回 Iterable，统一转 List */
     default List<UserRecord> listAll() {

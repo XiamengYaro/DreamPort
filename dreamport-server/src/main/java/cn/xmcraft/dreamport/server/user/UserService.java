@@ -110,7 +110,24 @@ public class UserService {
         boolean maintenance = maintenance();
         Optional<UserRecord> found = userRepository.findByUsernameIgnoreCase(username);
         if (found.isEmpty()) {
-            return maintenance ? denyMaintained() : LoginCheckResponse.deny("login.not_registered");
+            if (maintenance) {
+                return denyMaintained();
+            }
+            // 账号名 ≠ 绑定 MC ID 的账户：用绑定 ID 进服（pending_verify → 提示回网页；
+            // 已 approved → 放行，whitelist add 已随验证入队）
+            Optional<UserRecord> byMcId =
+                    userRepository.findByMinecraftNameIgnoreCase(username);
+            if (byMcId.isPresent()) {
+                UserRecord mcUser = byMcId.get();
+                if ("approved".equals(mcUser.status())) {
+                    return LoginCheckResponse.allow();
+                }
+                if ("pending_verify".equals(mcUser.status())) {
+                    // 该进服尝试由插件/代理无条件上报 login-record，网页验证据此比对
+                    return LoginCheckResponse.deny("verify.recorded");
+                }
+            }
+            return LoginCheckResponse.deny("login.not_registered");
         }
         UserRecord user = found.get();
         if (maintenance) {
