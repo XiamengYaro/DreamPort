@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -153,7 +154,8 @@ public class SystemSettingsController {
         if (body.get("news") instanceof List<?> newNews) {
             for (Object o : newNews) {
                 if (o instanceof Map<?, ?> m && m.get("id") != null && !oldIds.contains(String.valueOf(m.get("id")))) {
-                    String title = String.valueOf(m.getOrDefault("title", "无标题"));
+                    Object t = m.get("title");
+                    String title = t == null ? "无标题" : String.valueOf(t);
                     for (UserRecord u : userRepository.listAll()) {
                         if ("banned".equals(u.status())) continue;
                         notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(

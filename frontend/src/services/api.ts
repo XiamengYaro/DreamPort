@@ -280,25 +280,35 @@ class ApiService {
     })
   }
 
-  // Docs Management
-  async createDoc(title: string, category: string, filename?: string) {
+  // Docs Management(参数对齐后端 DocBody{title,category,filename,content})
+  async getDocs() {
+    return this.request('/docs')
+  }
+
+  async readDoc(category: string | null, filename: string) {
+    const q = new URLSearchParams({ filename })
+    if (category) q.set('category', category)
+    return this.request(`/docs/detail?${q.toString()}`)
+  }
+
+  async createDoc(title: string, category: string, content?: string) {
     return this.request('/admin/docs/create', {
       method: 'POST',
-      body: JSON.stringify({ title, category, filename })
+      body: JSON.stringify({ title, category, content })
     })
   }
 
-  async deleteDoc(filename: string) {
+  async deleteDoc(category: string | null, filename: string) {
     return this.request('/admin/docs/delete', {
       method: 'POST',
-      body: JSON.stringify({ filename })
+      body: JSON.stringify({ category, filename })
     })
   }
 
-  async updateDoc(filename: string, content: string) {
+  async updateDoc(category: string | null, filename: string, content: string) {
     return this.request('/admin/docs/update', {
       method: 'POST',
-      body: JSON.stringify({ filename, content })
+      body: JSON.stringify({ category, filename, content })
     })
   }
 

@@ -157,7 +157,12 @@
           <div class="space-y-4">
             <div v-for="(feature, index) in portalData.features" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input v-model="feature.icon" type="text" class="input text-sm" placeholder="图标 (emoji)" />
+                <div class="flex items-center gap-2">
+                  <AppIcon :name="feature.icon || 'star'" class="w-7 h-7 shrink-0" />
+                  <select v-model="feature.icon" class="input text-sm flex-1">
+                    <option v-for="n in iconNames" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                </div>
                 <input v-model="feature.title" type="text" class="input text-sm" placeholder="标题" />
                 <input v-model="feature.description" type="text" class="input text-sm" placeholder="描述" />
               </div>
@@ -169,10 +174,12 @@
 
         <!-- 时光照片墙(首页展示,玩家可留言) -->
         <div class="card p-6">
-          <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center justify-between mb-3">
             <h3 class="text-lg font-semibold text-white">时光照片墙</h3>
-            <p class="text-xs text-stone-500 mb-3">这里的内容与图片会展示在首页照片墙,玩家点击照片可放大并留言;分类用于首页筛选,可在下方添加</p>
-            <div class="mb-3 flex flex-wrap items-center gap-2">
+            <button @click="addTimelineEvent" class="btn-secondary text-sm">+ 添加事件</button>
+          </div>
+          <p class="text-xs text-stone-500 mb-3">这里的内容与图片会展示在首页照片墙,玩家点击照片可放大并留言;分类用于首页筛选,可在下方添加</p>
+          <div class="mb-4 flex flex-wrap items-center gap-2">
               <span class="text-xs text-stone-500">照片分类:</span>
               <span v-for="(t, ti) in portalData.photoTypes" :key="t"
                 class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/10 text-orange-400 text-xs">
@@ -184,7 +191,6 @@
                 class="input text-xs w-28 py-1" @keyup.enter="addPhotoType" />
               <button @click="addPhotoType" class="btn-secondary text-xs py-1 px-3">添加</button>
             </div>
-            <button @click="addTimelineEvent" class="btn-secondary text-sm">+ 添加事件</button>
           </div>
           <div class="space-y-4">
             <div v-for="(event, index) in portalData.timeline" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
@@ -404,6 +410,62 @@
           <button @click="saveAnnouncements" class="btn-primary mt-4" :disabled="savingAnnouncements">
             {{ savingAnnouncements ? '保存中...' : '保存更新日志' }}
           </button>
+        </div>
+      </div>
+
+      <!-- 文档管理 Tab -->
+      <div v-if="activeTab === 'docs' && !loading" class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+        <!-- 左:文档列表 -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-white">文档列表</h3>
+            <button @click="newDoc" class="btn-secondary text-xs">+ 新建文档</button>
+          </div>
+          <div v-for="cat in docsData.categories" :key="cat.name" class="mb-3">
+            <div class="text-xs text-stone-500 mb-1 px-1">{{ cat.displayName || cat.name }}</div>
+            <button v-for="f in cat.files" :key="f"
+              class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors"
+              :class="docForm.category === cat.name && docForm.filename === f ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+              @click="openDoc(cat.name, f)">
+              {{ f.replace(/\.md$/, '') }}
+            </button>
+          </div>
+          <div v-if="docsData.uncategorized.length" class="mb-3">
+            <div class="text-xs text-stone-500 mb-1 px-1">未分类</div>
+            <button v-for="f in docsData.uncategorized" :key="f"
+              class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors"
+              :class="!docForm.category && docForm.filename === f ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+              @click="openDoc(null, f)">
+              {{ f.replace(/\.md$/, '') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 右:编辑器 + 实时预览 -->
+        <div class="card p-4" v-if="docForm.isNew || docForm.filename">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+            <input v-model="docForm.title" class="input text-sm" placeholder="标题(即文件名)" />
+            <select v-model="docForm.category" class="input text-sm">
+              <option value="">未分类</option>
+              <option v-for="cat in docsData.categories" :key="cat.name" :value="cat.name">{{ cat.displayName || cat.name }}</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <textarea v-model="docForm.content" class="input text-sm font-mono" rows="18"
+              placeholder="Markdown 内容…"></textarea>
+            <div class="rounded-xl bg-stone-900/60 border border-stone-700 p-4 overflow-y-auto max-h-[60vh]">
+              <div class="prose prose-invert max-w-none text-sm" v-html="docPreview"></div>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button @click="saveDoc" class="btn-primary text-sm" :disabled="!docForm.title || savingDocs">
+              {{ savingDocs ? '保存中...' : (docForm.isNew ? '创建文档' : '保存修改') }}
+            </button>
+            <button v-if="!docForm.isNew" @click="deleteDocCurrent" class="btn-secondary text-sm text-rose-400">删除文档</button>
+          </div>
+        </div>
+        <div class="card p-10 text-center text-stone-500 text-sm" v-else>
+          从左侧选择一篇文档,或点击「+ 新建文档」开始撰写(支持 Markdown,右侧实时预览)
         </div>
       </div>
 
@@ -822,7 +884,7 @@
       </div>
     </AppModal>
   </div>
-    </div></template>
+</template>
 
 <script setup lang="ts">
 import { ref, onMounted, inject, computed, watch } from 'vue'
@@ -834,7 +896,9 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
+import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
+import { renderMarkdown } from '@/lib/markdown'
 
 const notify = inject('notify') as any
 
@@ -845,6 +909,7 @@ const menuItems = [
   { key: 'settings', icon: 'cog', label: '外观设置' },
   { key: 'system', icon: 'cpu', label: '系统设置' },
   { key: 'announcements', icon: 'chat-bubble', label: '公告管理' },
+  { key: 'docs', icon: 'document-text', label: '文档管理' },
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
@@ -1098,7 +1163,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs()])
   loading.value = false
 })
 
@@ -1324,6 +1389,65 @@ const removeTeamMember = (i: number) => { portalData.value.team.splice(i, 1) }
 const addFeature = () => { portalData.value.features.push({ icon: 'star', title: '', description: '' }) }
 const removeFeature = (i: number) => { portalData.value.features.splice(i, 1) }
 const newTimelineId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+
+// ===== 文档管理(读取/新建/编辑/删除,MD 实时预览) =====
+const docsData = ref<any>({ categories: [], uncategorized: [] })
+const docForm = ref({ isNew: false, category: '' as string | null, filename: '', title: '', content: '' })
+const savingDocs = ref(false)
+const docPreview = computed(() => renderMarkdown(docForm.value.content || ''))
+
+const loadDocs = async () => {
+  try {
+    const r: any = await api.getDocs()
+    if (r.success || r.categories) docsData.value = r.data ?? r
+  } catch (e) { console.error(e) }
+}
+
+const openDoc = async (category: string | null, filename: string) => {
+  try {
+    const r: any = await api.readDoc(category, filename)
+    if (r.success || r.filename) {
+      const d = r.data ?? r
+      docForm.value = { isNew: false, category: d.category || category || '', filename: d.filename || filename, title: d.title || filename, content: d.content || '' }
+    }
+  } catch (e: any) { notify?.error(e.message || '读取失败') }
+}
+
+const newDoc = () => {
+  docForm.value = { isNew: true, category: '', filename: '', title: '', content: '' }
+}
+
+const saveDoc = async () => {
+  savingDocs.value = true
+  try {
+    let r: any
+    if (docForm.value.isNew) {
+      r = await api.createDoc(docForm.value.title, docForm.value.category, docForm.value.content)
+    } else {
+      r = await api.updateDoc(docForm.value.category, docForm.value.filename, docForm.value.content)
+    }
+    if (r.success) {
+      notify?.success('文档已保存')
+      await loadDocs()
+      if (docForm.value.isNew && r.data?.filename) {
+        docForm.value = { isNew: false, category: docForm.value.category, filename: r.data.filename, title: r.data.title || docForm.value.title, content: docForm.value.content }
+      }
+    } else { notify?.error(r.message || '保存失败') }
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingDocs.value = false
+}
+
+const deleteDocCurrent = async () => {
+  if (!confirm(`确认删除文档「${docForm.value.filename}」吗?`)) return
+  try {
+    const r: any = await api.deleteDoc(docForm.value.category, docForm.value.filename)
+    if (r.success) {
+      notify?.success('已删除')
+      docForm.value = { isNew: false, category: '', filename: '', title: '', content: '' }
+      await loadDocs()
+    } else { notify?.error(r.message || '删除失败') }
+  } catch (e: any) { notify?.error(e.message || '删除失败') }
+}
 
 // ===== 公告管理(资讯中心 + 更新日志) =====
 const newsList = ref<any[]>([])
