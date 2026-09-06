@@ -107,7 +107,11 @@ interface TimelineEntry {
   type?: string
 }
 
-const props = defineProps<{ timeline: TimelineEntry[] }>()
+const props = withDefaults(defineProps<{
+  timeline: TimelineEntry[]
+  /** 照片分类(后台「时光照片墙」可添加),缺省用内置三类 */
+  types?: string[]
+}>(), { types: () => [] })
 
 const currentType = ref('all')
 const selected = ref<TimelineEntry | null>(null)
@@ -118,18 +122,20 @@ const posting = ref(false)
 const loggedIn = ref(!!localStorage.getItem('token'))
 const isAdmin = ref(localStorage.getItem('isAdmin') === 'true')
 
-const timelineTypes = [
-  { label: '全部', value: 'all' },
-  { label: '公告更新', value: 'announcement' },
-  { label: '活动赛事', value: 'event' },
-  { label: '成就纪念', value: 'milestone' }
-]
-
+const KNOWN_TYPES = ['announcement', 'event', 'milestone']
 const typeNames: Record<string, string> = {
   announcement: '公告更新',
   event: '活动赛事',
   milestone: '成就纪念'
 }
+
+const timelineTypes = computed(() => [
+  { label: '全部', value: 'all' },
+  ...(props.types?.length ? props.types : KNOWN_TYPES).map(t => ({
+    label: typeNames[t] || t,
+    value: t
+  }))
+])
 
 const getTypeName = (type?: string) => (type && typeNames[type]) || '其他'
 

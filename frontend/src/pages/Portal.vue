@@ -55,7 +55,7 @@
     <FeaturesSection v-if="portalConfig.features?.length" :features="portalConfig.features" />
 
     <!-- 历史时刻（垂直时间轴） -->
-    <TimelineSection :timeline="portalConfig.timeline" />
+    <TimelineSection :timeline="portalConfig.timeline" :types="portalConfig.photo_types" />
 
     <!-- 底部 CTA -->
     <section class="py-16 px-4 bg-stone-800/30">
@@ -124,7 +124,9 @@ onMounted(async () => {
           team: Array.isArray(configData.data.portal.team) ? configData.data.portal.team : portalConfig.value.team,
           features: Array.isArray(configData.data.portal.features) ? configData.data.portal.features : portalConfig.value.features,
           carousel: Array.isArray(configData.data.portal.carousel) ? configData.data.portal.carousel : portalConfig.value.carousel,
-          timeline: Array.isArray(configData.data.portal.timeline) ? configData.data.portal.timeline : portalConfig.value.timeline
+          timeline: Array.isArray(configData.data.portal.timeline) ? configData.data.portal.timeline : portalConfig.value.timeline,
+          photo_types: Array.isArray(configData.data.portal.photo_types)
+            ? configData.data.portal.photo_types : ['announcement', 'event', 'milestone'],
         }
         // 从 portal.logo 读取 Logo，不使用 logoUrl
         if (configData.data.portal.logo) {
