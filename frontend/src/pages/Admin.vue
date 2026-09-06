@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 pt-24 pb-20">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
       <div class="card p-6 mb-6 flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-white">管理面板</h1>
@@ -13,17 +13,18 @@
         </label>
       </div>
 
-      <!-- Tab 按钮 -->
-            <!-- Tab 按钮（单行，可横向滚动） -->
-      <div class="card p-2 mb-6 flex gap-1 overflow-x-auto">
-        <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
-          class="flex-1 min-w-fit shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm transition-all duration-200"
-          :class="activeTab === m.key ? 'bg-orange-500/15 text-orange-400 font-medium' : 'text-stone-400 hover:text-white hover:bg-white/5'">
-          <AppIcon :name="m.icon" class="w-4 h-4" /><span>{{ m.label }}</span>
-        </button>
-      </div>
-
-      <!-- Loading -->
+      <!-- 左侧菜单(桌面竖排 / 移动端横滚) + 右侧内容区 -->
+      <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <nav class="card p-2 w-full lg:w-52 lg:sticky lg:top-24 shrink-0 flex lg:flex-col gap-1 overflow-x-auto">
+          <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
+            class="flex items-center gap-2 whitespace-nowrap px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            :class="activeTab === m.key ? 'text-orange-400 bg-orange-500/15' : 'text-stone-400 hover:text-white hover:bg-white/5'">
+            <AppIcon :name="m.icon" class="w-4 h-4" />
+            {{ m.label }}
+          </button>
+        </nav>
+        <!-- 内容区 -->
+        <div class="flex-1 min-w-0 w-full">
       <div v-if="loading" class="card p-12 text-center">
         <div class="inline-flex items-center gap-3 text-stone-400">
           <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -368,10 +369,6 @@
             </div>
           </div>
           <AppPagination :page="pendingPage" :pages="totalPendingPages" @change="pendingPage = $event" />
-const totalAuditPages = computed(() => Math.max(1, Math.ceil(auditLogs.value.length / pageSize)))
-const paginatedAuditLogs = computed(() => auditLogs.value.slice((auditPage.value - 1) * pageSize, auditPage.value * pageSize))
-const totalAppealPages = computed(() => Math.max(1, Math.ceil(appeals.value.length / pageSize)))
-const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 1) * pageSize, appealPage.value * pageSize))
         </div>
       </div>
 
@@ -419,7 +416,7 @@ const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 
                 <th>基岩版 ID</th>
                 <th>角色</th>
                 <th>状态</th>
-                <th class="th-sticky-action">操作</th>
+                <th>操作</th>
               </tr>
             </thead>
             <tbody>
@@ -455,7 +452,7 @@ const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 
                   </select>
                   <span v-else :class="getStatusClass(user.status)">{{ getStatusText(user.status) }}</span>
                 </td>
-                <td class="td-sticky-action">
+                <td>
                   <div class="flex gap-2">
                     <button v-if="user.status !== 'banned' && !user.isAdmin" @click="confirmBan(user.username)" class="text-amber-400 hover:text-amber-300 text-sm font-medium">封禁</button>
                     <button v-if="user.status === 'banned'" @click="unbanUser(user.username)" class="text-sky-400 hover:text-sky-300 text-sm font-medium">解封</button>
@@ -510,7 +507,7 @@ const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 
         <h3 class="text-lg font-semibold text-white mb-4">操作日志</h3>
         <div class="overflow-x-auto">
           <table class="table min-w-[600px]">
-            <thead><tr><th>时间</th><th class="th-sticky-action">操作</th><th>操作者</th><th>目标</th><th>详情</th></tr></thead>
+            <thead><tr><th>时间</th><th>操作</th><th>操作者</th><th>目标</th><th>详情</th></tr></thead>
             <tbody>
               <tr v-for="audit in paginatedAuditLogs" :key="audit.id">
                 <td class="text-stone-400 text-sm whitespace-nowrap">{{ formatTime(audit.timestamp) }}</td>
@@ -565,7 +562,7 @@ const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 
         </div>
         <div v-else class="overflow-x-auto">
           <table class="table min-w-[700px]">
-            <thead><tr><th>用户名</th><th>分数</th><th>状态</th><th>提交时间</th><th class="th-sticky-action">操作</th></tr></thead>
+            <thead><tr><th>用户名</th><th>分数</th><th>状态</th><th>提交时间</th><th>操作</th></tr></thead>
             <tbody>
               <tr v-for="q in questionnaires" :key="q.username">
                 <td class="text-white font-medium">{{ q.username }}</td>
@@ -660,6 +657,9 @@ const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 
         <button @click="saveVerifyConfig" class="btn-primary" :disabled="saving">
           {{ saving ? '保存中...' : '保存验证页面配置' }}
         </button>
+      </div>
+
+      </div>
       </div>
 
     <!-- 确认对话框 -->
@@ -1009,6 +1009,10 @@ const filteredUsers = computed(() => {
   return result
 })
 const totalPendingPages = computed(() => Math.ceil(pendingUsers.value.length / pageSize))
+const totalAuditPages = computed(() => Math.max(1, Math.ceil(auditLogs.value.length / pageSize)))
+const paginatedAuditLogs = computed(() => auditLogs.value.slice((auditPage.value - 1) * pageSize, auditPage.value * pageSize))
+const totalAppealPages = computed(() => Math.max(1, Math.ceil(appeals.value.length / pageSize)))
+const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 1) * pageSize, appealPage.value * pageSize))
 const totalPlayerPages = computed(() => Math.ceil(filteredUsers.value.length / pageSize))
 const paginatedPendingUsers = computed(() => { const s = (pendingPage.value - 1) * pageSize; return pendingUsers.value.slice(s, s + pageSize) })
 const paginatedUsers = computed(() => { const s = (playerPage.value - 1) * pageSize; return filteredUsers.value.slice(s, s + pageSize) })

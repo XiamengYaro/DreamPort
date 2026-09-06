@@ -15,7 +15,7 @@
 
     <!-- 文字内容 -->
     <div class="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-      <div class="card px-6 py-10 md:px-14 md:py-12 max-w-3xl mx-auto">
+      <div>
         <img :src="logoUrl" alt="Logo" class="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-2xl"
           loading="eager" decoding="async" />
         <h1 class="text-4xl md:text-6xl font-bold mb-4 tracking-tight bg-gradient-to-r from-orange-300 via-amber-200 to-orange-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(249,115,22,0.35)]">
