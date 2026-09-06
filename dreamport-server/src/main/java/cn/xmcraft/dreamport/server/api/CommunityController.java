@@ -429,6 +429,21 @@ public class CommunityController {
         return ResponseEntity.ok(ApiResponse.success("已读"));
     }
 
+    @DeleteMapping("/notifications/{id}")
+    public ResponseEntity<Object> deleteNotification(@PathVariable long id, HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return unauthorized();
+        }
+        var list = notificationRepository.findByUsernameIgnoreCase(me);
+        var target = list.stream().filter(n -> n.id() == id).findFirst();
+        if (target.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("通知不存在"));
+        }
+        notificationRepository.delete(target.get());
+        return ResponseEntity.ok(ApiResponse.success("已删除"));
+    }
+
     @PostMapping("/notifications/read-all")
     public ResponseEntity<Object> notificationReadAll(HttpServletRequest request) {
         String me = AuthUtil.currentUser(request);

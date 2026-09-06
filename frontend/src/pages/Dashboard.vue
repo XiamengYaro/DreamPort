@@ -248,9 +248,8 @@
         <div class="flex items-start gap-6">
           <!-- 头像 -->
           <div class="flex flex-col items-center gap-2">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center overflow-hidden">
-              <img v-if="userProfile.avatar" :src="userProfile.avatar" alt="头像" class="w-full h-full object-cover" />
-              <span v-else class="text-3xl text-white font-bold">{{ username.charAt(0).toUpperCase() }}</span>
+            <div class="w-20 h-20 rounded-full overflow-hidden">
+              <AppAvatar :name="username" :avatar-url="userProfile.avatar || null" size-class="w-20 h-20" alt="头像" />
             </div>
             <label class="text-xs text-orange-400 cursor-pointer hover:text-orange-300">
               更换头像
@@ -343,6 +342,7 @@ import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
 import AppModal from '@/components/ui/AppModal.vue'
+import AppAvatar from '@/components/ui/AppAvatar.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 
 const notify = inject('notify') as any

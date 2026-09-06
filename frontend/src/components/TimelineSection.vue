@@ -63,9 +63,7 @@
           <div v-if="comments.length === 0" class="text-stone-500 text-sm mb-3">还没有留言,来抢沙发~</div>
           <div v-else class="space-y-3 max-h-60 overflow-y-auto mb-3 pr-1">
             <div v-for="c in comments" :key="c.id" class="flex gap-3">
-              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                {{ (c.username || '?').charAt(0).toUpperCase() }}
-              </div>
+              <AppAvatar :name="c.username" size-class="w-8 h-8" />
               <div class="flex-1 min-w-0">
                 <div class="text-sm text-white font-medium">
                   {{ c.username }}
@@ -95,6 +93,7 @@
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import EmptyState from './ui/EmptyState.vue'
+import AppAvatar from './ui/AppAvatar.vue'
 import AppModal from './ui/AppModal.vue'
 import AppIcon from './AppIcon.vue'
 

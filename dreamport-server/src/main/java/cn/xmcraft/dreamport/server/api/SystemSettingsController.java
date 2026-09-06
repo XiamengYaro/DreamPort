@@ -3,7 +3,10 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
+import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
+import cn.xmcraft.dreamport.server.user.UserRepository;
+import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -22,10 +25,15 @@ public class SystemSettingsController {
 
     private final SystemSettingsService settingsService;
     private final AuditService auditService;
+    private final UserRepository userRepository;
+    private final NotificationRepository notificationRepository;
 
-    public SystemSettingsController(SystemSettingsService settingsService, AuditService auditService) {
+    public SystemSettingsController(SystemSettingsService settingsService, AuditService auditService,
+                                    UserRepository userRepository, NotificationRepository notificationRepository) {
         this.settingsService = settingsService;
         this.auditService = auditService;
+        this.userRepository = userRepository;
+        this.notificationRepository = notificationRepository;
     }
 
     private String op(HttpServletRequest request) {
@@ -133,7 +141,27 @@ public class SystemSettingsController {
     @PutMapping("/announcements")
     public ResponseEntity<Object> saveAnnouncements(@RequestBody Map<String, Object> body, HttpServletRequest request) {
         var g = guard(request); if (g != null) return g;
+        // 检测新增资讯 → 给全站用户写站内通知(铃铛中心展示)
+        var oldNews = settingsService.announcementsConfig().get("news");
+        var oldIds = new java.util.HashSet<String>();
+        if (oldNews instanceof List<?> list) {
+            for (Object o : list) {
+                if (o instanceof Map<?, ?> m && m.get("id") != null) oldIds.add(String.valueOf(m.get("id")));
+            }
+        }
         settingsService.saveAnnouncementsConfig(body);
+        if (body.get("news") instanceof List<?> newNews) {
+            for (Object o : newNews) {
+                if (o instanceof Map<?, ?> m && m.get("id") != null && !oldIds.contains(String.valueOf(m.get("id")))) {
+                    String title = String.valueOf(m.getOrDefault("title", "无标题"));
+                    for (UserRecord u : userRepository.listAll()) {
+                        if ("banned".equals(u.status())) continue;
+                        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                                null, u.username(), "announcement", "新公告资讯", title, null, null, null));
+                    }
+                }
+            }
+        }
         auditService.log("settings_announcements", op(request), "", "");
         return ResponseEntity.ok(ApiResponse.success("公告内容已保存"));
     }

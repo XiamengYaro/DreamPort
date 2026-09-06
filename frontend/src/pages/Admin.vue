@@ -133,10 +133,7 @@
           </div>
           <div class="space-y-4">
             <div v-for="(member, index) in portalData.team" :key="index" class="flex items-center gap-4 p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <div class="w-12 h-12 rounded-full overflow-hidden bg-stone-700 flex-shrink-0">
-                <img v-if="member.avatar" :src="member.avatar" class="w-full h-full object-cover" @error="$event.target.src=''" />
-                <div v-else class="w-full h-full flex items-center justify-center text-stone-500 text-lg font-bold">{{ member.name?.charAt(0) }}</div>
-              </div>
+              <AppAvatar :name="member.name || ''" :avatar-url="member.avatar || null" size-class="w-12 h-12" />
               <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input v-model="member.name" type="text" class="input text-sm" placeholder="名称" />
                 <input v-model="member.role" type="text" class="input text-sm" placeholder="角色" />
@@ -836,6 +833,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatCard from '@/components/ui/StatCard.vue'
+import AppAvatar from '@/components/ui/AppAvatar.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
 const notify = inject('notify') as any

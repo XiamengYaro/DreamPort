@@ -715,6 +715,10 @@ class ApiService {
     return this.request('/notifications/read-all', { method: 'POST' })
   }
 
+  async deleteNotification(id: number) {
+    return this.request(`/notifications/${id}`, { method: 'DELETE' })
+  }
+
   // Verify
   async checkVerification() {
     return this.request('/verify/check', { method: 'POST' })

@@ -49,20 +49,35 @@
             </svg>
           </button>
 
-          <!-- 用户信息 -->
+          <!-- 用户区:铃铛 + 头像/ID(hover/点击展开用户卡) -->
           <template v-if="isLoggedIn">
-            <div class="flex items-center gap-2">
-              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white text-sm font-bold shadow-lg">
-                {{ username.charAt(0).toUpperCase() }}
-              </div>
-              <div class="hidden lg:block">
-                <div class="text-white text-sm font-medium drop-shadow">{{ username }}</div>
-                <div class="text-white/60 text-xs drop-shadow">{{ isAdmin ? '管理员' : '玩家' }}</div>
-              </div>
+            <NotificationBell />
+            <div class="relative">
+              <button @click.stop="userMenuOpen = !userMenuOpen"
+                class="flex items-center gap-2 p-1 rounded-xl hover:bg-white/10 transition-colors">
+                <AppAvatar :name="username" size-class="w-9 h-9 rounded-full" />
+                <span class="text-white text-sm font-medium drop-shadow hidden lg:block">{{ username }}</span>
+                <svg class="w-3 h-3 text-white/70 transition-transform" :class="{ 'rotate-180': userMenuOpen }"
+                  fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </button>
+              <transition name="modal">
+                <div v-if="userMenuOpen" class="absolute right-0 top-full mt-2 w-60 glass-panel rounded-xl shadow-xl z-50 overflow-hidden" @click.stop>
+                  <div class="p-4 flex items-center gap-3 border-b border-white/10">
+                    <AppAvatar :name="username" size-class="w-11 h-11 rounded-full" />
+                    <div class="min-w-0">
+                      <div class="text-white font-semibold truncate">{{ username }}</div>
+                      <span class="text-xs px-2 py-0.5 rounded inline-block mt-0.5"
+                        :class="isAdmin ? 'bg-orange-500/20 text-orange-300' : 'bg-stone-700/60 text-stone-300'">{{ isAdmin ? '管理员' : '玩家' }}</span>
+                    </div>
+                  </div>
+                  <div class="p-2">
+                    <router-link to="/dashboard" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="user" class="w-4 h-4" />控制台</router-link>
+                    <router-link v-if="isAdmin" to="/admin" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="cog" class="w-4 h-4" />管理后台</router-link>
+                    <button @click="logout" class="user-menu-row w-full text-left text-rose-300"><AppIcon name="x-mark" class="w-4 h-4" />退出登录</button>
+                  </div>
+                </div>
+              </transition>
             </div>
-            <router-link to="/dashboard" class="btn-ghost text-sm hidden xl:inline-block">控制台</router-link>
-            <router-link v-if="isAdmin" to="/admin" class="btn-ghost text-sm hidden xl:inline-block">管理</router-link>
-            <button @click="logout" class="btn-ghost text-sm">退出</button>
           </template>
           <template v-else>
             <router-link to="/login" class="btn-ghost text-sm">登录</router-link>
@@ -112,6 +127,8 @@
 <script setup lang="ts">
 import LanguageSwitcher from './LanguageSwitcher.vue'
 import AppIcon from './AppIcon.vue'
+import AppAvatar from './ui/AppAvatar.vue'
+import NotificationBell from './NotificationBell.vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
@@ -120,6 +137,8 @@ const route = useRoute()
 const router = useRouter()
 const mobileMenuOpen = ref(false)
 const scrolled = ref(false)
+const userMenuOpen = ref(false)
+const onDocClickUser = () => { userMenuOpen.value = false }
 const serverName = ref('夏日小镇')
 const logoUrl = ref('/Logo111.png')
 const moreGroupOpen = ref(false)
@@ -134,6 +153,7 @@ const handleScroll = () => {
 
 onMounted(async () => {
   window.addEventListener('scroll', handleScroll)
+  document.addEventListener('click', onDocClickUser)
 
   try {
     const res = await fetch('/api/config')
@@ -243,5 +263,13 @@ const logout = () => {
 .mobile-nav-item.router-link-exact-active {
   color: #fb923c;
   background: rgba(249, 115, 22, 0.15);
+}
+
+.user-menu-row {
+  @apply w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-stone-300 transition-colors;
+}
+
+.user-menu-row:hover {
+  @apply text-white bg-white/10;
 }
 </style>

@@ -29,10 +29,7 @@
       <div v-for="(msg, index) in messages" :key="msg.id ?? index" class="flex gap-3 mb-4">
         <img v-if="originOf(msg) === 'game'" :src="`https://crafthead.net/avatar/${displayName(msg)}/64`"
           :alt="displayName(msg)" class="w-9 h-9 rounded-full shrink-0" loading="lazy" />
-        <div v-else class="w-9 h-9 rounded-full shrink-0 flex items-center justify-center text-white text-xs font-bold"
-          :class="avatarBg(originOf(msg))">
-          {{ (displayName(msg) || '?').charAt(0).toUpperCase() }}
-        </div>
+        <AppAvatar v-else :name="displayName(msg)" :class="avatarBg(originOf(msg))" size-class="w-9 h-9" />
         <div class="min-w-0 flex-1">
           <div class="flex items-baseline gap-2 flex-wrap">
             <span class="text-orange-400 font-medium text-sm">{{ displayName(msg) }}</span>
@@ -69,6 +66,7 @@
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { api } from '../services/api'
 import EmptyState from './ui/EmptyState.vue'
+import AppAvatar from './ui/AppAvatar.vue'
 
 interface ChatMessage { id?: number; player: string; message: string; timestamp: number; origin?: string; server_id?: string | null }
 
