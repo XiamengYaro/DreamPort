@@ -3,32 +3,50 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XMCraft - 白名单申请已拒绝</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: #fef7ed; margin: 0; padding: 20px; }
-        .container { max-width: 600px; margin: 0 auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 8px 32px rgba(249, 115, 22, 0.08); }
-        .header { background: linear-gradient(135deg, #f97316 0%, #dc2626 100%); color: white; padding: 32px; text-align: center; }
-        .header h1 { margin: 0; font-size: 22px; font-weight: 600; }
-        .content { padding: 32px; color: #1c1917; }
-        .reason-box { background: rgba(249, 115, 22, 0.06); border-left: 4px solid #f97316; padding: 16px; margin: 20px 0; border-radius: 0 12px 12px 0; }
-        .footer { background: #fef7ed; padding: 20px; text-align: center; color: #a8a29e; font-size: 12px; }
-    </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>XMCraft</h1>
-        </div>
-        <div class="content">
-            <p style="text-align:center; font-size:48px; margin:16px 0;">❌</p>
-            <h2 style="text-align:center; color:#dc2626; margin:0 0 16px;">白名单申请已拒绝</h2>
-            <p>尊敬的 {username}，</p>
-            <p>很抱歉通知你，你的白名单申请未通过审核。</p>
-            <div class="reason-box"><strong>原因：</strong> {reason}</div>
-        </div>
-        <div class="footer">
-            <p>此邮件由 XMCraft 白名单系统 自动发送</p>
-        </div>
-    </div>
+<body style="margin: 0; padding: 20px; background-color: #f5f5f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.06); font-family: Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;">
+        <tr><td>
+<!-- 页眉：logo 左上 + 站名 -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="padding: 24px 32px 16px 32px;" align="left">
+                      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                        {logo_cell}
+                        <td style="font-family: Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 20px; font-weight: bold; color: #1c1917; vertical-align: middle;">{server_name}</td>
+                      </tr></table>
+                    </td>
+                  </tr>
+                  <tr><td style="height: 3px; background-color: #f97316; font-size: 0; line-height: 0;">&nbsp;</td></tr>
+                </table>
+          <!-- 内容区 -->
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+            <tr><td style="padding: 32px;">
+<p style="margin: 0 0 16px 0; font-size: 16px; color: #1c1917;">你好，{username}！</p>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding: 24px; background-color: #fef2f2; border-radius: 12px;">
+                  <span style="font-size: 48px; color: #dc2626; font-weight: bold;">&#10005;</span>
+                  <div style="font-size: 18px; font-weight: bold; color: #dc2626; margin-top: 8px;">白名单申请未通过</div>
+                </td></tr></table>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td style="margin: 16px 0; padding: 16px; background-color: #f5f5f4; border-radius: 8px; color: #57534e; font-size: 14px; line-height: 1.8;">
+                  拒绝原因：{reason}
+                </td></tr></table>
+                <p style="color: #a8a29e; font-size: 13px;">你可以重新答题或提交申诉。</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 24px;"><tr>
+                <td bgcolor="#f97316" style="border-radius: 8px;">
+                  <a href="{site_url}/whitelist" style="display: inline-block; padding: 12px 32px; font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; color: #ffffff; text-decoration: none;">重新申请</a>
+                </td>
+              </tr></table>
+            </td></tr>
+          </table>
+<!-- 页脚 -->
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                  <tr><td style="padding: 20px 32px; background-color: #fafaf9; text-align: center; font-family: Arial, 'PingFang SC', sans-serif; font-size: 12px; color: #a8a29e;">
+                    此邮件由系统自动发送，请勿直接回复<br/>
+                    <a href="{site_url}" style="color: #f97316; text-decoration: none;">{server_name} · 访问官网</a>
+                  </td></tr>
+                </table>
+        </td></tr>
+      </table>
+    </td></tr></table>
 </body>
 </html>

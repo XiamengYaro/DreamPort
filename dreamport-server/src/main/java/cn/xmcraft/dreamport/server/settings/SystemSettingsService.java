@@ -69,6 +69,10 @@ public class SystemSettingsService {
         return merge(SettingService.KEY_GAME_CONFIG, def);
     }
 
+    public Map<String, Object> portalConfig() {
+        return settingService.getMap(SettingService.KEY_PORTAL);
+    }
+
     public Map<String, Object> downloads() {
         return settingService.getMap(SettingService.KEY_DOWNLOADS);
     }

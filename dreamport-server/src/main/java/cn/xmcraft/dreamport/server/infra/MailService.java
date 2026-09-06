@@ -21,10 +21,13 @@ public class MailService {
 
     private final MailSenderHolder sender;
     private final MailProps props;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
 
-    public MailService(MailProps props, MailSenderHolder sender) {
+    public MailService(MailProps props, MailSenderHolder sender,
+                       cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.props = props;
         this.sender = sender;
+        this.systemSettings = systemSettings;
     }
 
     public boolean configured() {
@@ -37,10 +40,55 @@ public class MailService {
 
     private String render(String type, String lang, String... kv) {
         String html = loadTemplate(type, lang(lang));
+        // 公共品牌变量：logo_url / server_name / site_url（所有模板通用）
         for (int i = 0; i + 1 < kv.length; i += 2) {
             html = html.replace("{" + kv[i] + "}", kv[i + 1] == null ? "" : kv[i + 1]);
         }
+        String siteUrl = stripTrailingSlash(brandSiteUrl());
+        String logoPath = brandLogoPath();
+        String logoUrl = "";
+        if (logoPath != null && !logoPath.isBlank()) {
+            logoUrl = logoPath.startsWith("http") ? logoPath : siteUrl + logoPath;
+        }
+        String logoCell = logoUrl.isBlank() ? ""
+                : "<td style=\"padding-right: 12px; vertical-align: middle;\"><img src=\"" + logoUrl
+                        + "\" alt=\"logo\" width=\"40\" height=\"40\" style=\"display: block; border: 0; border-radius: 8px;\" /></td>";
+        html = html.replace("{logo_cell}", logoCell)
+                   .replace("{logo_url}", logoUrl)
+                   .replace("{server_name}", brandServerName())
+                   .replace("{site_url}", siteUrl);
         return html;
+    }
+
+    private String stripTrailingSlash(String url) {
+        return url != null && url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
+    }
+
+    private String brandServerName() {
+        try {
+            Object name = systemSettings.portalConfig().getOrDefault("server_name", "夏日小镇XMCraft");
+            return String.valueOf(name);
+        } catch (Exception e) {
+            return "夏日小镇XMCraft";
+        }
+    }
+
+    private String brandLogoPath() {
+        try {
+            Object logo = systemSettings.portalConfig().get("logo");
+            return logo == null ? "" : String.valueOf(logo);
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String brandSiteUrl() {
+        try {
+            Object url = systemSettings.gameConfig().getOrDefault("webRegisterUrl", "");
+            return String.valueOf(url);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     private String loadTemplate(String type, String lang) {
@@ -95,10 +143,8 @@ public class MailService {
 
     public void sendPasswordReset(String username, String to, String resetUrl, String lang) {
         String l = lang(lang);
-        String body = "zh".equals(l)
-                ? "<p>您好 " + username + "，</p><p>请点击以下链接重置密码（1 小时内有效）：</p><p><a href=\"" + resetUrl + "\">" + resetUrl + "</a></p>"
-                : "<p>Hi " + username + ",</p><p>Click the link to reset your password (valid for 1 hour):</p><p><a href=\"" + resetUrl + "\">" + resetUrl + "</a></p>";
-        send(to, "zh".equals(l) ? "夏日小镇密码重置" : "DreamPort password reset", body);
+        send(to, "zh".equals(l) ? "夏日小镇密码重置" : "DreamPort password reset",
+                render("password_reset", l, "username", username, "reset_url", resetUrl));
     }
 
     public void sendQuestionnaireResult(String username, String to, String lang,

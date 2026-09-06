@@ -7,6 +7,16 @@
 
 ## [Unreleased]
 
+### Changed
+- **v0.5.23 邮件模板品牌化重设计**：
+  - 统一骨架：左上角 logo（绝对地址）+ 站名页眉 + 橙色品牌条 + 内容区 + 站名/官网链接页脚
+  - table 布局 + 内联样式（Gmail/Outlook/QQ 邮箱兼容，替换原 <style> 块方案）
+  - 10 个模板全部重写：验证码/通过/拒绝/密码重置/问卷结果 × zh/en
+    （新增 password_reset 模板，原为内联 HTML）
+  - MailService 自动注入 {logo_cell}/{logo_url}/{server_name}/{site_url}
+    （logo/站名读 portal.config；站点地址读 game.config.webRegisterUrl）
+  - 无 logo 配置时页眉退化为仅站名文字
+
 ### Fixed
 - **v0.5.22 生产环境问卷评分不实时（反向代理缓冲）**：
   - 生产实测（xmcraft.cn 真实浏览器）证实：16 个 SSE 事件在流结束时同一毫秒
