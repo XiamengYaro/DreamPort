@@ -165,6 +165,20 @@ public class QuestionnaireService {
         return new SubmitOutcome(total, maxTotal, passed, results, overall);
     }
 
+    /**
+     * 流式提交落库：使用流内已评好的逐题结果计算总分并保存（避免 submit() 重复 LLM 评分）。
+     */
+    public SubmitOutcome saveScoredResult(String username, Map<String, Object> answers,
+                                          String lang, List<QuestionResult> results) {
+        QuestionnaireRecords.Questionnaire questionnaire = activeQuestionnaire();
+        int total = results.stream().mapToInt(QuestionResult::score).sum();
+        int maxTotal = results.stream().mapToInt(QuestionResult::maxScore).sum();
+        boolean passed = maxTotal > 0 && total * 100 / maxTotal >= questionnaire.passScore();
+        String overall = "总分 " + total + "/" + maxTotal + (passed ? "，通过" : "，未通过");
+        saveResult(username, questionnaire, total, maxTotal, passed, results, overall, answers);
+        return new SubmitOutcome(total, maxTotal, passed, results, overall);
+    }
+
     /** 单题/部分题预评分（SSE 逐题推送用，不落库） */
     public QuestionResult previewScore(Map<String, Object> answers, String lang) {
         QuestionnaireRecords.Questionnaire questionnaire = activeQuestionnaire();
@@ -271,7 +285,7 @@ public class QuestionnaireService {
                 passed ? "pending_review" : "rejected",
                 user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
                 user.qqNumber(), user.qqBoundAt(), total, passed, overall,
-                System.currentTimeMillis(), results.toString(), safeJson(answers),
+                System.currentTimeMillis(), reasonsJson(results), safeJson(answers),
                 user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(),
                 user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
@@ -284,13 +298,52 @@ public class QuestionnaireService {
                 String.class);
         if (passed && notifyEmail != null && !notifyEmail.isBlank()) {
             mailService.sendAdminNotification(
-                    "玩家 " + username + " 通过问卷：" + total + "/" + maxTotal + "\n" + overall,
-                    notifyEmail.replace("\"", ""));
+                    "<h3>玩家 " + escapeHtml(username) + " 通过问卷</h3>"
+                            + "<p>得分：" + total + " / " + maxTotal + "</p>"
+                            + buildResultItemsHtml(results),
+                    notifyEmail);
         }
         if (user.email() != null && !user.email().isBlank()) {
             mailService.sendQuestionnaireResult(username, user.email(), "zh",
                     passed ? "passed" : "failed", String.valueOf(total), String.valueOf(maxTotal),
-                    passed ? "通过" : "未通过", results.toString(), overall);
+                    passed ? "通过" : "未通过", buildResultItemsHtml(results), buildOverallHtml(overall));
+        }
+    }
+
+    /** 逐题结果 → 邮件 HTML（题干/得分/评语，替代 Java record toString 乱码） */
+    private String buildResultItemsHtml(List<QuestionResult> results) {
+        StringBuilder html = new StringBuilder();
+        int index = 1;
+        for (QuestionResult r : results) {
+            html.append("<div style=\"margin-bottom:12px;padding:10px;border:1px solid #eee;border-radius:6px\">")
+                .append("<div style=\"font-weight:bold;margin-bottom:4px\">").append(index++)
+                        .append(". ").append(escapeHtml(r.questionText())).append("</div>")
+                .append("<div style=\"color:").append(r.score() >= r.maxScore() ? "#2e7d32" : "#c62828")
+                        .append(";font-weight:bold\">得分：").append(r.score()).append(" / ").append(r.maxScore())
+                        .append("</div>")
+                .append("<div style=\"color:#555;font-size:13px\">评语：").append(escapeHtml(r.reason()))
+                        .append(r.manualReview() ? "（建议人工复核）" : "").append("</div>")
+                .append("</div>");
+        }
+        return html.toString();
+    }
+
+    private String buildOverallHtml(String overall) {
+        return "<div style=\"padding:10px;background:#f5f5f5;border-radius:6px;font-size:13px;color:#444\">"
+                + escapeHtml(overall) + "</div>";
+    }
+
+    private String escapeHtml(String s) {
+        return s == null ? "" : s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+    }
+
+    /** 逐题评语 → JSON 数组字符串（管理后台详情按 JSON 解析展示） */
+    private String reasonsJson(List<QuestionResult> results) {
+        try {
+            return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
+                    results.stream().map(QuestionResult::reason).toList());
+        } catch (Exception e) {
+            return "[]";
         }
     }
 

@@ -8,6 +8,18 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.20 问卷提交卡在 AI 分析（0/15）**：
+  - 前端 SSE 解析用 "data: "（带空格），而 Spring SseEmitter 实际发送 "data:"（无空格）
+    → 所有评分事件被前端丢弃，后端评分完成但前端永远卡在 0/15
+  - 前端流式请求补 Authorization 头（原裸 fetch 不带令牌，后端判未登录直接断流）
+  - 前端处理 error 事件与流中断（原直接忽略，永久转圈）
+  - 流式路径去除重复评分（原先逐题 LLM 评分后 submit() 又全量重评一遍，LLM 调用翻倍），
+    改为流内结果直接落库（saveScoredResult）；SSE 超时 120s → 不限时
+  - question_scored 事件补 maxScoreTotal 字段（前端累计满分显示）
+  - 邮件乱码修复：result_items 由 Java record toString 改为格式化 HTML
+    （题干/得分/评语卡片），questionnaire_reasons 存 JSON 数组（管理后台详情可解析）
+
+### Fixed
 - **v0.5.19 选择题选项保存后消失**：save-bulk 的 BulkOption 记录缺
   @JsonAlias("text_zh")，前端发送的选项文本无法映射（textZh 恒为空），
   保存后选项文本全部丢失。已补别名；E2E 回读验证选项文本+分值完整保留，

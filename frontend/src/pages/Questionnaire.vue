@@ -259,26 +259,46 @@ const handleSubmit = async () => {
   try {
     const response = await fetch('/api/questionnaire/stream', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+      },
       body: JSON.stringify({ username: username.value, answers: answers.value })
     })
 
+    if (!response.ok || !response.body) {
+      const errText = await response.json().catch(() => null)
+      throw new Error(errText?.message || `提交失败（${response.status}）`)
+    }
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
 
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        if (!scoringComplete.value) {
+          notify?.error('评分流意外中断，请稍后重试或联系管理员')
+          loading.value = false
+        }
+        break
+      }
 
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
       buffer = lines.pop() || ''
 
       for (const line of lines) {
-        if (line.startsWith('data: ')) {
+        if (line.startsWith('data:')) {
           try {
-            const event = JSON.parse(line.substring(6))
+            const event = JSON.parse(line.substring(5).trim())
+
+            if (event.type === 'error') {
+              notify?.error(event.message || '评分失败，请重新提交')
+              loading.value = false
+              showScoringModal.value = false
+              return
+            }
 
             if (event.type === 'question_scored') {
               scoringResults.value.push({

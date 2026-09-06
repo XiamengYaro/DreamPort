@@ -147,7 +147,7 @@ public class QuestionnaireController {
     @PostMapping(value = "/questionnaire/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@RequestBody SubmitBody body, HttpServletRequest request) {
         String me = AuthUtil.currentUser(request);
-        SseEmitter emitter = new SseEmitter(120_000L);
+        SseEmitter emitter = new SseEmitter(0L); // 不限时：LLM 逐题评分可能超 2 分钟
         if (me == null) {
             try {
                 emitter.send(SseEmitter.event().data(Map.of("type", "error", "message", "未登录")));
@@ -163,11 +163,13 @@ public class QuestionnaireController {
             int total = 0;
             int maxTotal = 0;
             Map<String, Object> answers = body.answers();
+            List<QuestionnaireService.QuestionResult> streamResults = new ArrayList<>();
             for (int i = 0; i < questions.size(); i++) {
                 var q = questions.get(i);
                 Object raw = answers.get(String.valueOf(q.id()));
                 String answer = raw == null ? "" : String.valueOf(raw);
                 var outcome = singleScore(q, answer, body.language());
+                streamResults.add(outcome);
                 total += outcome.score();
                 maxTotal += q.maxScore();
                 try {
@@ -176,19 +178,19 @@ public class QuestionnaireController {
                             "questionId", q.id(), "questionText",
                             "en".equals(body.language()) && q.questionEn() != null ? q.questionEn() : q.questionZh(),
                             "score", outcome.score(), "maxScore", q.maxScore(),
-                            "reason", outcome.reason(), "totalScore", total)));
+                            "reason", outcome.reason(), "totalScore", total, "maxScoreTotal", maxTotal)));
                     Thread.sleep(200);
                 } catch (Exception e) {
                     emitter.completeWithError(e);
                     return;
                 }
             }
-            boolean passed = maxTotal > 0 && total * 100 / maxTotal >= questionnaire.passScore();
             try {
-                var full = questionnaireService.submit(username, answers, body.language());
+                var saved = questionnaireService.saveScoredResult(username, answers,
+                        body.language(), streamResults);
                 emitter.send(SseEmitter.event().data(Map.of(
-                        "type", "complete", "totalScore", total, "maxScore", maxTotal,
-                        "passed", passed, "summary", full.overallSummary())));
+                        "type", "complete", "totalScore", saved.totalScore(), "maxScore", saved.maxScore(),
+                        "passed", saved.passed(), "summary", saved.overallSummary())));
             } catch (Exception e) {
                 log("stream 完成事件发送失败: {}", e.getMessage());
             }
