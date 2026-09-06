@@ -41,9 +41,9 @@
           </svg>
           加载中...
         </div>
-        <div v-else-if="filteredList.length === 0" class="text-center py-8 text-stone-500">暂无数据</div>
+        <EmptyState v-else-if="filteredList.length === 0" icon="wrench" text="暂无公共机器,快来提交第一台吧" />
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div v-for="machine in filteredList" :key="machine.id" class="bg-stone-800/50 rounded-xl border border-stone-700 overflow-hidden hover:border-orange-500/50 transition-all">
+          <div v-for="machine in filteredList" :key="machine.id" class="card card-hover overflow-hidden">
             <!-- 截图 -->
             <div v-if="machine.screenshotUrl" class="aspect-video bg-stone-900 relative">
               <img :src="machine.screenshotUrl" class="w-full h-full object-cover" alt="机器截图" />
@@ -83,10 +83,8 @@
       </div>
 
       <!-- 提交弹窗 -->
-      <div v-if="showSubmitModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showSubmitModal = false">
-        <div class="card w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto">
-          <h3 class="text-lg font-semibold text-white mb-4">提交公共机器</h3>
-          <div class="space-y-4">
+      <AppModal :open="showSubmitModal" size="lg" title="提交公共机器" @close="showSubmitModal = false">
+      <div class="space-y-4">
             <div>
               <label class="block text-sm text-stone-300 mb-1">机器名称 <span class="text-red-400">*</span></label>
               <input v-model="submitForm.name" type="text" class="input w-full" placeholder="请输入机器名称" required />
@@ -136,19 +134,20 @@
               <p v-if="screenshotFile" class="text-xs text-emerald-400 mt-1">已选择：{{ screenshotFile.name }}</p>
             </div>
           </div>
-          <div class="flex gap-3 mt-6">
-            <button @click="showSubmitModal = false" class="btn-ghost flex-1">取消</button>
-            <button @click="submitMachine" class="btn-primary flex-1" :disabled="submitting">{{ submitting ? '提交中...' : '提交' }}</button>
-          </div>
-        </div>
-      </div>
-    </div>
+          
+        <template #footer>
+          <button @click="showSubmitModal = false" class="btn-ghost flex-1">取消</button>
+          <button @click="submitMachine" class="btn-primary flex-1" :disabled="submitting">{{ submitting ? '提交中...' : '提交' }}</button>
+        </template>
+      </AppModal>
   </div>
-</template>
+    </div></template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import api from '@/services/api'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import AppModal from '@/components/ui/AppModal.vue'
 
 const loading = ref(false)
 const machines = ref<any[]>([])

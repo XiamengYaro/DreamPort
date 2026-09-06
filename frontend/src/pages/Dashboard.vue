@@ -36,8 +36,12 @@
       <ChatBox class="mb-6" />
 
       <!-- 个人游戏数据 -->
-      <div v-if="cmiEnabled && playerData.name" class="card p-6 mb-6">
+      <div v-if="cmiEnabled" class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4">我的游戏数据</h2>
+        <div v-if="!playerData.name" class="text-stone-500 text-sm py-4 text-center">
+          暂无服务器数据 —— 进入服务器后系统会自动采集(余额/时长/最近登录)
+        </div>
+        <template v-else>
         <!-- 在线状态 -->
         <div class="flex items-center gap-2 mb-4">
           <span class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
@@ -77,6 +81,7 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
 
       <!-- 账户绑定区（桌面双栏） -->

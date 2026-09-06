@@ -3,6 +3,7 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.appeal.AppealRecord;
 import cn.xmcraft.dreamport.server.appeal.AppealRepository;
 import cn.xmcraft.dreamport.server.config.WlProps;
+import cn.xmcraft.dreamport.server.economy.EconomyService;
 import cn.xmcraft.dreamport.server.invite.InviteRecord;
 import cn.xmcraft.dreamport.server.invite.InviteRepository;
 import cn.xmcraft.dreamport.server.invite.InviteService;
@@ -59,12 +60,15 @@ public class CommunityController {
     private final WlProps props;
     private final SettingService settingService;
 
+    private final EconomyService economyService;
+
     public CommunityController(VillageTradeRepository villageRepository,
                                PublicMachineRepository machineRepository,
                                InviteRepository inviteRepository, InviteService inviteService,
                                NotificationRepository notificationRepository,
                                AppealRepository appealRepository, UserRepository userRepository,
-                               ReviewService reviewService, WlProps props, SettingService settingService) {
+                               ReviewService reviewService, WlProps props, SettingService settingService,
+                               EconomyService economyService) {
         this.villageRepository = villageRepository;
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
@@ -74,6 +78,7 @@ public class CommunityController {
         this.userRepository = userRepository;
         this.reviewService = reviewService;
         this.props = props;
+        this.economyService = economyService;
         this.settingService = settingService;
     }
 
@@ -279,6 +284,12 @@ public class CommunityController {
         profile.put("qqNumber", u.qqNumber());
         profile.put("banReason", u.banReason());
         profile.put("status", u.status());
+        // 合并服务器内数据(经济快照,按游戏名匹配)
+        var econ = economyService.playerData(u.username());
+        profile.put("balance", econ.getOrDefault("balance", 0));
+        profile.put("timePlayed", econ.getOrDefault("timePlayed", 0L));
+        profile.put("activeDaysLast30", econ.getOrDefault("activeDaysLast30", 0));
+        profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
         return ResponseEntity.ok(profile);
     }
 

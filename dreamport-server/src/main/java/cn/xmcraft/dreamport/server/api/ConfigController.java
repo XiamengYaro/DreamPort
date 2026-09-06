@@ -39,6 +39,8 @@ public class ConfigController {
         data.put("serverName", portal.getOrDefault("server_name", "夏日小镇"));
         data.put("subtitle", portal.getOrDefault("subtitle", "Minecraft 服务器"));
         data.put("announcement", announcement == null ? "欢迎来到夏日小镇！" : announcement);
+        // 背景设置(外观设置卡保存的 image/opacity/blur),App.vue applyBackground 消费
+        data.put("background", settingService.getMap(SettingService.KEY_BACKGROUND));
         data.put("registerEnabled", true);
         data.put("authMethods", java.util.List.of("email"));
         data.put("bedrockEnabled", Boolean.TRUE.equals(

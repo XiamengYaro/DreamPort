@@ -475,6 +475,26 @@ class ApiService {
     return this.request(`/review/status?username=${encodeURIComponent(username)}`)
   }
 
+  // 照片墙留言（首页时光照片墙）
+  async getPhotoComments(photoKey: string) {
+    return this.request(`/portal/comments/${encodeURIComponent(photoKey)}`)
+  }
+
+  async getPhotoCommentCounts() {
+    return this.request('/portal/comments/counts')
+  }
+
+  async postPhotoComment(photoKey: string, content: string) {
+    return this.request(`/portal/comments/${encodeURIComponent(photoKey)}`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    })
+  }
+
+  async deletePhotoComment(id: number) {
+    return this.request(`/admin/portal/comments/${id}`, { method: 'DELETE' })
+  }
+
   async updateUserProfile(data: { avatar?: string }) {
     return this.request('/user/profile', {
       method: 'POST',

@@ -178,9 +178,15 @@
           </div>
           <div class="space-y-4">
             <div v-for="(event, index) in portalData.timeline" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
                 <input v-model="event.date" type="text" class="input text-sm" placeholder="日期 (如: 2024-01-01)" />
                 <input v-model="event.title" type="text" class="input text-sm" placeholder="标题" />
+                <select v-model="event.type" class="input text-sm">
+                  <option value="">分类: 其他</option>
+                  <option value="announcement">公告更新</option>
+                  <option value="event">活动赛事</option>
+                  <option value="milestone">成就纪念</option>
+                </select>
               </div>
               <textarea v-model="event.description" class="input text-sm mb-2" rows="2" placeholder="描述"></textarea>
               <div class="flex items-center gap-2">
@@ -1230,7 +1236,8 @@ const loadPortalConfig = async () => {
         carousel: Array.isArray(p.carousel) ? p.carousel : [],
         team: Array.isArray(p.team) ? p.team : [],
         features: Array.isArray(p.features) ? p.features : [],
-        timeline: Array.isArray(p.timeline) ? p.timeline : []
+        timeline: (Array.isArray(p.timeline) ? p.timeline : []).map((t: any) =>
+          t && !t.id ? { ...t, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) } : t)
       }
     }
   } catch (e) { console.error(e) }
@@ -1243,7 +1250,8 @@ const addTeamMember = () => { portalData.value.team.push({ name: '', role: '', a
 const removeTeamMember = (i: number) => { portalData.value.team.splice(i, 1) }
 const addFeature = () => { portalData.value.features.push({ icon: 'star', title: '', description: '' }) }
 const removeFeature = (i: number) => { portalData.value.features.splice(i, 1) }
-const addTimelineEvent = () => { portalData.value.timeline.push({ date: '', title: '', description: '', image: '' }) }
+const newTimelineId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+const addTimelineEvent = () => { portalData.value.timeline.push({ id: newTimelineId(), date: '', title: '', description: '', image: '', type: '' }) }
 const removeTimelineEvent = (i: number) => { portalData.value.timeline.splice(i, 1) }
 
 const savePortalConfig = async () => {
