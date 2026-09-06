@@ -9,6 +9,7 @@
 
 - 严格遵循 [SemVer 2.0.0](https://semver.org/lang/zh-CN/)：`MAJOR.MINOR.PATCH` + 预发布段 `-alpha/-beta/-rc`
 - `0.x` = 开发期（API/Schema 可变）；**`1.0.0` = 功能对齐旧版 + 迁移器就绪** 才允许打出
+- 项目阶段：**自 v1.0.1 起不再对标旧版 Legacy**，进入新功能开发阶段；已上线端点与迁移器行为保持稳定
 - 面向用户的每个变更必须记入 [CHANGELOG.md](CHANGELOG.md)；发布 = CHANGELOG + git 标签 `vX.Y.Z` + push（含 `--tags`）
 
 ## 2. Java（后端与插件）
@@ -21,7 +22,8 @@
 
 ## 3. Web API 契约
 
-- 对外 `/api/**` 的路径、方法、请求/响应结构与旧版**逐字保持**（前端 `api.ts` 才能少改）；有意修复的偏差必须：在代码注释标 `// FIX(legacy)` + CHANGELOG 记录
+- 已上线端点（v1.0.x）的路径、方法、响应结构保持向后兼容；破坏性变更必须记 CHANGELOG 并同步前端 `api.ts`
+- 新增功能端点自由设计，但必须沿用本节的响应包装、鉴权通道与限流规范；既有 `// FIX(legacy)` 注释保留，新代码不再新增
 - 响应统一包装：`{"success": bool, "message": string, "data"?: ...}`（兼容旧前端的 `msg/message` 双键读法）
 - 限流（IP 维度，可配置）：登录 5 次/分钟、注册 3 次/分钟、验证码 3 次/5 分钟；超限 429
 - CORS：dev 默认 `*`；生产必须显式配置（`web.allowed_origins`）
@@ -57,7 +59,7 @@
 - 双语覆盖：游戏内消息 `messages_zh/en.properties`、前端 `locales/{zh,en}.json`、邮件模板 `{type}_{zh|en}.html`
 - 邮件模板占位符风格 `{var}`；支持 `plugins/DreamPort/email/` 外置覆盖 jar 内模板
 
-## 9. 禁止事项（旧版踩坑清单，重写中必须修复而非复刻）
+## 9. 禁止事项（历史踩坑清单，永久有效）
 
 | # | 禁止 | 应该 |
 |---|------|------|
