@@ -9,6 +9,19 @@
 
 ### Added
 -  部署与运维检查清单（首次部署核对/日常运维/故障排查/终端日志速查）
+- AstrBot 重构方案定稿（docs/ASTRBOT_PLAN.md：QQ 验证绑定 + 群服消息互通，含现状实测与开源调研）
+- 管理后台「QQ 互通」设置卡：启用开关 + API 令牌生成（`GET/PUT /api/admin/settings/astrbot`，token 脱敏回读）
+
+### Changed
+- AstrBot 集成 v1.1 门禁（docs/ASTRBOT_PLAN.md §5.4）：新增 `astrbot.enabled` 总开关（默认关闭，关闭时 `/api/astrbot/**` 全部 403）；开关与 `astrbot.api_token` 均可在管理后台配置
+- `GET /api/astrbot/players` 契约定版为 `{count, players:[{name, server}], servers:[…]}`（原仅 `{servers}`）
+- `POST /api/astrbot/unbind` 改为按 QQ 解绑（`{qq}`），无绑定时返回失败提示
+
+### Fixed
+- `/api/astrbot/lookup/qq/{qq}`、`/api/astrbot/lookup/mc/{mc}` 参数绑定错误：误用 `@RequestParam` 导致路径风格恒 400、查询风格 404，端点完全不可调用；已修复为真路径参数，`lookup/mc` 响应补充 `bound` 字段
+
+### Removed
+- 免验证直绑端点 `POST /api/astrbot/bind`（任何持 token 者可直接冒绑任意账号，无验证环节）；QQ 绑定将改走一次性验证码流程（方案 §5.2，后续里程碑）
 
 ## [1.0.0] - 2026-09-06
 

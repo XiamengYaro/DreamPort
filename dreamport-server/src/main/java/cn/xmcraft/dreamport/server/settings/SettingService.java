@@ -30,6 +30,8 @@ public class SettingService {
     public static final String KEY_GAME_CONFIG = "game.config";
     public static final String KEY_SETUP_COMPLETED = "setup.completed";
     public static final String KEY_QUESTIONNAIRE_CONFIG = "questionnaire.config";
+    public static final String KEY_ASTRBOT_ENABLED = "astrbot.enabled";
+    public static final String KEY_ASTRBOT_TOKEN = "astrbot.api_token";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

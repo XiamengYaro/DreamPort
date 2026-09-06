@@ -677,6 +677,8 @@ class ApiService {
   async saveInviteSettings(body: any) { return this.request('/admin/settings/invite', { method: 'PUT', body: JSON.stringify(body) }) }
   async getGameSettings() { return this.request('/admin/settings/game') }
   async saveGameSettings(body: any) { return this.request('/admin/settings/game', { method: 'PUT', body: JSON.stringify(body) }) }
+  async getAstrbotSettings() { return this.request('/admin/settings/astrbot') }
+  async saveAstrbotSettings(body: any) { return this.request('/admin/settings/astrbot', { method: 'PUT', body: JSON.stringify(body) }) }
   async getDownloadsAdmin() { return this.request('/admin/settings/downloads') }
   async saveDownloadsAdmin(body: any) { return this.request('/admin/settings/downloads', { method: 'PUT', body: JSON.stringify(body) }) }
 

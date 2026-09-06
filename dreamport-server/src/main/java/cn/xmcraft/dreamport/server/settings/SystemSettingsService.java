@@ -93,6 +93,26 @@ public class SystemSettingsService {
         settingService.set(SettingService.KEY_GAME_CONFIG, config);
     }
 
+    /** QQ 互通（AstrBot）：enabled 与 api_token 分键存储，AstrBotController 直接按键读取 */
+    public Map<String, Object> astrbotConfig() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("enabled", settingService.getBool(SettingService.KEY_ASTRBOT_ENABLED, false));
+        String token = settingService.get(SettingService.KEY_ASTRBOT_TOKEN, String.class);
+        result.put("apiToken", token == null ? "" : token);
+        return result;
+    }
+
+    public void saveAstrbotConfig(Map<String, Object> config) {
+        if (config.containsKey("enabled")) {
+            settingService.set(SettingService.KEY_ASTRBOT_ENABLED,
+                    Boolean.TRUE.equals(config.get("enabled")) || "true".equalsIgnoreCase(String.valueOf(config.get("enabled"))));
+        }
+        if (config.containsKey("apiToken")) {
+            Object token = config.get("apiToken");
+            settingService.set(SettingService.KEY_ASTRBOT_TOKEN, token == null ? "" : String.valueOf(token));
+        }
+    }
+
     public void saveDownloads(Map<String, Object> downloads) {
         settingService.set(SettingService.KEY_DOWNLOADS, downloads);
     }

@@ -124,6 +124,32 @@ public class SystemSettingsController {
         return ResponseEntity.ok(ApiResponse.success("游戏设置已保存"));
     }
 
+    @GetMapping("/astrbot")
+    public ResponseEntity<Object> getAstrbot(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        var config = settingsService.astrbotConfig();
+        String token = String.valueOf(config.getOrDefault("apiToken", ""));
+        if (!token.isBlank()) {
+            config.put("hasToken", true);
+            config.put("apiToken", "***");
+        } else {
+            config.put("hasToken", false);
+            config.put("apiToken", "");
+        }
+        return ResponseEntity.ok(Map.of("success", true, "data", config));
+    }
+
+    @PutMapping("/astrbot")
+    public ResponseEntity<Object> saveAstrbot(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        if ("***".equals(body.get("apiToken"))) {
+            body.put("apiToken", settingsService.astrbotConfig().getOrDefault("apiToken", ""));
+        }
+        settingsService.saveAstrbotConfig(body);
+        auditService.log("settings_astrbot", op(request), "", "");
+        return ResponseEntity.ok(ApiResponse.success("QQ 互通设置已保存"));
+    }
+
     @GetMapping("/downloads")
     public ResponseEntity<Object> getDownloads(HttpServletRequest request) {
         var g = guard(request); if (g != null) return g;

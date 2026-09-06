@@ -303,6 +303,23 @@
         </div>
 
         <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="chat-bubble" class="w-5 h-5" /> QQ 互通（AstrBot）</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="astrbotCfg.enabled" class="accent-orange-500" /> 启用 AstrBot 集成（关闭时 /api/astrbot/** 全部 403）
+          </label>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">API 令牌（请求头 X-API-Token）</label>
+            <div class="flex gap-2">
+              <input v-model="astrbotCfg.apiToken" type="text" class="input flex-1 font-mono"
+                :placeholder="astrbotCfg.hasToken ? '已配置（输入新值可覆盖）' : '留空则机器人无法通过鉴权'" />
+              <button @click="genAstrbotToken" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+            </div>
+          </div>
+          <div class="text-xs text-stone-500">在 AstrBot 插件中配置同一令牌与后端地址（http://主机:18898）即可对接；设计见 docs/ASTRBOT_PLAN.md。</div>
+          <button @click="saveAstrbotSettings" class="btn-primary text-sm">保存 QQ 互通设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 游戏设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label class="block text-xs text-stone-500 mb-1">注册页地址</label>
@@ -836,15 +853,17 @@ const sysCfg = ref<any>({ requireEmailCode: true, captchaEnabled: false, autoApp
 const llmCfg = ref<any>({ enabled: false, apiBase: '', apiKey: '', model: '', systemPrompt: '', hasApiKey: false })
 const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser: 3 })
 const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
+const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false })
 const downloadsJson = ref('{}')
 
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
-      api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings()
+      api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
+      api.getAstrbotSettings()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -853,6 +872,7 @@ const loadSystemSettings = async () => {
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
     if (quest.success) Object.assign(questCfg.value, quest.data)
+    if (astr.success) Object.assign(astrbotCfg.value, astr.data)
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -887,6 +907,18 @@ const saveGameSettings = async () => {
     const r: any = await api.saveGameSettings(gameCfg.value)
     if (r.success) notify?.success('游戏设置已保存')
   } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const saveAstrbotSettings = async () => {
+  try {
+    const r: any = await api.saveAstrbotSettings(astrbotCfg.value)
+    if (r.success) notify?.success('QQ 互通设置已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const genAstrbotToken = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let t = ''
+  for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
+  astrbotCfg.value.apiToken = t
 }
 const saveDownloads = async () => {
   try {
