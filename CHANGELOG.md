@@ -8,6 +8,14 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.21 问卷进度显示与前端缓存**：
+  - 进度改为「已评分 X/Y 题」（原 0 起始 index 显示成 0/15 似卡死）
+  - 评分中实时显示当前题干；逐题卡片增加题干行
+  - 评分完成展示总评（summary）
+  - SPA HTML 响应 no-store（SpaCacheHeaderFilter），部署新版本浏览器立即生效
+  - 回滚误加的 /index.html 资源处理器（文件级 location 导致 SPA 全 404）
+
+### Fixed
 - **v0.5.20 问卷提交卡在 AI 分析（0/15）**：
   - 前端 SSE 解析用 "data: "（带空格），而 Spring SseEmitter 实际发送 "data:"（无空格）
     → 所有评分事件被前端丢弃，后端评分完成但前端永远卡在 0/15

@@ -110,14 +110,17 @@
                 请继续努力，你可以重新答题
               </template>
               <template v-else>
-                正在评分第 {{ currentScoringIndex }}/{{ questions.length }} 题
+                已评分 {{ scoringResults.length }}/{{ questions.length }} 题
               </template>
             </p>
           </div>
 
-          <div v-if="!scoringComplete" class="w-full h-2 bg-stone-700 rounded-full overflow-hidden mb-6">
-            <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-300"
-              :style="{ width: scoringProgress + '%' }"></div>
+          <div v-if="!scoringComplete" class="mb-3">
+            <div class="w-full h-2 bg-stone-700 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-300"
+                :style="{ width: scoringProgress + '%' }"></div>
+            </div>
+            <div v-if="currentQuestionText" class="text-xs text-stone-500 mt-2 truncate">正在评分：{{ currentQuestionText }}</div>
           </div>
 
           <div class="space-y-3 mb-6 max-h-[400px] overflow-y-auto">
@@ -147,6 +150,11 @@
             </div>
           </div>
 
+          <div v-if="scoringComplete && scoringSummary" class="mb-6 p-4 rounded-xl bg-stone-800/60">
+            <div class="text-xs text-stone-500 mb-1.5">总评</div>
+            <div class="text-sm text-stone-300 leading-relaxed">{{ scoringSummary }}</div>
+          </div>
+
           <div v-if="scoringComplete" class="flex gap-3">
             <button v-if="!scoringPassed" @click="retryQuestionnaire" class="btn-primary flex-1">重新答题</button>
             <button @click="goToLogin" class="btn-secondary flex-1">{{ scoringPassed ? '返回登录' : '退出' }}</button>
@@ -174,6 +182,8 @@ const showScoringModal = ref(false)
 const scoringComplete = ref(false)
 const scoringPassed = ref(false)
 const currentScoringIndex = ref(0)
+const currentQuestionText = ref('')
+const scoringSummary = ref('')
 const scoringResults = ref<Array<{ score: number; maxScore: number; reason: string; isNew: boolean }>>([])
 const scoringTotalScore = ref(0)
 const scoringMaxScore = ref(0)
@@ -189,7 +199,7 @@ const answeredCount = computed(() => {
 })
 const scoringProgress = computed(() => {
   if (questions.value.length === 0) return 0
-  return Math.round((currentScoringIndex.value / questions.value.length) * 100)
+  return Math.round((scoringResults.value.length / questions.value.length) * 100)
 })
 
 onMounted(async () => {
@@ -305,9 +315,11 @@ const handleSubmit = async () => {
                 score: event.score,
                 maxScore: event.maxScore,
                 reason: event.reason,
+                questionText: event.questionText || '',
                 isNew: true
               })
               currentScoringIndex.value = event.index
+              currentQuestionText.value = event.questionText || ''
               scoringTotalScore.value = event.totalScore
               scoringMaxScore.value = event.maxScoreTotal
 
@@ -323,6 +335,7 @@ const handleSubmit = async () => {
               scoringPassed.value = event.passed
               scoringTotalScore.value = event.totalScore
               scoringMaxScore.value = event.maxScore
+              scoringSummary.value = event.summary || ''
             }
           } catch (e) {
             console.error('Parse event error:', e)
