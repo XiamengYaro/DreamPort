@@ -32,7 +32,7 @@ spring.servlet.multipart:
 wl:
   # 业务设置（注册/AI评分/邀请/问卷/游戏）存数据库 dp_setting，管理后台「外观设置」页配置（热生效）
   ws-port: 18899             # WebSocket 端口（可被工作目录 config.yml 覆盖）
-  version: 1.0.0
+  version: 1.0.1
   security:
     # 生产必须通过环境变量 WL_JWT_SECRET 覆盖（Rules.md §5）
     jwt-secret: ${WL_JWT_SECRET:dev-only-change-me-0123456789abcdef0123456789abcdef}
