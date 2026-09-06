@@ -163,32 +163,32 @@ const logout = () => {
 }
 
 .scrolled {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 
+  background: linear-gradient(135deg, var(--lg-tint-strong) 0%, var(--lg-tint) 100%);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  border-bottom: 1px solid var(--lg-border);
+  box-shadow:
     0 4px 30px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    inset 0 1px 0 var(--lg-highlight);
 }
 
 .liquid-glass-subtle {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 100%);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  background: linear-gradient(135deg, var(--lg-tint) 0%, rgb(255 255 255 / 0.03) 100%);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
 }
 
 .mobile-menu-glass {
   background: linear-gradient(135deg, rgba(40, 40, 40, 0.85) 0%, rgba(30, 30, 30, 0.9) 100%);
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
 .menu-glass {
   background: rgba(28, 25, 23, 0.88);
-  backdrop-filter: saturate(180%) blur(24px);
-  -webkit-backdrop-filter: saturate(180%) blur(24px);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
 }
 
 .nav-item {

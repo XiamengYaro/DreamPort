@@ -15,13 +15,13 @@
 
     <!-- 文字内容 -->
     <div class="relative z-10 h-full flex flex-col items-center justify-center text-center px-4">
-      <div>
+      <div class="card px-6 py-10 md:px-14 md:py-12 max-w-3xl mx-auto">
         <img :src="logoUrl" alt="Logo" class="w-20 h-20 rounded-2xl mx-auto mb-6 shadow-2xl"
           loading="eager" decoding="async" />
-        <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+        <h1 class="text-4xl md:text-6xl font-bold mb-4 tracking-tight bg-gradient-to-r from-orange-300 via-amber-200 to-orange-400 bg-clip-text text-transparent drop-shadow-[0_2px_12px_rgba(249,115,22,0.35)]">
           {{ currentSlide.title }}
         </h1>
-        <p class="text-lg md:text-xl text-white/80 mb-8 max-w-2xl">
+        <p class="text-lg md:text-xl text-white/85 mb-8 max-w-2xl mx-auto">
           {{ currentSlide.subtitle }}
         </p>
         <div class="flex flex-wrap gap-4 justify-center">

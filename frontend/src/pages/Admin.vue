@@ -368,6 +368,10 @@
             </div>
           </div>
           <AppPagination :page="pendingPage" :pages="totalPendingPages" @change="pendingPage = $event" />
+const totalAuditPages = computed(() => Math.max(1, Math.ceil(auditLogs.value.length / pageSize)))
+const paginatedAuditLogs = computed(() => auditLogs.value.slice((auditPage.value - 1) * pageSize, auditPage.value * pageSize))
+const totalAppealPages = computed(() => Math.max(1, Math.ceil(appeals.value.length / pageSize)))
+const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 1) * pageSize, appealPage.value * pageSize))
         </div>
       </div>
 
@@ -415,7 +419,7 @@
                 <th>基岩版 ID</th>
                 <th>角色</th>
                 <th>状态</th>
-                <th>操作</th>
+                <th class="th-sticky-action">操作</th>
               </tr>
             </thead>
             <tbody>
@@ -451,7 +455,7 @@
                   </select>
                   <span v-else :class="getStatusClass(user.status)">{{ getStatusText(user.status) }}</span>
                 </td>
-                <td>
+                <td class="td-sticky-action">
                   <div class="flex gap-2">
                     <button v-if="user.status !== 'banned' && !user.isAdmin" @click="confirmBan(user.username)" class="text-amber-400 hover:text-amber-300 text-sm font-medium">封禁</button>
                     <button v-if="user.status === 'banned'" @click="unbanUser(user.username)" class="text-sky-400 hover:text-sky-300 text-sm font-medium">解封</button>
@@ -506,9 +510,9 @@
         <h3 class="text-lg font-semibold text-white mb-4">操作日志</h3>
         <div class="overflow-x-auto">
           <table class="table min-w-[600px]">
-            <thead><tr><th>时间</th><th>操作</th><th>操作者</th><th>目标</th><th>详情</th></tr></thead>
+            <thead><tr><th>时间</th><th class="th-sticky-action">操作</th><th>操作者</th><th>目标</th><th>详情</th></tr></thead>
             <tbody>
-              <tr v-for="audit in auditLogs" :key="audit.id">
+              <tr v-for="audit in paginatedAuditLogs" :key="audit.id">
                 <td class="text-stone-400 text-sm whitespace-nowrap">{{ formatTime(audit.timestamp) }}</td>
                 <td><span class="badge-info text-xs">{{ audit.action }}</span></td>
                 <td class="text-white">{{ audit.operator }}</td>
@@ -525,7 +529,7 @@
         <h3 class="text-lg font-semibold text-white mb-4">申诉管理</h3>
         <EmptyState v-if="appeals.length === 0" icon="envelope" text="暂无申诉" />
         <div v-else class="space-y-4">
-          <div v-for="appeal in appeals" :key="appeal.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <div v-for="appeal in paginatedAppeals" :key="appeal.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="font-medium text-white">{{ appeal.username }}</div>
@@ -546,6 +550,7 @@
             </div>
           </div>
         </div>
+        <AppPagination :page="appealPage" :pages="totalAppealPages" @change="appealPage = $event" />
       </div>
 
       <!-- 问卷管理 Tab -->
@@ -560,7 +565,7 @@
         </div>
         <div v-else class="overflow-x-auto">
           <table class="table min-w-[700px]">
-            <thead><tr><th>用户名</th><th>分数</th><th>状态</th><th>提交时间</th><th>操作</th></tr></thead>
+            <thead><tr><th>用户名</th><th>分数</th><th>状态</th><th>提交时间</th><th class="th-sticky-action">操作</th></tr></thead>
             <tbody>
               <tr v-for="q in questionnaires" :key="q.username">
                 <td class="text-white font-medium">{{ q.username }}</td>
@@ -972,6 +977,8 @@ const verifyConfig = ref({
 })
 const pendingPage = ref(1)
 const playerPage = ref(1)
+const auditPage = ref(1)
+const appealPage = ref(1)
 const pageSize = 10
 
 const showConfirmDialog = ref(false)

@@ -3,7 +3,7 @@
     <transition name="modal">
       <div
         v-if="open"
-        class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+        class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4"
         @click.self="$emit('close')"
       >
         <div class="card w-full p-6" :class="sizeClass">

@@ -24,13 +24,10 @@ const icpUrl = 'https://beian.miit.gov.cn'
 
 <style scoped>
 .liquid-glass {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  box-shadow: 
-    0 8px 32px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, var(--lg-tint-strong) 0%, var(--lg-tint) 100%);
+  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+  border: 1px solid var(--lg-border);
+  box-shadow: var(--lg-shadow);
 }
 </style>
