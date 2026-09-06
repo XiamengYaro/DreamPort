@@ -50,6 +50,15 @@ import java.util.concurrent.TimeUnit;
         authors = {"Xia_Meng_"})
 public class DreamPortProxyPlugin {
 
+    private static final String[] BANNER_LINES = {
+            " _____                           _____           _   ",
+            " |  __ \\                         |  __ \\         | |  ",
+            " | |  | |_ __ ___  __ _ _ __ ___ | |__) |__  _ __| |_ ",
+            " | |  | | '__/ _ \\/ _` | '_ ` _ \\|  ___/ _ \\| '__| __|",
+            " | |__| | | |  __/ (_| | | | | | | |  | (_) | |  | |_ ",
+            "  |_____/|_|  \\___|\\__,_|_| |_| |_|_|   \\___/|_|   \\__|"
+    };
+
     private final ProxyServer proxy;
     private final Logger logger;
     private final Path dataDir;
@@ -80,9 +89,53 @@ public class DreamPortProxyPlugin {
 
     @Subscribe
     public void onInitialize(ProxyInitializeEvent event) {
+        long start = System.currentTimeMillis();
+        printBanner();
         loadConfig();
         startHeartbeat();
-        logger.info("DreamPort Proxy 已启动（backend={}，拦截={}）", backendUrl, enforceWhitelist);
+        printStartupReport(start);
+    }
+
+    private void printBanner() {
+        logger.info("");
+        for (String line : BANNER_LINES) {
+            logger.info(line);
+        }
+        logger.info("    夏日小镇 · 梦港  ——  DreamPort Velocity 代理端");
+        logger.info("");
+    }
+
+    private void printStartupReport(long startMillis) {
+        logger.info("┌──────────────────── 启动记录 ────────────────────┐");
+        report("插件版本", "v0.1.0");
+        report("后端地址", backendUrl);
+        report("服务器标识", serverId);
+        report("白名单拦截", enforceWhitelist ? "开启（fail-policy: " + failPolicy + "）" : "关闭");
+        report("决策缓存", cacheTtlSeconds + " 秒");
+        report("已注册后端服", String.valueOf(proxy.getAllServers().size()));
+        proxy.getAllServers().forEach(server ->
+                report("  · " + server.getServerInfo().getName(),
+                        server.getPlayersConnected().size() + " 在线"));
+        report("在线玩家", String.valueOf(proxy.getPlayerCount()));
+        double seconds = (System.currentTimeMillis() - startMillis) / 1000.0;
+        report("启动耗时", String.format("%.1f 秒", seconds));
+        logger.info("└──────────────────────────────────────────────────┘");
+        logger.info("");
+    }
+
+    private void report(String key, String value) {
+        int pad = Math.max(1, 16 - key.length() - countCjk(key));
+        logger.info("│ ✓ " + key + " ".repeat(pad) + value);
+    }
+
+    private int countCjk(String s) {
+        int n = 0;
+        for (char c : s.toCharArray()) {
+            if (c >= 0x4E00 && c <= 0x9FFF) {
+                n++;
+            }
+        }
+        return n;
     }
 
     @Subscribe
