@@ -1,5 +1,6 @@
 package cn.xmcraft.dreamport.server.settings;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedHashMap;
@@ -93,12 +94,14 @@ public class SystemSettingsService {
         settingService.set(SettingService.KEY_GAME_CONFIG, config);
     }
 
-    /** QQ 互通（AstrBot）：enabled 与 api_token 分键存储，AstrBotController 直接按键读取 */
+    /** QQ 互通（AstrBot）：enabled / api_token / 群绑定 JSON 分键存储，AstrBotController 与 QqBridgeService 直接按键读取 */
     public Map<String, Object> astrbotConfig() {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("enabled", settingService.getBool(SettingService.KEY_ASTRBOT_ENABLED, false));
         String token = settingService.get(SettingService.KEY_ASTRBOT_TOKEN, String.class);
         result.put("apiToken", token == null ? "" : token);
+        String bindings = settingService.getRaw(cn.xmcraft.dreamport.server.qq.QqBridgeService.KEY_GROUP_BINDINGS);
+        result.put("groupBindings", bindings == null || bindings.isBlank() ? "[]" : bindings);
         return result;
     }
 
@@ -110,6 +113,20 @@ public class SystemSettingsService {
         if (config.containsKey("apiToken")) {
             Object token = config.get("apiToken");
             settingService.set(SettingService.KEY_ASTRBOT_TOKEN, token == null ? "" : String.valueOf(token));
+        }
+        if (config.containsKey("groupBindings")) {
+            Object raw = config.get("groupBindings");
+            if (raw == null || String.valueOf(raw).isBlank()) {
+                settingService.set(cn.xmcraft.dreamport.server.qq.QqBridgeService.KEY_GROUP_BINDINGS, List.of());
+                return;
+            }
+            try {
+                // 前端传原始 JSON 文本:解析为列表后按正规 JSON 数组落库(QqBridgeService 按列表读取)
+                List<?> parsed = new ObjectMapper().readValue(String.valueOf(raw), List.class);
+                settingService.set(cn.xmcraft.dreamport.server.qq.QqBridgeService.KEY_GROUP_BINDINGS, parsed);
+            } catch (Exception e) {
+                throw new IllegalArgumentException("群绑定 JSON 格式错误");
+            }
         }
     }
 

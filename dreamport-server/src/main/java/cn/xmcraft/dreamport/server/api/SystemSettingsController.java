@@ -145,7 +145,11 @@ public class SystemSettingsController {
         if ("***".equals(body.get("apiToken"))) {
             body.put("apiToken", settingsService.astrbotConfig().getOrDefault("apiToken", ""));
         }
-        settingsService.saveAstrbotConfig(body);
+        try {
+            settingsService.saveAstrbotConfig(body);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(e.getMessage()));
+        }
         auditService.log("settings_astrbot", op(request), "", "");
         return ResponseEntity.ok(ApiResponse.success("QQ 互通设置已保存"));
     }

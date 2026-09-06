@@ -315,6 +315,12 @@
               <button @click="genAstrbotToken" class="btn-secondary text-sm whitespace-nowrap">生成</button>
             </div>
           </div>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">群绑定（与 AstrBot 插件 forward_groups 一致的群号）</label>
+            <textarea v-model="astrbotCfg.groupBindingsStr" rows="4" class="input w-full font-mono text-sm resize-y"
+              placeholder='[{"group": 697093624, "mode": "all", "prefix": "#", "forward_join_quit": true}]'></textarea>
+            <div class="text-xs text-stone-600 mt-1">mode: all=全部转发进服, prefix=仅带前缀消息进服; forward_join_quit=进退服是否发群</div>
+          </div>
           <div class="text-xs text-stone-500">在 AstrBot 插件中配置同一令牌与后端地址（http://主机:18898）即可对接；设计见 docs/ASTRBOT_PLAN.md。</div>
           <button @click="saveAstrbotSettings" class="btn-primary text-sm">保存 QQ 互通设置</button>
         </div>
@@ -853,7 +859,7 @@ const sysCfg = ref<any>({ requireEmailCode: true, captchaEnabled: false, autoApp
 const llmCfg = ref<any>({ enabled: false, apiBase: '', apiKey: '', model: '', systemPrompt: '', hasApiKey: false })
 const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser: 3 })
 const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
-const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false })
+const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false, groupBindingsStr: '[]' })
 const downloadsJson = ref('{}')
 
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
@@ -872,7 +878,11 @@ const loadSystemSettings = async () => {
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
     if (quest.success) Object.assign(questCfg.value, quest.data)
-    if (astr.success) Object.assign(astrbotCfg.value, astr.data)
+    if (astr.success) {
+      Object.assign(astrbotCfg.value, astr.data)
+      try { astrbotCfg.value.groupBindingsStr = JSON.stringify(JSON.parse(astr.data.groupBindings || '[]'), null, 2) }
+      catch { astrbotCfg.value.groupBindingsStr = '[]' }
+    }
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -909,8 +919,12 @@ const saveGameSettings = async () => {
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
 const saveAstrbotSettings = async () => {
+  try { JSON.parse(astrbotCfg.value.groupBindingsStr || '[]') }
+  catch { notify?.error('群绑定 JSON 格式错误'); return }
   try {
-    const r: any = await api.saveAstrbotSettings(astrbotCfg.value)
+    const body: any = { ...astrbotCfg.value, groupBindings: astrbotCfg.value.groupBindingsStr }
+    delete body.groupBindingsStr
+    const r: any = await api.saveAstrbotSettings(body)
     if (r.success) notify?.success('QQ 互通设置已保存')
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
