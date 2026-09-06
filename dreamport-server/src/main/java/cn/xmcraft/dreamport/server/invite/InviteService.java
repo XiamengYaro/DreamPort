@@ -30,13 +30,17 @@ public class InviteService {
         this.systemSettings = systemSettings;
     }
 
-    public record Result(boolean success, String message) {
+    public record Result(boolean success, String message, String code) {
         public static Result ok(String message) {
-            return new Result(true, message);
+            return new Result(true, message, null);
+        }
+
+        public static Result ok(String message, String code) {
+            return new Result(true, message, code);
         }
 
         public static Result fail(String message) {
-            return new Result(false, message);
+            return new Result(false, message, null);
         }
     }
 
@@ -70,7 +74,7 @@ public class InviteService {
         InviteRecord invite = new InviteRecord(null, InviteRecord.generateCode(), inviter,
                 null, "active", now, now + expiryDays * 86_400_000L, null);
         inviteRepository.save(invite);
-        return Result.ok("邀请码已生成：" + invite.code());
+        return Result.ok("邀请码已生成：" + invite.code(), invite.code());
     }
 
     public List<InviteRecord> myCodes(String inviter) {

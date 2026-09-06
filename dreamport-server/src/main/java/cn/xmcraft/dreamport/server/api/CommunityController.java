@@ -290,7 +290,13 @@ public class CommunityController {
         if (me == null) {
             return unauthorized();
         }
-        return wrap(inviteService.generate(me));
+        var result = inviteService.generate(me);
+        if (!result.success()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(result.message()));
+        }
+        // 前端读 data.code 展示新邀请码
+        return ResponseEntity.ok(ApiResponse.success(result.message(),
+                Map.of("code", result.code() == null ? "" : result.code())));
     }
 
     @GetMapping("/invite/my-codes")
@@ -310,7 +316,10 @@ public class CommunityController {
             m.put("usedAt", i.usedAt());
             codes.add(m);
         }
-        return ResponseEntity.ok(Map.of("codes", codes));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", codes);
+        return ResponseEntity.ok(body);
     }
 
     @GetMapping("/invite/pending")
@@ -319,7 +328,10 @@ public class CommunityController {
         if (me == null) {
             return unauthorized();
         }
-        return ResponseEntity.ok(Map.of("pending", inviteService.pendingFor(me)));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
+        body.put("data", inviteService.pendingFor(me));
+        return ResponseEntity.ok(body);
     }
 
     @PostMapping("/invite/apply")

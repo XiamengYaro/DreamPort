@@ -7,6 +7,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- **v0.5.24 生成邀请码报 Cannot read properties of undefined (reading code)**：
+  /invite/generate 返回缺 data.code（前端读 res.data.code）；
+  my-codes/pending 缺 {success, data} 包装。InviteService.Result 携带 code，
+  generate 返回 data.code；my-codes/pending 统一 {success, data} 包装
+  （E2E: 生成→data.code→my-codes 含新码→pending 数组）
+
 ### Changed
 - **v0.5.23 邮件模板品牌化重设计**：
   - 统一骨架：左上角 logo（绝对地址）+ 站名页眉 + 橙色品牌条 + 内容区 + 站名/官网链接页脚
