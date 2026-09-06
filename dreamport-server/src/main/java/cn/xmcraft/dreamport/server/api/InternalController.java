@@ -262,7 +262,7 @@ public class InternalController {
 
     // ---------- 游戏内管理命令（/xmw 经服务器令牌调用，替代旧版进程内直调） ----------
 
-    public record AdminOpBody(String username, String reason) {
+    public record AdminOpBody(String username, String reason, Integer days) {
     }
 
     @PostMapping("/admin-ops/{action}")
@@ -280,7 +280,7 @@ public class InternalController {
             case "reject" -> reviewService.reject(body.username(), operator,
                     body.reason() == null ? "未通过审核" : body.reason(), "zh");
             case "ban" -> reviewService.ban(body.username(), operator,
-                    body.reason() == null ? "违规操作" : body.reason());
+                    body.reason() == null ? "违规操作" : body.reason(), body.days());
             case "unban" -> reviewService.unban(body.username(), operator);
             case "delete" -> reviewService.delete(body.username(), operator);
             default -> null;

@@ -130,7 +130,7 @@ public class SetupController {
                     "bcrypt", passwordService.hash(password), null,
                     null, null, null, null, null, null, null, null, null,
                     null, null, null, null, null, null, null, null, null, null,
-                    null, null, null));
+                    null, null, null, null));
             adminCreated = true;
         }
         // ③ 写入管理员名单
@@ -175,6 +175,6 @@ public class SetupController {
                 user.questionnaireReasons(), user.questionnaireAnswers(), user.minecraftUuid(),
                 user.minecraftName(), user.microsoftVerified(), user.verifiedAt(), user.verifyType(),
                 user.invitedBy(), user.bedrockUuid(), user.bedrockName(), user.bedrockVerified(),
-                user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 }

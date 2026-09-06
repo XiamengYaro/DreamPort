@@ -204,10 +204,10 @@ class ApiService {
     })
   }
 
-  async banUser(username: string, reason?: string) {
+  async banUser(username: string, reason?: string, days?: number) {
     return this.request('/admin/user/ban', {
       method: 'POST',
-      body: JSON.stringify({ username, reason })
+      body: JSON.stringify({ username, reason, days })
     })
   }
 
@@ -216,6 +216,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ username })
     })
+  }
+
+  // 公开封禁名单(/bans 页)
+  async getBans() {
+    return this.request('/bans')
   }
 
   async deleteUser(username: string) {

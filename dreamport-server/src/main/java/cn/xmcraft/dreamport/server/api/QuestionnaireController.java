@@ -285,7 +285,7 @@ public class QuestionnaireController {
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(),
                 user.microsoftVerified(), user.verifiedAt(), user.verifyType(), user.invitedBy(),
                 user.bedrockUuid(), user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         auditService.log("admin_update_questionnaire", AuthUtil.currentUser(request), username, null);
         return ResponseEntity.ok(ApiResponse.success("问卷成绩已更新"));

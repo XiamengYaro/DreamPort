@@ -8,6 +8,7 @@ import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.websocket.ReviewPushService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -89,6 +90,11 @@ public class ReviewService {
     }
 
     public Result ban(String username, String operator, String reason) {
+        return ban(username, operator, reason, null);
+    }
+
+    /** days 非空 = 临时封禁(到期自动解封) */
+    public Result ban(String username, String operator, String reason, Integer days) {
         var userOpt = target(username);
         if (userOpt.isEmpty()) {
             return Result.fail("用户不存在");
@@ -101,11 +107,29 @@ public class ReviewService {
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
                 user.bedrockVerified(), user.bedrockVerifiedAt(),
-                reason == null ? "违规操作" : reason, System.currentTimeMillis(), user.avatar());
+                reason == null ? "违规操作" : reason, System.currentTimeMillis(),
+                days != null && days > 0 ? System.currentTimeMillis() + days * 86_400_000L : null,
+                user.avatar());
         userRepository.save(updated);
-        auditService.log("ban", operator, username, reason);
+        auditService.log("ban", operator, username,
+                (reason == null ? "违规操作" : reason) + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)"));
         notify("user_banned", username);
         return Result.ok("已封禁玩家 " + username);
+    }
+
+    /** 到期临时封禁自动解封(每小时扫描;登录校验侧以状态为准,解封后即刻放行) */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3_600_000, initialDelay = 90_000)
+    public void unbanExpired() {
+        var expired = userRepository.listAll().stream()
+                .filter(u -> "banned".equals(u.status()) && u.banUntil() != null
+                        && u.banUntil() <= System.currentTimeMillis())
+                .toList();
+        for (UserRecord u : expired) {
+            unban(u.username(), "system(临时封禁到期)");
+        }
+        if (!expired.isEmpty()) {
+            auditService.log("unban_expired", "system", "", expired.size() + " 个到期临时封禁已自动解除");
+        }
     }
 
     public Result unban(String username, String operator) {
@@ -120,7 +144,7 @@ public class ReviewService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), null, 0L, user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), null, 0L, null, user.avatar());
         userRepository.save(updated);
         auditService.log("unban", operator, username, null);
         notify("user_unbanned", username);
@@ -163,7 +187,7 @@ public class ReviewService {
                 "bcrypt", passwordService.hash(java.util.UUID.randomUUID().toString()), null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
-                null, null, null);
+                null, null, null, null);
         userRepository.save(user);
         auditService.log("add_user", operator, username, "email=" + email);
         return Result.ok("已添加用户 " + username);
@@ -176,6 +200,6 @@ public class ReviewService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 }

@@ -1048,6 +1048,8 @@ const showConfirmDialog = ref(false)
 const confirmTitle = ref('')
 const confirmMessage = ref('')
 const confirmAction = ref<() => void>(() => {})
+const showBanDaysInput = ref(false)
+const banDays = ref<number | null>(null)
 
 // 删除用户相关
 const showDeleteDialog = ref(false)
@@ -1398,9 +1400,9 @@ const saveSettings = async () => {
 }
 
 // 审核操作
-const confirmApprove = (u: string) => { confirmTitle.value = '确认通过'; confirmMessage.value = `确定通过 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.approveUser(u); notify?.success('已通过'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
-const confirmReject = (u: string) => { confirmTitle.value = '确认拒绝'; confirmMessage.value = `确定拒绝 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.rejectUser(u); notify?.success('已拒绝'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
-const confirmBan = (u: string) => { confirmTitle.value = '确认封禁'; confirmMessage.value = `确定封禁 ${u} 吗？`; confirmAction.value = async () => { try { await api.banUser(u); notify?.success('已封禁'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmApprove = (u: string) => { showBanDaysInput.value = false; confirmTitle.value = '确认通过'; confirmMessage.value = `确定通过 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.approveUser(u); notify?.success('已通过'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmReject = (u: string) => { showBanDaysInput.value = false; confirmTitle.value = '确认拒绝'; confirmMessage.value = `确定拒绝 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.rejectUser(u); notify?.success('已拒绝'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmBan = (u: string) => { banDays.value = null; showBanDaysInput.value = true; confirmTitle.value = '确认封禁'; confirmMessage.value = `确定封禁 ${u} 吗？可设置临时封禁天数(留空 = 永久)`; confirmAction.value = async () => { try { await api.banUser(u, undefined, banDays.value ?? undefined); notify?.success('已封禁'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
 const confirmDelete = (u: string) => { deleteUsername.value = u; deleteStep.value = 1; deleteConfirmInput.value = ''; showDeleteDialog.value = true }
 const executeDelete = async () => {
   if (deleteConfirmInput.value !== deleteUsername.value) return

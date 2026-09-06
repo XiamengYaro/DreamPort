@@ -58,7 +58,7 @@ public class ReviewAdminController {
 
     // ---------- 请求体 ----------
 
-    public record UsernameBody(String username, String reason, String language, String operator) {
+    public record UsernameBody(String username, String reason, String language, String operator, Integer days) {
     }
 
     public record AddUserBody(String username, String email, String status) {
@@ -147,7 +147,7 @@ public class ReviewAdminController {
         if (guard != null) {
             return guard;
         }
-        return wrap(reviewService.ban(body.username(), operator(request), body.reason()));
+        return wrap(reviewService.ban(body.username(), operator(request), body.reason(), body.days()));
     }
 
     @PostMapping("/user/unban")
@@ -196,7 +196,7 @@ public class ReviewAdminController {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         auditService.log("update_user", operator(request), body.username(), null);
         return ResponseEntity.ok(ApiResponse.success("已更新用户 " + body.username()));
@@ -321,7 +321,7 @@ public class ReviewAdminController {
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(),
                 user.microsoftVerified(), user.verifiedAt(), user.verifyType(), user.invitedBy(),
                 user.bedrockUuid(), user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         auditService.log("admin_update_questionnaire", operator(request), body.username(), null);
         return ResponseEntity.ok(ApiResponse.success("问卷成绩已更新"));
@@ -366,7 +366,7 @@ public class ReviewAdminController {
                 u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
                 u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
                 u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
-                u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.avatar());
+                u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.banUntil(), u.avatar());
         userRepository.save(updated);
         auditService.log("set_bedrock", operator(request), u.username(), bn);
         return ResponseEntity.ok(ApiResponse.success("基岩 ID 已设置"));
@@ -390,7 +390,7 @@ public class ReviewAdminController {
                 u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
                 u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
                 u.invitedBy(), "admin-verified", u.bedrockName(), true, System.currentTimeMillis(),
-                u.banReason(), u.banTime(), u.avatar());
+                u.banReason(), u.banTime(), u.banUntil(), u.avatar());
         userRepository.save(updated);
         auditService.log("verify_bedrock", operator(request), u.username(), u.bedrockName());
         return ResponseEntity.ok(ApiResponse.success("基岩 ID 已验证"));

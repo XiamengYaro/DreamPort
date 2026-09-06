@@ -289,7 +289,7 @@ public class QuestionnaireService {
                 user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(),
                 user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         auditService.log("questionnaire_submit", username, username,
                 total + "/" + maxTotal + (passed ? " passed" : " failed"));

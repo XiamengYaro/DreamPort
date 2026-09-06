@@ -129,7 +129,7 @@ public class AuthController {
                     u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
                     u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
                     u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
-                    u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.avatar())));
+                    u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.banUntil(), u.avatar())));
         }
         String token = tokenService.issue(result.user().username(), TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();

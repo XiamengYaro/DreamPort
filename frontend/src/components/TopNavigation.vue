@@ -23,7 +23,7 @@
           <!-- 更多下拉菜单（样式与其余导航项一致） -->
           <div class="relative group">
             <span class="nav-item cursor-pointer flex items-center gap-1"
-              :class="{ active: ['/village', '/players', '/machines', '/chat', '/status'].includes($route.path) }">
+              :class="{ active: ['/village', '/players', '/machines', '/chat', '/bans', '/status'].includes($route.path) }">
               更多
               <svg class="w-3 h-3 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </span>
@@ -32,6 +32,7 @@
               <router-link to="/players" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">玩家</router-link>
               <router-link to="/machines" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公共机器</router-link>
               <router-link to="/announcements" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">公告资讯</router-link>
+              <router-link to="/bans" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">封禁名单</router-link>
               <router-link to="/chat" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">聊天广场</router-link>
               <router-link to="/status" class="block px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all">申请状态查询</router-link>
             </div>
@@ -90,6 +91,7 @@
           <router-link to="/players" class="block mobile-nav-item" @click="mobileMenuOpen = false">玩家</router-link>
           <router-link to="/machines" class="block mobile-nav-item" @click="mobileMenuOpen = false">公共机器</router-link>
           <router-link to="/announcements" class="block mobile-nav-item" @click="mobileMenuOpen = false">公告资讯</router-link>
+          <router-link to="/bans" class="block mobile-nav-item" @click="mobileMenuOpen = false">封禁名单</router-link>
           <router-link to="/chat" class="block mobile-nav-item" @click="mobileMenuOpen = false">聊天广场</router-link>
           <router-link to="/status" class="block mobile-nav-item" @click="mobileMenuOpen = false">申请状态查询</router-link>
         </div>

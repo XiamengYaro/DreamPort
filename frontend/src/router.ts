@@ -101,6 +101,11 @@ const routes = [
     component: () => import('./pages/Announcements.vue')
   },
   {
+    path: '/bans',
+    name: 'Bans',
+    component: () => import('./pages/Bans.vue')
+  },
+  {
     path: '/chat',
     name: 'Chat',
     component: () => import('./pages/Chat.vue')

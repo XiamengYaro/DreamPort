@@ -290,7 +290,30 @@ public class CommunityController {
         profile.put("timePlayed", econ.getOrDefault("timePlayed", 0L));
         profile.put("activeDaysLast30", econ.getOrDefault("activeDaysLast30", 0));
         profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
+        profile.put("banUntil", u.banUntil());
         return ResponseEntity.ok(profile);
+    }
+
+    /** 公开封禁名单(状态 banned,按封禁时间倒序) */
+    @GetMapping("/bans")
+    public Map<String, Object> bans() {
+        var list = userRepository.listAll().stream()
+                .filter(u -> "banned".equals(u.status()))
+                .sorted((a, b) -> Long.compare(b.banTime() == null ? 0 : b.banTime(),
+                        a.banTime() == null ? 0 : a.banTime()))
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("username", u.username());
+                    m.put("minecraftName", u.minecraftName());
+                    m.put("uuid", u.minecraftUuid());
+                    m.put("avatarUrl", "https://crafthead.net/avatar/"
+                            + (u.minecraftUuid() != null ? u.minecraftUuid() : u.username()) + "/128");
+                    m.put("banReason", u.banReason());
+                    m.put("banTime", u.banTime());
+                    m.put("banUntil", u.banUntil());
+                    return m;
+                }).toList();
+        return Map.of("success", true, "data", Map.of("bans", list));
     }
 
     // ---------- 邀请 ----------

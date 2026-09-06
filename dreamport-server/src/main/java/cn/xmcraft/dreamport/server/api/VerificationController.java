@@ -160,7 +160,7 @@ public class VerificationController {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar()));
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar()));
         passwordResetRepository.save(record.get().markUsed());
         return ResponseEntity.ok(ApiResponse.success("密码已重置，请使用新密码登录"));
     }
@@ -348,7 +348,7 @@ public class VerificationController {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar()));
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar()));
         return ResponseEntity.ok(ApiResponse.success("邮箱已更新"));
     }
 
@@ -401,7 +401,7 @@ public class VerificationController {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(),
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(),
                 "/uploads/" + filename));
         return ResponseEntity.ok(ApiResponse.success("头像已更新",
                 Map.of("avatar", "/uploads/" + filename)));
@@ -416,7 +416,7 @@ public class VerificationController {
                 user.questionnaireScoredAt(), user.questionnaireReasons(), user.questionnaireAnswers(),
                 user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(), user.verifiedAt(),
                 user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 
     private ResponseEntity<Map<String, Object>> wrap(MinecraftVerifyService.Result result) {

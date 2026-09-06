@@ -136,7 +136,7 @@ public class MinecraftVerifyService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), null, full, false, null,
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         return Result.ok("已绑定基岩 ID，请使用基岩版进服完成验证");
     }
@@ -154,7 +154,7 @@ public class MinecraftVerifyService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), null, null, false, null,
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         return Result.ok("已取消基岩版验证");
     }
@@ -178,7 +178,7 @@ public class MinecraftVerifyService {
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), login.get().minecraftUuid(),
                 user.bedrockName(), true, System.currentTimeMillis(),
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
         userRepository.save(updated);
         return Result.ok("基岩版验证成功");
     }
@@ -216,7 +216,7 @@ public class MinecraftVerifyService {
                 user.questionnaireAnswers(), uuid, name, user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(),
                 user.bedrockName(), user.bedrockVerified(), user.bedrockVerifiedAt(),
-                user.banReason(), user.banTime(), user.avatar());
+                user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 
     @Scheduled(fixedRate = 300_000)
