@@ -226,6 +226,93 @@
         </button>
       </div>
 
+      <!-- 系统设置（注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
+      <div v-if="activeTab === 'settings' && !loading" class="space-y-6 mt-6">
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+              <input type="checkbox" v-model="sysCfg.requireEmailCode" class="accent-orange-500" /> 需要邮箱验证码
+            </label>
+            <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+              <input type="checkbox" v-model="sysCfg.captchaEnabled" class="accent-orange-500" /> 需要图形验证码
+            </label>
+            <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+              <input type="checkbox" v-model="sysCfg.autoApprove" class="accent-orange-500" /> 自动通过审核
+            </label>
+            <div class="flex items-center gap-2 text-sm text-stone-300">
+              单邮箱上限 <input v-model.number="sysCfg.maxAccountsPerEmail" type="number" min="1" class="input w-20 text-center" />
+            </div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="sysCfg.domainWhitelistEnabled" class="accent-orange-500" /> 启用邮箱域名白名单
+          </label>
+          <div v-if="sysCfg.domainWhitelistEnabled">
+            <label class="block text-sm text-stone-300 mb-1">白名单域名（逗号分隔）</label>
+            <input v-model="sysCfg.emailDomainWhitelistStr" class="input w-full" placeholder="qq.com, 163.com, gmail.com" />
+          </div>
+          <button @click="saveRegisterSettings" class="btn-primary text-sm">保存注册设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="cpu" class="w-5 h-5" /> AI 评分设置</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="llmCfg.enabled" class="accent-orange-500" /> 启用 AI 自动评分
+          </label>
+          <template v-if="llmCfg.enabled">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">API 地址</label>
+                <input v-model="llmCfg.apiBase" class="input w-full" placeholder="https://api.deepseek.com/v1" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">API Key</label>
+                <input v-model="llmCfg.apiKey" type="password" class="input w-full" :placeholder="llmCfg.hasApiKey ? '已配置（输入新值可覆盖）' : 'sk-...'" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">模型</label>
+                <input v-model="llmCfg.model" class="input w-full" placeholder="deepseek-chat" /></div>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">系统提示词</label>
+              <textarea v-model="llmCfg.systemPrompt" rows="2" class="input w-full resize-none"></textarea></div>
+          </template>
+          <button @click="saveLlmSettings" class="btn-primary text-sm">保存 AI 设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="envelope" class="w-5 h-5" /> 邀请设置</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-center">
+            <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+              <input type="checkbox" v-model="inviteCfg.enabled" class="accent-orange-500" /> 启用邀请系统
+            </label>
+            <div class="flex items-center gap-2 text-sm text-stone-300">
+              有效期 <input v-model.number="inviteCfg.codeExpiryDays" type="number" min="1" class="input w-20 text-center" /> 天
+            </div>
+            <div class="flex items-center gap-2 text-sm text-stone-300">
+              每人上限 <input v-model.number="inviteCfg.maxInvitesPerUser" type="number" min="1" class="input w-20 text-center" /> 个
+            </div>
+          </div>
+          <button @click="saveInviteSettings" class="btn-primary text-sm">保存邀请设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 游戏设置</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs text-stone-500 mb-1">注册页地址</label>
+              <input v-model="gameCfg.webRegisterUrl" class="input w-full" placeholder="https://..." /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">基岩版前缀</label>
+              <input v-model="gameCfg.bedrockPrefix" class="input w-full" placeholder="." /></div>
+          </div>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="gameCfg.bedrockEnabled" class="accent-orange-500" /> 启用基岩版支持
+          </label>
+          <button @click="saveGameSettings" class="btn-primary text-sm">保存游戏设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="archive-box" class="w-5 h-5" /> 下载中心</h3>
+          <div class="text-xs text-stone-500">以 JSON 格式管理下载条目</div>
+          <textarea v-model="downloadsJson" rows="5" class="input w-full font-mono text-sm resize-y"
+            placeholder='{"client": {"title": "客户端", "url": "..."}}'></textarea>
+          <button @click="saveDownloads" class="btn-primary text-sm">保存下载中心</button>
+        </div>
+      </div>
+
       <!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
@@ -730,6 +817,64 @@ const menuItems = [
   { key: 'migration', icon: 'archive-box', label: '数据迁移' }
 ]
 
+// ===== 系统设置（注册/AI/邀请/游戏/下载中心） =====
+const sysCfg = ref<any>({ requireEmailCode: true, captchaEnabled: false, autoApprove: false,
+  maxAccountsPerEmail: 2, domainWhitelistEnabled: true, emailDomainWhitelistStr: '' })
+const llmCfg = ref<any>({ enabled: false, apiBase: '', apiKey: '', model: '', systemPrompt: '', hasApiKey: false })
+const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser: 3 })
+const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
+const downloadsJson = ref('{}')
+
+const loadSystemSettings = async () => {
+  try {
+    const [reg, llm, inv, game, dls] = await Promise.all([
+      api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
+      api.getGameSettings(), api.getDownloadsAdmin()
+    ])
+    if (reg.success) Object.assign(sysCfg.value, reg.data,
+      { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
+    if (llm.success) Object.assign(llmCfg.value, llm.data)
+    if (inv.success) Object.assign(inviteCfg.value, inv.data)
+    if (game.success) Object.assign(gameCfg.value, game.data)
+    if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
+  } catch (e) { console.error('loadSystemSettings failed', e) }
+}
+
+const saveRegisterSettings = async () => {
+  try {
+    const body: any = { ...sysCfg.value,
+      emailDomainWhitelist: sysCfg.value.emailDomainWhitelistStr.split(',').map((x: string) => x.trim()).filter(Boolean) }
+    delete body.emailDomainWhitelistStr
+    const r: any = await api.saveRegisterSettings(body)
+    if (r.success) notify?.success('注册设置已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const saveLlmSettings = async () => {
+  try {
+    const r: any = await api.saveLlmSettings(llmCfg.value)
+    if (r.success) notify?.success('AI 设置已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const saveInviteSettings = async () => {
+  try {
+    const r: any = await api.saveInviteSettings(inviteCfg.value)
+    if (r.success) notify?.success('邀请设置已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const saveGameSettings = async () => {
+  try {
+    const r: any = await api.saveGameSettings(gameCfg.value)
+    if (r.success) notify?.success('游戏设置已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const saveDownloads = async () => {
+  try {
+    const parsed = JSON.parse(downloadsJson.value)
+    const r: any = await api.saveDownloadsAdmin(parsed)
+    if (r.success) notify?.success('下载中心已保存')
+  } catch (e: any) { notify?.error(e.message?.includes('JSON') ? 'JSON 格式错误' : (e.message || '保存失败')) }
+}
+
 const loadMaintenance = async () => {
   try { const r: any = await api.getMaintenanceMode(); maintenanceEnabled.value = !!r.data?.enabled } catch (e) {}
 }
@@ -743,6 +888,7 @@ const toggleMaintenance = async () => {
   }
 }
 loadMaintenance()
+loadSystemSettings()
 const migrationFileInput = ref<HTMLInputElement | null>(null)
 const migrationFile = ref<File | null>(null)
 const migrationLoading = ref(false)
