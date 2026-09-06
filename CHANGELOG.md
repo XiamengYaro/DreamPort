@@ -8,6 +8,12 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.15 外观设置页消失**：问卷设置卡片模板引用 qnCfg/saveQnSettings，
+  但 script 中实际定义为 questCfg（前次编辑锚点未匹配静默失败），
+  渲染时抛 ReferenceError 导致整页白屏。已统一命名并补上独立的
+  saveQuestSettings 函数（此前问卷保存被错位嵌入 saveRegisterSettings）
+
+### Fixed
 - **v0.5.14 ID 验证重构（UUID 比对优先）+ Economy 崩溃 + 问卷设置**：
   - 验证改为 UUID 比对优先：进服记录与绑定 UUID 不一致时拒绝（防同名冒充）；
     首次验证采用进服记录中的真实 UUID（原 setMinecraftId 伪造随机 UUID 已移除）；

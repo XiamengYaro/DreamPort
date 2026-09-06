@@ -277,13 +277,13 @@
         <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="pencil-square" class="w-5 h-5" /> 问卷设置</h3>
           <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
-            <input type="checkbox" v-model="qnCfg.enabled" class="accent-orange-500" />
+            <input type="checkbox" v-model="questCfg.enabled" class="accent-orange-500" />
             启用入服问卷（关闭后注册用户直接进入审核）
           </label>
           <div class="flex items-center gap-2 text-sm text-stone-300">
-            通过线 <input v-model.number="qnCfg.passScore" type="number" min="0" max="100" class="input w-20 text-center" /> 分（百分制）
+            通过线 <input v-model.number="questCfg.passScore" type="number" min="0" max="100" class="input w-20 text-center" /> 分（百分制）
           </div>
-          <button @click="saveQnSettings" class="btn-primary text-sm">保存问卷设置</button>
+          <button @click="saveQuestSettings" class="btn-primary text-sm">保存问卷设置</button>
         </div>
 
         <div class="card p-6 space-y-4">
@@ -860,11 +860,15 @@ const saveRegisterSettings = async () => {
     const body: any = { ...sysCfg.value,
       emailDomainWhitelist: sysCfg.value.emailDomainWhitelistStr.split(',').map((x: string) => x.trim()).filter(Boolean) }
     delete body.emailDomainWhitelistStr
-    const rq: any = await api.saveQuestionnaireSettings(questCfg.value)
     const r: any = await api.saveRegisterSettings(body)
-    if (r.success && rq.success) notify?.success('注册设置已保存')
+    if (r.success) notify?.success('注册设置已保存')
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
+const saveQuestSettings = async () => {
+  try { const r: any = await api.saveQuestionnaireSettings(questCfg.value); if (r.success) notify?.success('问卷设置已保存') }
+  catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+
 const saveLlmSettings = async () => {
   try {
     const r: any = await api.saveLlmSettings(llmCfg.value)
