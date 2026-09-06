@@ -67,9 +67,20 @@ public class InternalController {
         if (req == null || req.username() == null || req.username().isBlank()) {
             return badRequest("username 必填");
         }
-        // 群组服统一拦截（proxy 角色）时也走同一决策
-        return ResponseEntity.ok(userService.loginDecision(req.username()));
+        var decision = userService.loginDecision(req.username());
+        if (decision.allowed()) {
+            LOG.info("[校验] {} → 放行", req.username());
+        } else {
+            LOG.info("[校验] {} → 拒绝（{}）", req.username(), decision.reasonKey());
+        }
+        return ResponseEntity.ok(decision);
     }
+
+    private static final org.slf4j.Logger LOG =
+            org.slf4j.LoggerFactory.getLogger(InternalController.class);
+
+    /** 各服上次心跳时间（用于离线检测） */
+    private static final java.util.concurrent.ConcurrentHashMap<String, Long> LAST_SEEN = new java.util.concurrent.ConcurrentHashMap<>();
 
     @PostMapping("/heartbeat")
     public ResponseEntity<Object> heartbeat(@RequestBody HeartbeatRequest req,
@@ -81,11 +92,34 @@ public class InternalController {
         if (req == null || req.serverId() == null || req.serverId().isBlank()) {
             return badRequest("serverId 必填");
         }
-        statsService.heartbeat(new ServerStatsService.Heartbeat(req.serverId(), req.serverName(),
+        long now = System.currentTimeMillis();
+        String sid = req.serverId();
+        Long prev = LAST_SEEN.put(sid, now);
+        if (prev == null) {
+            LOG.info("[连接] 服务器上线: {}（{}，{}）", sid, req.serverName(), req.role());
+        }
+        statsService.heartbeat(new ServerStatsService.Heartbeat(sid, req.serverName(),
                 req.role(), req.onlinePlayers(), req.maxPlayers(), req.version(),
-                req.players() == null ? java.util.List.of() : req.players(),
-                System.currentTimeMillis()));
-        return ResponseEntity.ok(new HeartbeatResponse(true, System.currentTimeMillis()));
+                req.players() == null ? java.util.List.of() : req.players(), now));
+        if (now - (prev == null ? now : prev) >= 300_000) {
+            // 每 5 分钟一条常规心跳摘要
+            LOG.info("[心跳] {} 在线 {} / {}（玩家 {}）", sid, req.onlinePlayers(),
+                    req.maxPlayers(), req.players() == null ? 0 : req.players().size());
+        }
+        return ResponseEntity.ok(new HeartbeatResponse(true, now));
+    }
+
+    /** 定时检测服务器离线（5 分钟无心跳视为离线） */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60_000)
+    public void detectOffline() {
+        long now = System.currentTimeMillis();
+        LAST_SEEN.entrySet().removeIf(e -> {
+            if (now - e.getValue() > 5 * 60_000L) {
+                LOG.warn("[连接] 服务器离线: {}（超过 5 分钟无心跳）", e.getKey());
+                return true;
+            }
+            return false;
+        });
     }
 
     public record LoginRecordBody(String name, String uuid, String ip) {

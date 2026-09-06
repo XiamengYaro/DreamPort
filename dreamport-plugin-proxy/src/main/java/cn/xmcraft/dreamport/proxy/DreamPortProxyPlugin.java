@@ -115,6 +115,7 @@ public class DreamPortProxyPlugin {
         report("决策缓存", cacheTtlSeconds + " 秒");
         // 区分「已配置」与「在线」：只有能 ping 通的后端才算在线
         List<RegisteredServer> configured = new java.util.ArrayList<>(proxy.getAllServers());
+        report("后端连通", checkBackendAlive());
         report("已配置后端服", String.valueOf(configured.size()));
         List<RegisteredServer> online = new java.util.ArrayList<>();
         configured.forEach(server -> {
@@ -143,6 +144,25 @@ public class DreamPortProxyPlugin {
         report("启动耗时", String.format("%.1f 秒", seconds));
         logger.info("└──────────────────────────────────────────────────┘");
         logger.info("");
+    }
+
+    /** 启动时探测后端连通性 */
+    private String checkBackendAlive() {
+        try {
+            long start = System.currentTimeMillis();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(backendUrl + "/api/health"))
+                    .timeout(Duration.ofSeconds(3))
+                    .GET().build();
+            HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+            long latency = System.currentTimeMillis() - start;
+            if (resp.statusCode() == 200) {
+                return "正常（" + latency + "ms）";
+            }
+            return "异常（HTTP " + resp.statusCode() + "）";
+        } catch (Exception e) {
+            return "失败（" + e.getMessage() + "）";
+        }
     }
 
     private void report(String key, String value) {
@@ -260,9 +280,12 @@ public class DreamPortProxyPlugin {
         return s == null ? "" : s.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
-    /** 心跳上报 */
+    private volatile boolean lastHeartbeatOk = true;
+
+    /** 心跳上报（含连接状态终端记录） */
     private void startHeartbeat() {
         proxy.getScheduler().buildTask(this, () -> {
+            long start = System.currentTimeMillis();
             try {
                 int totalOnline = proxy.getPlayerCount();
                 int totalMax = proxy.getConfiguration().getShowMaxPlayers();
@@ -285,9 +308,22 @@ public class DreamPortProxyPlugin {
                         .header(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN, serverToken)
                         .POST(HttpRequest.BodyPublishers.ofString(body))
                         .build();
-                http.sendAsync(request, HttpResponse.BodyHandlers.ofString());
+                HttpResponse<String> resp = http.send(request, HttpResponse.BodyHandlers.ofString());
+                long latency = System.currentTimeMillis() - start;
+                boolean ok = resp.statusCode() == 200 && resp.body().contains("\"ok\":true");
+                if (ok != lastHeartbeatOk) {
+                    if (ok) {
+                        logger.info("[连接] 后端恢复连接（{}ms）", latency);
+                    } else {
+                        logger.warn("[连接] 后端失联: HTTP {}（fail-policy: {}）", resp.statusCode(), failPolicy);
+                    }
+                    lastHeartbeatOk = ok;
+                }
             } catch (Exception e) {
-                logger.debug("心跳上报失败: {}", e.getMessage());
+                if (lastHeartbeatOk) {
+                    logger.warn("[连接] 后端失联: {}（fail-policy: {}）", e.getMessage(), failPolicy);
+                    lastHeartbeatOk = false;
+                }
             }
         }).repeat(60, TimeUnit.SECONDS).schedule();
     }

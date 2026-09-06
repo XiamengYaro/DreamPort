@@ -113,10 +113,53 @@ public final class BackendClient {
                 "player", player == null ? "" : player, "message", message == null ? "" : message));
     }
 
+    /** 上次心跳是否成功（连接状态追踪） */
+    private volatile boolean lastHeartbeatOk;
+    private volatile long lastHeartbeatAt;
+    private volatile long lastLatencyMs;
+
+    public boolean lastHeartbeatOk() {
+        return lastHeartbeatOk;
+    }
+
+    public long lastHeartbeatAt() {
+        return lastHeartbeatAt;
+    }
+
+    public long lastLatencyMs() {
+        return lastLatencyMs;
+    }
+
+    /** 连接状态变化时输出提示 */
+    private void reportConnection(boolean ok, String detail) {
+        boolean changed = lastHeartbeatOk != ok;
+        lastHeartbeatOk = ok;
+        lastHeartbeatAt = System.currentTimeMillis();
+        if (changed || ok) {
+            if (ok) {
+                plugin.getLogger().info("[连接] 后端正常 " + detail);
+            } else if (changed) {
+                plugin.getLogger().warning("[连接] 后端失联: " + detail + "（fail-policy: "
+                        + plugin.pluginConfig().failPolicy() + "）");
+            }
+        }
+    }
+
     public void heartbeat(int online, int max, String version, java.util.List<String> players) {
         var cfg = plugin.pluginConfig();
-        postAsync(Protocol.HEARTBEAT, new cn.xmcraft.dreamport.common.HeartbeatRequest(
-                cfg.serverId(), cfg.serverId(), cfg.role(), online, max, version, players));
+        long start = System.currentTimeMillis();
+        plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
+            try {
+                String body = post(Protocol.HEARTBEAT, new cn.xmcraft.dreamport.common.HeartbeatRequest(
+                        cfg.serverId(), cfg.serverId(), cfg.role(), online, max, version, players));
+                long latency = System.currentTimeMillis() - start;
+                lastLatencyMs = latency;
+                reportConnection(body != null && body.contains("\"ok\":true"),
+                        "（" + latency + "ms）");
+            } catch (Exception e) {
+                reportConnection(false, e.getMessage());
+            }
+        });
     }
 
     public void economySnapshot(String json) {
