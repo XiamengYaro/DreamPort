@@ -7,6 +7,12 @@
 
 ## [Unreleased]
 
+### Changed
+- **v0.5.25 收尾**：
+  - 删除死组件 ScoringModal.vue（问卷页使用内嵌评分弹窗）
+  - 运行时全量路由探测 104 条前端调用 0 缺失；15 个主路由 200
+  - 全量重建（前端 + server fat jar + Paper 插件 + Velocity 插件）通过
+
 ### Fixed
 - **v0.5.24 生成邀请码报 Cannot read properties of undefined (reading code)**：
   /invite/generate 返回缺 data.code（前端读 res.data.code）；
