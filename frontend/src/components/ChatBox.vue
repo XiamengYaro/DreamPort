@@ -25,10 +25,7 @@
         </button>
         <div v-else-if="historyLoaded" class="text-xs text-stone-600">已到 7 天窗口最早记录</div>
       </div>
-      <div v-if="messages.length === 0" class="text-center text-stone-500 py-8">
-        <AppIcon name="chat-bubble" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
-        <div>暂无消息</div>
-      </div>
+      <EmptyState v-if="messages.length === 0" icon="chat-bubble" text="暂无消息" />
       <div v-for="(msg, index) in messages" :key="msg.id ?? index" class="mb-2">
         <span class="text-orange-400 font-medium text-sm">{{ msg.player }}</span>
         <span class="text-stone-300">: {{ msg.message }}</span>
@@ -60,6 +57,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { api } from '../services/api'
+import EmptyState from './ui/EmptyState.vue'
 
 interface ChatMessage { id?: number; player: string; message: string; timestamp: number; origin?: string }
 

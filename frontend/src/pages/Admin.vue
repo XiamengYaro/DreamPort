@@ -227,7 +227,7 @@
       </div>
 
       <!-- 系统设置（注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
-      <div v-if="activeTab === 'settings' && !loading" class="space-y-6 mt-6">
+      <div v-if="activeTab === 'system' && !loading" class="space-y-6">
         <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -351,10 +351,7 @@
       <!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
-        <div v-if="pendingUsers.length === 0" class="text-center py-12 text-stone-500">
-          <svg class="w-16 h-16 mx-auto mb-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-          <div>暂无待审核玩家</div>
-        </div>
+        <EmptyState v-if="pendingUsers.length === 0" icon="check-circle" text="暂无待审核玩家" />
         <div v-else class="space-y-4">
           <div v-for="user in paginatedPendingUsers" :key="user.username" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -370,11 +367,7 @@
               </div>
             </div>
           </div>
-          <div v-if="pendingUsers.length > pageSize" class="flex justify-center gap-2 mt-4">
-            <button @click="pendingPage--" :disabled="pendingPage <= 1" class="btn-ghost text-sm">上一页</button>
-            <span class="text-stone-400 text-sm py-2">{{ pendingPage }} / {{ totalPendingPages }}</span>
-            <button @click="pendingPage++" :disabled="pendingPage >= totalPendingPages" class="btn-ghost text-sm">下一页</button>
-          </div>
+          <AppPagination :page="pendingPage" :pages="totalPendingPages" @change="pendingPage = $event" />
         </div>
       </div>
 
@@ -471,11 +464,7 @@
             </tbody>
           </table>
         </div>
-        <div v-if="filteredUsers.length > pageSize" class="flex justify-center gap-2 mt-4">
-          <button @click="playerPage--" :disabled="playerPage <= 1" class="btn-ghost text-sm">上一页</button>
-          <span class="text-stone-400 text-sm py-2">{{ playerPage }} / {{ totalPlayerPages }}</span>
-          <button @click="playerPage++" :disabled="playerPage >= totalPlayerPages" class="btn-ghost text-sm">下一页</button>
-        </div>
+        <AppPagination :page="playerPage" :pages="totalPlayerPages" @change="playerPage = $event" />
       </div>
 
       <!-- 统计分析 Tab -->
@@ -484,22 +473,10 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">数据总览</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-orange-400">{{ statsOverview.totalUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">总用户数</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-emerald-400">{{ statsOverview.approvedUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">已通过</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-amber-400">{{ statsOverview.pendingUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">待审核</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-rose-400">{{ statsOverview.bannedUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">已封禁</div>
-            </div>
+            <StatCard :value="statsOverview.totalUsers || 0" label="总用户数" tone="orange" />
+            <StatCard :value="statsOverview.approvedUsers || 0" label="已通过" tone="emerald" />
+            <StatCard :value="statsOverview.pendingUsers || 0" label="待审核" tone="amber" />
+            <StatCard :value="statsOverview.bannedUsers || 0" label="已封禁" tone="rose" />
           </div>
         </div>
         
@@ -507,18 +484,9 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">注册统计</h3>
           <div class="grid grid-cols-3 gap-4">
-            <div class="text-center p-4 rounded-xl bg-blue-500/10">
-              <div class="text-xl font-bold text-blue-400">{{ statsOverview.todayRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">今日注册</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-purple-500/10">
-              <div class="text-xl font-bold text-purple-400">{{ statsOverview.weekRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">本周注册</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-cyan-500/10">
-              <div class="text-xl font-bold text-cyan-400">{{ statsOverview.monthRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">本月注册</div>
-            </div>
+            <StatCard :value="statsOverview.todayRegistrations || 0" label="今日注册" tone="blue" />
+            <StatCard :value="statsOverview.weekRegistrations || 0" label="本周注册" tone="purple" />
+            <StatCard :value="statsOverview.monthRegistrations || 0" label="本月注册" tone="cyan" />
           </div>
         </div>
         
@@ -526,18 +494,9 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">问卷统计</h3>
           <div class="grid grid-cols-3 gap-4">
-            <div class="text-center p-4 rounded-xl bg-emerald-500/10">
-              <div class="text-xl font-bold text-emerald-400">{{ statsOverview.questionnairePassRate?.toFixed(1) || 0 }}%</div>
-              <div class="text-xs text-stone-400">通过率</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-orange-500/10">
-              <div class="text-xl font-bold text-orange-400">{{ statsOverview.averageScore?.toFixed(1) || 0 }}</div>
-              <div class="text-xs text-stone-400">平均分</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-xl font-bold text-white">{{ (statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0) }}</div>
-              <div class="text-xs text-stone-400">总提交数</div>
-            </div>
+            <StatCard :value="(statsOverview.questionnairePassRate?.toFixed(1) || 0) + '%'" label="通过率" tone="emerald" />
+            <StatCard :value="statsOverview.averageScore?.toFixed(1) || 0" label="平均分" tone="orange" />
+            <StatCard :value="(statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0)" label="总提交数" />
           </div>
         </div>
       </div>
@@ -564,10 +523,7 @@
       <!-- 申诉管理 Tab -->
       <div v-if="activeTab === 'appeals' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">申诉管理</h3>
-        <div v-if="appeals.length === 0" class="text-center py-12 text-stone-500">
-          <AppIcon name="envelope" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
-          <div>暂无申诉</div>
-        </div>
+        <EmptyState v-if="appeals.length === 0" icon="envelope" text="暂无申诉" />
         <div v-else class="space-y-4">
           <div v-for="appeal in appeals" :key="appeal.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
             <div class="flex items-start justify-between mb-3">
@@ -702,138 +658,118 @@
       </div>
 
     <!-- 确认对话框 -->
-    <div v-if="showConfirmDialog" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showConfirmDialog = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <h3 class="text-lg font-semibold text-white mb-2">{{ confirmTitle }}</h3>
-        <p class="text-stone-400 mb-6">{{ confirmMessage }}</p>
-        <div class="flex gap-3 justify-end">
-          <button @click="showConfirmDialog = false" class="btn-secondary">取消</button>
-          <button @click="executeConfirmAction" class="btn-primary">确认</button>
-        </div>
-      </div>
-    </div>
+    <AppModal :open="showConfirmDialog" :title="confirmTitle" @close="showConfirmDialog = false">
+      <p class="text-stone-400">{{ confirmMessage }}</p>
+      <template #footer>
+        <button @click="showConfirmDialog = false" class="btn-secondary">取消</button>
+        <button @click="executeConfirmAction" class="btn-primary">确认</button>
+      </template>
+    </AppModal>
 
     <!-- 删除用户确认对话框（两次确认） -->
-    <div v-if="showDeleteDialog" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showDeleteDialog = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <!-- 第一次确认 -->
-        <template v-if="deleteStep === 1">
-          <h3 class="text-lg font-semibold text-red-400 mb-2">确认删除用户</h3>
-          <p class="text-stone-400 mb-4">你确定要删除用户 <span class="text-white font-medium">{{ deleteUsername }}</span> 吗？</p>
-          <p class="text-red-400 text-sm mb-6">此操作不可撤销，用户的所有数据将被永久删除。</p>
-          <div class="flex gap-3 justify-end">
-            <button @click="showDeleteDialog = false" class="btn-secondary">取消</button>
-            <button @click="deleteStep = 2" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl">继续</button>
-          </div>
-        </template>
-        <!-- 第二次确认 -->
-        <template v-else>
-          <h3 class="text-lg font-semibold text-red-400 mb-2">最终确认</h3>
-          <p class="text-stone-400 mb-4">请输入用户名 <span class="text-white font-medium">{{ deleteUsername }}</span> 以确认删除：</p>
-          <input v-model="deleteConfirmInput" type="text" class="input w-full mb-4" :placeholder="deleteUsername" />
-          <div class="flex gap-3 justify-end">
-            <button @click="showDeleteDialog = false; deleteStep = 1" class="btn-secondary">取消</button>
-            <button @click="executeDelete" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl" :disabled="deleteConfirmInput !== deleteUsername">确认删除</button>
-          </div>
-        </template>
-      </div>
-    </div>
+    <AppModal :open="showDeleteDialog" :title="deleteStep === 1 ? '确认删除用户' : '最终确认'" @close="showDeleteDialog = false; deleteStep = 1">
+      <template v-if="deleteStep === 1">
+        <p class="text-stone-400 mb-4">你确定要删除用户 <span class="text-white font-medium">{{ deleteUsername }}</span> 吗？</p>
+        <p class="text-red-400 text-sm mb-6">此操作不可撤销，用户的所有数据将被永久删除。</p>
+      </template>
+      <template v-else>
+        <p class="text-stone-400 mb-4">请输入用户名 <span class="text-white font-medium">{{ deleteUsername }}</span> 以确认删除：</p>
+        <input v-model="deleteConfirmInput" type="text" class="input w-full" :placeholder="deleteUsername" />
+      </template>
+      <template #footer>
+        <button @click="showDeleteDialog = false; deleteStep = 1" class="btn-secondary">取消</button>
+        <button v-if="deleteStep === 1" @click="deleteStep = 2" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl">继续</button>
+        <button v-else @click="executeDelete" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl" :disabled="deleteConfirmInput !== deleteUsername">确认删除</button>
+      </template>
+    </AppModal>
 
     <!-- 基岩版 ID 设置弹窗 -->
-    <div v-if="showBedrockModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showBedrockModal = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <h3 class="text-lg font-semibold text-white mb-4">设置基岩版 ID</h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">玩家用户名</label>
-            <input :value="bedrockTargetUser?.username" type="text" class="input w-full" disabled />
-          </div>
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">当前 Java 版 ID</label>
-            <input :value="bedrockTargetUser?.minecraftName || '未验证'" type="text" class="input w-full" disabled />
-          </div>
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">基岩版用户名</label>
-            <input v-model="bedrockNameInput" type="text" class="input w-full" placeholder="输入基岩版用户名（不含前缀）" />
-            <p class="mt-1 text-xs text-stone-500">系统会自动添加 "." 前缀</p>
-          </div>
-          <div v-if="bedrockTargetUser?.bedrockName" class="p-3 bg-stone-800/50 rounded-xl">
-            <p class="text-sm text-stone-400">当前基岩版 ID: <span class="text-white">{{ bedrockTargetUser.bedrockName }}</span></p>
-            <p class="text-sm text-stone-400 mt-1">验证状态: <span :class="bedrockTargetUser.bedrockVerified ? 'text-emerald-400' : 'text-amber-400'">{{ bedrockTargetUser.bedrockVerified ? '已验证' : '待验证' }}</span></p>
-          </div>
-          <div v-if="bedrockVerifyMessage" class="p-3 rounded-xl" :class="bedrockVerifySuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'">
-            {{ bedrockVerifyMessage }}
-          </div>
+    <AppModal :open="showBedrockModal" title="设置基岩版 ID" @close="showBedrockModal = false">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">玩家用户名</label>
+          <input :value="bedrockTargetUser?.username" type="text" class="input w-full" disabled />
         </div>
-        <div class="flex gap-3 justify-end mt-6">
-          <button @click="showBedrockModal = false" class="btn-secondary">取消</button>
-          <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
-            {{ bedrockLoading ? '设置中...' : '设置' }}
-          </button>
-          <button v-if="bedrockTargetUser?.bedrockName && !bedrockTargetUser?.bedrockVerified" @click="verifyBedrockId" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl" :disabled="bedrockLoading">
-            {{ bedrockLoading ? '验证中...' : '验证' }}
-          </button>
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">当前 Java 版 ID</label>
+          <input :value="bedrockTargetUser?.minecraftName || '未验证'" type="text" class="input w-full" disabled />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">基岩版用户名</label>
+          <input v-model="bedrockNameInput" type="text" class="input w-full" placeholder="输入基岩版用户名（不含前缀）" />
+          <p class="mt-1 text-xs text-stone-500">系统会自动添加 "." 前缀</p>
+        </div>
+        <div v-if="bedrockTargetUser?.bedrockName" class="p-3 bg-stone-800/50 rounded-xl">
+          <p class="text-sm text-stone-400">当前基岩版 ID: <span class="text-white">{{ bedrockTargetUser.bedrockName }}</span></p>
+          <p class="text-sm text-stone-400 mt-1">验证状态: <span :class="bedrockTargetUser.bedrockVerified ? 'text-emerald-400' : 'text-amber-400'">{{ bedrockTargetUser.bedrockVerified ? '已验证' : '待验证' }}</span></p>
+        </div>
+        <div v-if="bedrockVerifyMessage" class="p-3 rounded-xl" :class="bedrockVerifySuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'">
+          {{ bedrockVerifyMessage }}
         </div>
       </div>
-    </div>
+      <template #footer>
+        <button @click="showBedrockModal = false" class="btn-secondary">取消</button>
+        <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
+          {{ bedrockLoading ? '设置中...' : '设置' }}
+        </button>
+        <button v-if="bedrockTargetUser?.bedrockName && !bedrockTargetUser?.bedrockVerified" @click="verifyBedrockId" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl" :disabled="bedrockLoading">
+          {{ bedrockLoading ? '验证中...' : '验证' }}
+        </button>
+      </template>
+    </AppModal>
 
     <!-- 问卷详情弹窗 -->
-    <div v-if="showQuestionnaireDetail" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showQuestionnaireDetail = false">
-      <div class="card w-full max-w-4xl max-h-[85vh] overflow-hidden">
-        <div class="p-4 flex items-center justify-between border-b border-stone-700">
-          <h3 class="text-lg font-semibold text-white">{{ selectedUser?.username }} 的问卷详情</h3>
-          <button @click="showQuestionnaireDetail = false" class="text-stone-400 hover:text-white text-2xl">&times;</button>
+    <AppModal :open="showQuestionnaireDetail" size="xl" :title="(selectedUser?.username ?? '') + ' 的问卷详情'" @close="showQuestionnaireDetail = false">
+      <div v-if="questionnaireDetail" class="space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-orange-900/20 rounded-xl">
+          <div><div class="text-xs text-stone-400">分数</div><div class="text-2xl font-bold text-orange-400">{{ questionnaireDetail.questionnaireScore || 0 }}</div></div>
+          <div><div class="text-xs text-stone-400">状态</div><div :class="questionnaireDetail.questionnairePassed ? 'text-emerald-400' : 'text-rose-400'">{{ questionnaireDetail.questionnairePassed ? '已通过' : '未通过' }}</div></div>
+          <div><div class="text-xs text-stone-400">账号状态</div><div class="text-white">{{ getStatusText(questionnaireDetail.status) }}</div></div>
+          <div><div class="text-xs text-stone-400">答题时间</div><div class="text-sm text-stone-300">{{ formatTime(questionnaireDetail.questionnaireScoredAt) }}</div></div>
         </div>
-        <div class="p-4 overflow-auto max-h-[70vh]">
-          <div v-if="questionnaireDetail" class="space-y-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-orange-900/20 rounded-xl">
-              <div><div class="text-xs text-stone-400">分数</div><div class="text-2xl font-bold text-orange-400">{{ questionnaireDetail.questionnaireScore || 0 }}</div></div>
-              <div><div class="text-xs text-stone-400">状态</div><div :class="questionnaireDetail.questionnairePassed ? 'text-emerald-400' : 'text-rose-400'">{{ questionnaireDetail.questionnairePassed ? '已通过' : '未通过' }}</div></div>
-              <div><div class="text-xs text-stone-400">账号状态</div><div class="text-white">{{ getStatusText(questionnaireDetail.status) }}</div></div>
-              <div><div class="text-xs text-stone-400">答题时间</div><div class="text-sm text-stone-300">{{ formatTime(questionnaireDetail.questionnaireScoredAt) }}</div></div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">修改分数</h4>
-              <div class="flex flex-col sm:flex-row gap-4 items-end">
-                <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">分数</label><input v-model="editScore" type="number" class="input" min="0" /></div>
-                <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">通过状态</label><select v-model="editPassed" class="input"><option :value="true">通过</option><option :value="false">未通过</option></select></div>
-                <button @click="saveQuestionnaire" class="btn-primary w-full sm:w-auto">保存</button>
-              </div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">玩家答案</h4>
-              <div v-if="questionnaireDetail.questionnaireAnswers" class="space-y-3">
-                <div v-for="(answer, index) in parsedAnswers" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
-                  <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
-                  <p class="text-stone-300 text-sm">{{ answer }}</p>
-                </div>
-              </div>
-              <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">AI 评语</h4>
-              <div v-if="parsedReasons.length > 0" class="space-y-3">
-                <div v-for="(reason, index) in parsedReasons" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
-                  <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
-                  <textarea v-model="parsedReasons[index]" class="input text-sm" rows="2"></textarea>
-                </div>
-              </div>
-              <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
-              <button v-if="parsedReasons.length > 0" @click="saveReasons" class="btn-secondary mt-3 text-sm">保存评语</button>
-            </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">修改分数</h4>
+          <div class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">分数</label><input v-model="editScore" type="number" class="input" min="0" /></div>
+            <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">通过状态</label><select v-model="editPassed" class="input"><option :value="true">通过</option><option :value="false">未通过</option></select></div>
+            <button @click="saveQuestionnaire" class="btn-primary w-full sm:w-auto">保存</button>
           </div>
         </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">玩家答案</h4>
+          <div v-if="questionnaireDetail.questionnaireAnswers" class="space-y-3">
+            <div v-for="(answer, index) in parsedAnswers" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
+              <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
+              <p class="text-stone-300 text-sm">{{ answer }}</p>
+            </div>
+          </div>
+          <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
+        </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">AI 评语</h4>
+          <div v-if="parsedReasons.length > 0" class="space-y-3">
+            <div v-for="(reason, index) in parsedReasons" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
+              <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
+              <textarea v-model="parsedReasons[index]" class="input text-sm" rows="2"></textarea>
+            </div>
+          </div>
+          <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
+          <button v-if="parsedReasons.length > 0" @click="saveReasons" class="btn-secondary mt-3 text-sm">保存评语</button>
+        </div>
       </div>
-    </div>
+    </AppModal>
   </div>
-    </div>
-</template>
+    </div></template>
 
 <script setup lang="ts">
 import { ref, onMounted, inject, computed, watch } from 'vue'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import QuestionnaireEditor from '@/components/QuestionnaireEditor.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import StatCard from '@/components/ui/StatCard.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
 const notify = inject('notify') as any
@@ -843,6 +779,7 @@ const maintenanceEnabled = ref(false)
 const menuItems = [
   { key: 'portal', icon: 'home', label: '门户管理' },
   { key: 'settings', icon: 'cog', label: '外观设置' },
+  { key: 'system', icon: 'cpu', label: '系统设置' },
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },

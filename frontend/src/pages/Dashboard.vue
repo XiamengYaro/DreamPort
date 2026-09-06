@@ -17,31 +17,20 @@
         </div>
       </div>
 
-      <!-- 服务器状态 -->
-      <div class="card p-6 mb-6">
-        <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.onlinePlayers || 0 }}</div>
-            <div class="text-xs text-stone-400">在线玩家</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.maxPlayers || 0 }}</div>
-            <div class="text-xs text-stone-400">最大人数</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.tps?.toFixed(1) || '0.0' }}</div>
-            <div class="text-xs text-stone-400">TPS</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.minecraftVersion || '-' }}</div>
-            <div class="text-xs text-stone-400">版本</div>
+      <!-- 概览行：服务器状态 + 在线趋势 -->
+      <div class="mb-6 grid gap-6 md:grid-cols-2">
+        <div class="card p-6">
+          <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <StatCard :value="serverStatus.onlinePlayers || 0" label="在线玩家" />
+            <StatCard :value="serverStatus.maxPlayers || 0" label="最大人数" />
+            <StatCard :value="serverStatus.tps?.toFixed(1) || '0.0'" label="TPS" />
+            <StatCard :value="serverStatus.minecraftVersion || '-'" label="版本" />
           </div>
         </div>
+        <!-- 在线人数趋势图 -->
+        <PlayerChart :days="7" />
       </div>
-
-      <!-- 在线人数趋势图 -->
-      <PlayerChart :days="7" class="mb-6" />
 
       <!-- 服务器聊天（网页 ↔ 服内消息互通，docs/CHAT_SERVERINFO_PLAN.md） -->
       <ChatBox class="mb-6" />
@@ -90,8 +79,10 @@
         </div>
       </div>
 
-      <!-- 基岩版 ID 管理 -->
-      <div class="card p-6 mb-6">
+      <!-- 账户绑定区（桌面双栏） -->
+      <div class="mb-6 grid gap-6 lg:grid-cols-2">
+        <!-- 基岩版 ID 管理 -->
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -140,7 +131,7 @@
         <!-- 未设置状态 -->
         <div v-else class="space-y-4">
           <p class="text-stone-400 text-sm">设置基岩版 ID 后，你可以使用基岩版登录服务器。</p>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <input v-model="bedrockNameInput" type="text" class="input flex-1" placeholder="输入基岩版用户名（不含前缀）" />
             <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
               {{ bedrockLoading ? '设置中...' : '设置' }}
@@ -204,7 +195,7 @@
       </div>
 
       <!-- QQ 绑定 -->
-      <div class="card p-6 mb-6">
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -229,7 +220,7 @@
             在 QQ 群内向机器人发送 <code class="text-orange-400">/dp绑定</code>，验证码将私聊发送给你（5 分钟内有效）；
             也可以在游戏内执行 <code class="text-orange-400">/xmw qq bind &lt;验证码&gt;</code> 完成绑定。
           </p>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <input v-model="qqCode" type="text" class="input flex-1" maxlength="6" placeholder="输入 6 位验证码" />
             <button @click="bindQq" class="btn-primary" :disabled="qqCode.trim().length !== 6 || qqLoading">
               {{ qqLoading ? '绑定中...' : '绑定' }}
@@ -242,34 +233,8 @@
         </div>
       </div>
 
-      <!-- 修改 Minecraft ID 弹窗 -->
-      <div v-if="showChangeIdModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showChangeIdModal = false">
-        <div class="card w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">修改 Minecraft ID</h3>
-          <div class="space-y-4">
-            <div v-if="minecraftStatus.name">
-              <p class="text-sm text-stone-400">当前 ID: <span class="text-white">{{ minecraftStatus.name }}</span></p>
-            </div>
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">新的 Minecraft 用户名</label>
-              <input v-model="newMinecraftName" type="text" class="input w-full" placeholder="输入新的 Minecraft 用户名" />
-              <p class="mt-1 text-xs text-stone-500">修改后需要重新登录服务器验证（3分钟内有效）</p>
-            </div>
-            <div v-if="changeIdMessage" class="p-3 rounded-xl" :class="changeIdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-              {{ changeIdMessage }}
-            </div>
-          </div>
-          <div class="flex gap-3 justify-end mt-6">
-            <button @click="showChangeIdModal = false" class="btn-secondary">取消</button>
-            <button @click="setMinecraftId" class="btn-primary" :disabled="!newMinecraftName || minecraftLoading">
-              {{ minecraftLoading ? '设置中...' : '确认修改' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- 个人资料编辑 -->
-      <div class="card p-6 mb-6">
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -306,42 +271,64 @@
           </div>
         </div>
       </div>
-
-      <!-- 修改邮箱弹窗 -->
-      <div v-if="showEmailModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showEmailModal = false">
-        <div class="card w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">修改邮箱</h3>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">新邮箱</label>
-              <input v-model="newEmail" type="email" class="input w-full" placeholder="输入新邮箱" />
-            </div>
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">验证码</label>
-              <div class="flex gap-2">
-                <input v-model="emailVerifyCode" type="text" class="input flex-1" placeholder="输入验证码" />
-                <button @click="sendEmailVerifyCode" class="btn-secondary text-sm whitespace-nowrap" :disabled="emailCooldown > 0">
-                  {{ emailCooldown > 0 ? `${emailCooldown}s` : '发送验证码' }}
-                </button>
-              </div>
-            </div>
-            <div v-if="emailMessage" class="p-3 rounded-xl text-sm" :class="emailSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-              {{ emailMessage }}
-            </div>
-          </div>
-          <div class="flex gap-3 justify-end mt-6">
-            <button @click="showEmailModal = false" class="btn-secondary">取消</button>
-            <button @click="updateEmail" class="btn-primary" :disabled="!newEmail || !emailVerifyCode || emailLoading">
-              {{ emailLoading ? '修改中...' : '确认修改' }}
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- 邀请管理 -->
       <div class="mb-6">
         <InviteManager @notify="(type: string, msg: string) => notify?.[type](msg)" />
       </div>
+
+      <!-- 修改 Minecraft ID 弹窗 -->
+      <AppModal :open="showChangeIdModal" title="修改 Minecraft ID" @close="showChangeIdModal = false">
+        <div class="space-y-4">
+          <div v-if="minecraftStatus.name">
+            <p class="text-sm text-stone-400">当前 ID: <span class="text-white">{{ minecraftStatus.name }}</span></p>
+          </div>
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">新的 Minecraft 用户名</label>
+            <input v-model="newMinecraftName" type="text" class="input w-full" placeholder="输入新的 Minecraft 用户名" />
+            <p class="mt-1 text-xs text-stone-500">修改后需要重新登录服务器验证（3分钟内有效）</p>
+          </div>
+          <div v-if="changeIdMessage" class="p-3 rounded-xl" :class="changeIdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ changeIdMessage }}
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-secondary" @click="showChangeIdModal = false">取消</button>
+          <button class="btn-primary" :disabled="!newMinecraftName || minecraftLoading" @click="setMinecraftId">
+            {{ minecraftLoading ? '设置中...' : '确认修改' }}
+          </button>
+        </template>
+      </AppModal>
+
+      <!-- 修改邮箱弹窗 -->
+      <AppModal :open="showEmailModal" title="修改邮箱" @close="showEmailModal = false">
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">新邮箱</label>
+            <input v-model="newEmail" type="email" class="input w-full" placeholder="输入新邮箱" />
+          </div>
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">验证码</label>
+            <div class="flex gap-2">
+              <input v-model="emailVerifyCode" type="text" class="input flex-1" placeholder="输入验证码" />
+              <button class="btn-secondary text-sm whitespace-nowrap" :disabled="emailCooldown > 0" @click="sendEmailVerifyCode">
+                {{ emailCooldown > 0 ? `${emailCooldown}s` : '发送验证码' }}
+              </button>
+            </div>
+          </div>
+          <div v-if="emailMessage" class="rounded-xl p-3 text-sm" :class="emailSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ emailMessage }}
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-secondary" @click="showEmailModal = false">取消</button>
+          <button class="btn-primary" :disabled="!newEmail || !emailVerifyCode || emailLoading" @click="updateEmail">
+            {{ emailLoading ? '修改中...' : '确认修改' }}
+          </button>
+        </template>
+      </AppModal>
+
     </div>
   </div>
 </template>
@@ -353,6 +340,8 @@ import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
 import ChatBox from '@/components/ChatBox.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import StatCard from '@/components/ui/StatCard.vue'
 
 const notify = inject('notify') as any
 
@@ -502,9 +491,6 @@ const loadPlayerData = async () => {
     console.error('Failed to load player data:', e)
   }
 }
-
-const getStatusClass = (s: string) => ({ pending: 'badge-warning', approved: 'badge-success', rejected: 'badge-danger', banned: 'badge-danger' }[s] || 'badge-info')
-const getStatusText = (s: string) => ({ pending: '待答题', approved: '已通过', rejected: '未通过', banned: '已封禁' }[s] || s)
 
 const formatPlaytime = (ms: number) => {
   if (!ms) return '0h'

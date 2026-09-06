@@ -188,6 +188,14 @@ body::before {
   backdrop-filter: blur(10px);
 }
 
+/* 紧凑输入/下拉(表格行内用,Admin.vue 玩家管理状态列) */
+.input-sm {
+  @apply rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs text-stone-100 placeholder-stone-500 transition-colors;
+}
+.input-sm:focus {
+  @apply border-orange-500/50 outline-none ring-1 ring-orange-500/30;
+}
+
 .input::placeholder {
   color: rgba(255, 255, 255, 0.4);
 }

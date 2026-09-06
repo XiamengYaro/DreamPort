@@ -61,10 +61,7 @@
         </div>
         
         <!-- 空状态 -->
-        <div v-if="filteredTimeline.length === 0" class="text-center py-12">
-          <AppIcon name="document-text" class="w-10 h-10 mx-auto mb-3 text-stone-500" />
-          <div class="text-stone-500">暂无相关内容</div>
-        </div>
+        <EmptyState v-if="filteredTimeline.length === 0" icon="document-text" text="暂无相关内容" />
       </div>
       
       <!-- 加载更多按钮 -->
@@ -78,6 +75,7 @@
 </template>
 
 <script setup lang="ts">
+import EmptyState from './ui/EmptyState.vue'
 import { ref, computed } from 'vue'
 
 const props = defineProps<{
@@ -165,16 +163,6 @@ const handleImageError = (event: Event) => {
     width: 2px;
     background: linear-gradient(to bottom, #f97316, #f59e0b);
   }
-}
-
-/* 悬停动画 */
-.card-hover {
-  @apply transition-all duration-300;
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
 }
 
 /* 淡入动画 */
