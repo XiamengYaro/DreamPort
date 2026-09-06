@@ -8,6 +8,13 @@
 ## [Unreleased]
 
 ### Fixed
+- **v0.5.16 完成验证后刷新仍显示等待验证**：
+  - verified 改为身份验证语义（minecraftUuid != null），与白名单审核状态解耦
+  - 验证成功状态流转：pending_verify → approved；pending 且问卷未启用 → approved
+    （验证即完成白名单）；pending 且问卷启用 → 保持 pending（还需答题）
+  - 幂等判定放宽：已有 UUID 且无新进服记录 → 「已完成验证」（原要求 approved）
+
+### Fixed
 - **v0.5.15 外观设置页消失**：问卷设置卡片模板引用 qnCfg/saveQnSettings，
   但 script 中实际定义为 questCfg（前次编辑锚点未匹配静默失败），
   渲染时抛 ReferenceError 导致整页白屏。已统一命名并补上独立的

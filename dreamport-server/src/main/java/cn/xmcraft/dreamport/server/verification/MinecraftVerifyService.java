@@ -28,16 +28,19 @@ public class MinecraftVerifyService {
     private final UserRepository userRepository;
     private final ReviewService reviewService;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
     /** bukkit 模式下待执行的 whitelist 指令（serverId → 指令），插件经 /internal/v1/commands/whitelist 领取 */
     private final Map<String, ConcurrentLinkedQueue<String>> whitelistCommands = new ConcurrentHashMap<>();
 
     public MinecraftVerifyService(PendingLoginRepository pendingLoginRepository,
                                   UserRepository userRepository, ReviewService reviewService,
-                                  org.springframework.jdbc.core.JdbcTemplate jdbc) {
+                                  org.springframework.jdbc.core.JdbcTemplate jdbc,
+                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.pendingLoginRepository = pendingLoginRepository;
         this.userRepository = userRepository;
         this.reviewService = reviewService;
         this.jdbc = jdbc;
+        this.systemSettings = systemSettings;
     }
 
     public record Result(boolean success, String message) {
@@ -84,15 +87,17 @@ public class MinecraftVerifyService {
         if (user.minecraftName() == null) {
             return Result.fail("请先绑定 Minecraft ID");
         }
-        // 幂等：已完成验证的直接返回成功
-        if (user.minecraftUuid() != null && "approved".equals(user.status())) {
+        // 幂等：已完成过身份验证且无新的进服记录 → 直接成功
+        boolean hasNewRecord = pendingLoginRepository
+                .findLatestVerifiable(user.minecraftName(), System.currentTimeMillis()).isPresent();
+        if (user.minecraftUuid() != null && !hasNewRecord) {
             return Result.ok("已完成验证");
+        }
+        if (!hasNewRecord) {
+            return Result.fail("未检测到该 ID 的进服记录，请使用 " + user.minecraftName() + " 进服后重试");
         }
         Optional<PendingLoginRecord> login = pendingLoginRepository
                 .findLatestVerifiable(user.minecraftName(), System.currentTimeMillis());
-        if (login.isEmpty()) {
-            return Result.fail("未检测到该 ID 的进服记录，请使用 " + user.minecraftName() + " 进服后重试");
-        }
         PendingLoginRecord record = login.get();
         // UUID 比对优先：已绑定 UUID 时进服记录必须一致（防同名冒充）
         if (user.minecraftUuid() != null && !user.minecraftUuid().equalsIgnoreCase(record.minecraftUuid())) {
@@ -100,10 +105,18 @@ public class MinecraftVerifyService {
         }
         pendingLoginRepository.save(new PendingLoginRecord(record.id(), record.minecraftName(),
                 record.minecraftUuid(), record.ipAddress(), record.loginTime(), true, record.expireTime()));
-        // 采用进服记录中的真实 UUID
-        boolean wasPendingVerify = "pending_verify".equals(user.status());
+        // 采用进服记录中的真实 UUID；状态流转：
+        // pending_verify → approved；pending 且问卷未启用 → approved（验证即完成白名单）；
+        // pending 且问卷启用 → 保持 pending（还需答题）
+        boolean questionnaireOn = systemSettings.questionnaireConfig()
+                .getOrDefault("enabled", true).equals(Boolean.TRUE);
+        String newStatus = user.status();
+        if ("pending_verify".equals(user.status())
+                || ("pending".equals(user.status()) && !questionnaireOn)) {
+            newStatus = "approved";
+        }
         UserRecord updated = withMinecraft(user, user.minecraftName(),
-                record.minecraftUuid(), wasPendingVerify ? "approved" : user.status());
+                record.minecraftUuid(), newStatus);
         userRepository.save(updated);
         enqueueWhitelist("main", "whitelist add " + user.minecraftName());
         log.info("[验证] {} 完成MC ID验证（{} / {}）", username, user.minecraftName(), record.minecraftUuid());

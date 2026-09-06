@@ -205,7 +205,8 @@ public class VerificationController {
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("minecraftName", userOpt.map(UserRecord::minecraftName).orElse(null));
         data.put("minecraftUuid", userOpt.map(UserRecord::minecraftUuid).orElse(null));
-        data.put("verified", userOpt.map(u -> u.minecraftName() != null && u.status().equals("approved")).orElse(false));
+        // verified = 身份验证语义（已通过进服记录验证出真实 UUID），与白名单审核状态解耦
+        data.put("verified", userOpt.map(u -> u.minecraftUuid() != null).orElse(false));
         data.put("status", userOpt.map(UserRecord::status).orElse(null));
         return ResponseEntity.ok(ApiResponse.success(null, data));
     }
