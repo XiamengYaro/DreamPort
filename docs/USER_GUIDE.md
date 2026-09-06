@@ -163,9 +163,21 @@ web-register-url: "https://你的域名"
 
 子服上同配置，改 `role: secondary`、`server-id: "survival"` 等唯一 ID。子服不再拦截登录，仅做心跳上报（在线人数/玩家列表进后台与状态页）。
 
-### proxy（Velocity/BungeeCord 代理端）
+### proxy（Velocity 代理端）
 
-群组服想把白名单校验上移到代理端时，在代理端使用（`role: proxy`）；后端子服可关闭本地拦截。*Velocity 独立分发物在路线图中（当前版本代理端拦截形态以 secondary 逐服拦截为兜底）。*
+Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-0.1.0.jar`（不是 Paper 版！二者不可混装）。
+首次启动自动生成 `plugins/dreamport-proxy/config.properties`：
+
+```properties
+backend.url=http://127.0.0.1:18898
+backend.server-id=proxy
+backend.server-token=与后端一致
+enforce-whitelist=true
+check.fail-policy=cache
+```
+
+功能：代理端统一白名单拦截（后端 login-check）+ 60 秒决策缓存 + fail_policy 兜底 + 心跳上报。
+Paper 子服从装 `dreamport-plugin-0.1.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
 
 ### 校验连通
 

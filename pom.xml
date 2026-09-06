@@ -16,6 +16,7 @@
         <module>dreamport-common</module>
         <module>dreamport-server</module>
         <module>dreamport-plugin</module>
+        <module>dreamport-plugin-proxy</module>
     </modules>
 
     <properties>
