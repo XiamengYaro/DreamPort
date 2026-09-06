@@ -211,7 +211,6 @@
           </div>
           <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存照片墙</button>
         </div>
-      </div>
 
       <!-- 外观设置 Tab -->
       <div v-if="activeTab === 'settings' && !loading" class="card p-6 space-y-4">
@@ -781,6 +780,8 @@
 
       </div>
       </div>
+    </div>
+  </div>
 
     <!-- 确认对话框 -->
     <AppModal :open="showConfirmDialog" :title="confirmTitle" @close="showConfirmDialog = false">
@@ -883,7 +884,6 @@
         </div>
       </div>
     </AppModal>
-  </div>
 </template>
 
 <script setup lang="ts">
