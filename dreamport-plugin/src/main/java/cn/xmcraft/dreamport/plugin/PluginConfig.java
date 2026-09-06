@@ -17,6 +17,8 @@ public record PluginConfig(
         boolean enforceWhitelist,
         boolean forwardChat,
         boolean reportJoinQuit,
+        boolean receiveChat,
+        int messagePollSeconds,
         String webRegisterUrl
 ) {
 
@@ -33,6 +35,8 @@ public record PluginConfig(
                 config.getBoolean("features.enforce-whitelist", true),
                 config.getBoolean("features.forward-chat", false),
                 config.getBoolean("features.report-join-quit", false),
+                config.getBoolean("features.receive-chat", true),
+                Math.max(1, config.getInt("features.message-poll-seconds", 2)),
                 config.getString("web-register-url", "http://localhost:18898")
         );
     }

@@ -2,6 +2,7 @@ package cn.xmcraft.dreamport.plugin.internal;
 
 import cn.xmcraft.dreamport.common.LoginCheckRequest;
 import cn.xmcraft.dreamport.common.LoginCheckResponse;
+import cn.xmcraft.dreamport.common.PendingMessagesResponse;
 import cn.xmcraft.dreamport.common.Protocol;
 import cn.xmcraft.dreamport.plugin.DreamPortPlugin;
 import com.google.gson.Gson;
@@ -42,6 +43,15 @@ public final class BackendClient {
     public String get(String path) {
         return exchange(builder -> builder.uri(URI.create(url(path)))
                 .timeout(Duration.ofMillis(plugin.pluginConfig().timeoutMs()))
+                .GET(), null);
+    }
+
+    /** 携带服务器身份的 GET（/internal/v1/** 端点要求 X-Server-Id/X-Server-Token） */
+    public String getInternal(String path) {
+        return exchange(builder -> builder.uri(URI.create(url(path)))
+                .timeout(Duration.ofMillis(plugin.pluginConfig().timeoutMs()))
+                .header(Protocol.HEADER_SERVER_ID, plugin.pluginConfig().serverId())
+                .header(Protocol.HEADER_SERVER_TOKEN, plugin.pluginConfig().serverToken())
                 .GET(), null);
     }
 
@@ -167,7 +177,26 @@ public final class BackendClient {
     }
 
     public String whitelistCommands() {
-        return get(Protocol.COMMANDS_WHITELIST + "?serverId=" + plugin.pluginConfig().serverId());
+        return getInternal(Protocol.COMMANDS_WHITELIST + "?serverId=" + plugin.pluginConfig().serverId());
+    }
+
+    /** 游戏收件箱增量轮询（网页/QQ 消息下行进服）；后端不可达返回 null */
+    public PendingMessagesResponse pollPendingMessages(long since) {
+        String body = getInternal(Protocol.MESSAGES_PENDING + "?since=" + since);
+        if (body == null) {
+            return null;
+        }
+        try {
+            return gson.fromJson(body, PendingMessagesResponse.class);
+        } catch (Exception e) {
+            plugin.getLogger().warning("messages/pending 响应解析失败: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /** QQ 绑定游戏内确认（/xmw qq bind），@return 后端原始响应体 */
+    public String qqBind(String player, String code) {
+        return post(Protocol.QQ_BIND, Map.of("player", player, "code", code));
     }
 
     public String adminOp(String action, String username, String reason) {
@@ -176,11 +205,11 @@ public final class BackendClient {
     }
 
     public String adminList() {
-        return get("/internal/v1/admin-ops/list");
+        return getInternal("/internal/v1/admin-ops/list");
     }
 
     public String adminInfo(String username) {
-        return get("/internal/v1/admin-ops/info/" + username);
+        return getInternal("/internal/v1/admin-ops/info/" + username);
     }
 
     private void postAsync(String path, Object body) {

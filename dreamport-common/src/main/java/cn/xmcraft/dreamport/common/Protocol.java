@@ -22,6 +22,10 @@ public final class Protocol {
     public static final String ECONOMY_SNAPSHOT = "/internal/v1/economy/snapshot";
     /** whitelist 指令队列拉取（bukkit 模式） */
     public static final String COMMANDS_WHITELIST = "/internal/v1/commands/whitelist";
+    /** 游戏收件箱轮询（网页/QQ 消息下行进服，docs/ASTRBOT_PLAN.md §5.3） */
+    public static final String MESSAGES_PENDING = "/internal/v1/messages/pending";
+    /** QQ 绑定游戏内确认通道（/xmw qq bind，docs/ASTRBOT_PLAN.md §5.2） */
+    public static final String QQ_BIND = "/internal/v1/qq/bind";
 
     /** 校验放行 */
     public static final String DECISION_ALLOW = "allow";

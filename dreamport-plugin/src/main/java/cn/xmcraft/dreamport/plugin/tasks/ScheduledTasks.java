@@ -55,8 +55,49 @@ public final class ScheduledTasks {
         runAtRate(plugin, 300, task -> new cn.xmcraft.dreamport.plugin.internal.EconomyCollector(plugin)
                 .collectAndReport());
 
+        // 游戏收件箱轮询：网页/QQ 消息下行进服（docs/ASTRBOT_PLAN.md §5.3/§5.6）
+        if (plugin.pluginConfig().receiveChat()) {
+            startInboxPolling(plugin);
+        }
+
         // console 发送器引用
         BukkitDispatch.console = console;
+    }
+
+    /**
+     * 收件箱轮询：游标增量拉取 → 主线程 broadcastMessage。
+     * 首次拉取仅快进游标不广播（避免插件重启回放历史消息）。
+     */
+    private static void startInboxPolling(DreamPortPlugin plugin) {
+        var lastSeq = new java.util.concurrent.atomic.AtomicLong(-1);
+        long period = Math.max(1, plugin.pluginConfig().messagePollSeconds());
+        runAtRate(plugin, period, task -> {
+            long cursor = lastSeq.get();
+            cn.xmcraft.dreamport.common.PendingMessagesResponse resp =
+                    plugin.backendClient().pollPendingMessages(cursor < 0 ? 0 : cursor);
+            if (resp == null) {
+                return;
+            }
+            if (cursor < 0) {
+                lastSeq.set(resp.latest());
+                return;
+            }
+            var messages = resp.messages() == null
+                    ? java.util.List.<cn.xmcraft.dreamport.common.PendingMessagesResponse.Message>of()
+                    : resp.messages();
+            for (var m : messages) {
+                if (m.seq() > lastSeq.get()) {
+                    lastSeq.set(m.seq());
+                    String text = m.text();
+                    plugin.getServer().getGlobalRegionScheduler().execute(plugin,
+                            () -> org.bukkit.Bukkit.broadcastMessage(text));
+                }
+            }
+            if (messages.isEmpty() && resp.latest() > lastSeq.get()) {
+                // 队列容量淘汰导致取不到中间条目，快进游标
+                lastSeq.set(resp.latest());
+            }
+        });
     }
 
     private static void runAtRate(DreamPortPlugin plugin, long periodSeconds,

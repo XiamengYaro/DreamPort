@@ -23,6 +23,8 @@ features:
   enforce-whitelist: true
   forward-chat: true
   report-join-quit: true
+  receive-chat: true            # 接收网页/QQ 消息并游戏内广播（docs/ASTRBOT_PLAN.md §5.3）
+  message-poll-seconds: 2       # 游戏收件箱轮询间隔（秒）
 
 # 未注册玩家踢出提示中的注册地址
 web-register-url: "http://localhost:18898"

@@ -173,8 +173,7 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
         }
         String code = args[2];
         async(sender, () -> {
-            String body = plugin.backendClient().post("/internal/v1/qq/bind",
-                    java.util.Map.of("player", player.getName(), "code", code));
+            String body = plugin.backendClient().qqBind(player.getName(), code);
             if (body == null) {
                 sender.sendMessage("§6[DreamPort] §c后端不可达");
                 return;
