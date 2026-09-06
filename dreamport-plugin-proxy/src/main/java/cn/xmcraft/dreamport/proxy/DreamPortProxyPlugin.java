@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -112,10 +113,31 @@ public class DreamPortProxyPlugin {
         report("服务器标识", serverId);
         report("白名单拦截", enforceWhitelist ? "开启（fail-policy: " + failPolicy + "）" : "关闭");
         report("决策缓存", cacheTtlSeconds + " 秒");
-        report("已注册后端服", String.valueOf(proxy.getAllServers().size()));
-        proxy.getAllServers().forEach(server ->
-                report("  · " + server.getServerInfo().getName(),
-                        server.getPlayersConnected().size() + " 在线"));
+        // 区分「已配置」与「在线」：只有能 ping 通的后端才算在线
+        List<RegisteredServer> configured = new java.util.ArrayList<>(proxy.getAllServers());
+        report("已配置后端服", String.valueOf(configured.size()));
+        List<RegisteredServer> online = new java.util.ArrayList<>();
+        configured.forEach(server -> {
+            server.ping().thenAccept(ping -> {
+                synchronized (online) {
+                    online.add(server);
+                }
+            }).exceptionally(ex -> null);
+        });
+        // ping 是异步的：同步等待短时间收集结果
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+        }
+        report("在线后端服", online.size() + " / " + configured.size());
+        if (online.isEmpty()) {
+            report("  · 后端服", "均未在线（或未装 DreamPort 插件）");
+        } else {
+            online.forEach(server ->
+                    report("  · " + server.getServerInfo().getName(),
+                            server.getPlayersConnected().size() + " 在线"));
+        }
         report("在线玩家", String.valueOf(proxy.getPlayerCount()));
         double seconds = (System.currentTimeMillis() - startMillis) / 1000.0;
         report("启动耗时", String.format("%.1f 秒", seconds));
