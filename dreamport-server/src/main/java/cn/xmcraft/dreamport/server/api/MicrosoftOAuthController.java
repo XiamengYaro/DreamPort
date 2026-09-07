@@ -118,22 +118,22 @@ public class MicrosoftOAuthController {
 
     private JsonNode minecraftProfile(String msAccessToken) throws Exception {
         // XBL
-        var xblResp = http.send(jsonPost("https://user.auth.xboxlive.com/user/authenticate",
-                """{"Properties":{"AuthMethod":"RPS","SiteName":"user.auth.xboxlive.com","RpsTicket":"d=%s"},"RelyingParty":"http://auth.xboxlive.com","TokenType":"JWT"}"""
-                        .formatted(msAccessToken)), HttpResponse.BodyHandlers.ofString());
+        var xblBody = "{\"Properties\":{\"AuthMethod\":\"RPS\",\"SiteName\":\"user.auth.xboxlive.com\",\"RpsTicket\":\"d=" + msAccessToken + "\"},\"RelyingParty\":\"http://auth.xboxlive.com\",\"TokenType\":\"JWT\"}";
+        var xblResp = http.send(jsonPost("https://user.auth.xboxlive.com/user/authenticate", xblBody),
+                HttpResponse.BodyHandlers.ofString());
         var xbl = mapper.readTree(xblResp.body());
         String xblToken = xbl.get("Token").asText();
         String uhs = xbl.get("DisplayClaims").get("xui").get(0).get("uhs").asText();
         // XSTS
-        var xstsResp = http.send(jsonPost("https://xsts.auth.xboxlive.com/xsts/authorize",
-                """{"Properties":{"SandboxId":"RETAIL","UserTokens":["%s"]},"RelyingParty":"http://xboxlive.com","TokenType":"JWT"}"""
-                        .formatted(xblToken)), HttpResponse.BodyHandlers.ofString());
+        var xstsBody = "{\"Properties\":{\"SandboxId\":\"RETAIL\",\"UserTokens\":[\"" + xblToken + "\"]},\"RelyingParty\":\"http://xboxlive.com\",\"TokenType\":\"JWT\"}";
+        var xstsResp = http.send(jsonPost("https://xsts.auth.xboxlive.com/xsts/authorize", xstsBody),
+                HttpResponse.BodyHandlers.ofString());
         var xsts = mapper.readTree(xstsResp.body());
         String xstsToken = xsts.get("Token").asText();
         String xstsUhs = xsts.get("DisplayClaims").get("xui").get(0).get("uhs").asText();
         // Minecraft Services
-        var mcResp = http.send(jsonPost("https://api.minecraftservices.com/authentication/login_with_xbox",
-                """{"identityToken":"XBL3.0 x=%s;%s"}""".formatted(xstsUhs, xstsToken)),
+        var mcBody = "{\"identityToken\":\"XBL3.0 x=" + xstsUhs + ";" + xstsToken + "\"}";
+        var mcResp = http.send(jsonPost("https://api.minecraftservices.com/authentication/login_with_xbox", mcBody),
                 HttpResponse.BodyHandlers.ofString());
         var mc = mapper.readTree(mcResp.body());
         String mcToken = mc.get("access_token").asText();

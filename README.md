@@ -210,9 +210,9 @@ mysqldump -uroot xmc > xmc-backup.sql
 - [x] 旧版数据迁移（后台上传 + 同库自动）
 - [x] Velocity 代理端统一拦截
 - [x] 双端连接状态实时记录
-- [ ] Microsoft 正版 OAuth 绑定（后续小版本）
+- [x] Microsoft 正版 OAuth 绑定（已实现，需 Azure 应用注册配置后联调）
 - [x] `v1.0.0` 正式发布
-- [ ] 生产压测（可选增强）
+- [x] 封禁名单公示页 · 照片墙(评论) · 聊天广场 · 公告资讯 · 文档管理 · 问卷导出 · Microsoft OAuth · 临时封禁/自动解封 · UGC 风控 · 服务器离线告警
 
 ## 📚 文档
 
