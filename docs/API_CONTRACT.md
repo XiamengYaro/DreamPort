@@ -117,3 +117,49 @@
 - 限流响应：HTTP 429 + failure 包装
 - 时间戳：BIGINT 毫秒 epoch
 - 用户状态枚举：`pending / pending_review / pending_verify / invited_pending / approved / rejected / banned`
+
+## 8. v1.2 新增端点 🆕
+
+### 8.1 皮肤站互通(OAuth2 Provider + 账号同步)
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/oauth2/authorize-info?client_id=&redirect_uri=` | JWT | 授权确认页校验(client/redirect 合法性) |
+| `POST /api/oauth2/authorize` | JWT | body `{clientId, redirectUri, state, approved}` → `{redirectUrl}`;授权码 5 分钟单次消费 |
+| `POST /oauth2/token` | client 凭据 | form `grant_type/client_id/client_secret/redirect_uri/code` → `{access_token(站内 JWT), token_type, expires_in}` |
+| `GET /oauth2/userinfo` | Bearer | `{username, email, nickname, minecraftName, minecraftUuid}` |
+| `GET /api/user/bs/players` | JWT | 当前用户皮肤站角色(服务端调插件接口,5 分钟缓存;`linked=false`=未关联) |
+| `POST /api/user/bs/provision` | JWT + 密码校验 | 一键开通/重试(幂等):建账号+初始积分+同名角色 |
+| `GET /dreamport/api/players?email=` | X-Dreamport-Secret | 皮肤站插件:角色列表(200 已关联/404 未关联) |
+| `POST /dreamport/api/provision` | X-Dreamport-Secret | 皮肤站插件:开通账号+角色(幂等,密码=DP 注册密码) |
+| `POST /dreamport/api/update-password` / `update-player-name` / `update-email` | X-Dreamport-Secret | 改密/角色改名/邮箱改绑同步 |
+
+配置键 `blessingskin.{enabled,url,client_id,client_secret,api_secret}`;互通未启用时同步类调用视为无操作成功。
+
+### 8.2 封禁与公告
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/bans` | 公开 | 封禁公示列表(username/avatar/reason/banTime/banUntil) |
+| `POST /api/admin/ban`(ReviewAdmin BanBody) | 管理员 | days 可选:临时封禁,到期每小时自动解封 |
+| `GET /api/announcements` | 公开 | `{news, changelog}`,仅 status=published 且到发布时间的条目 |
+
+### 8.3 照片墙留言与通知
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/portal/comments/{photoKey}` / `counts` | 公开 | 留言列表(仅 approved)/计数 |
+| `POST /api/portal/comments/{photoKey}` | JWT | 发留言(限频 5/分·用户+IP,敏感词过滤;moderation 开启时 approved=false) |
+| `DELETE /api/portal/comments/{id}` | JWT | 删除自己的留言 |
+| `GET/POST/DELETE /api/admin/portal/comments/**` | 管理员 | 待审列表/通过/删除 |
+| `GET /api/notifications`、`POST read|read-all`、`DELETE /api/notifications/{id}` | JWT | 站内通知(铃铛) |
+
+### 8.4 其他
+
+- `POST /api/user/email/update`:**先同步皮肤站邮箱成功才落本站**(关联键)
+- `POST /api/user/password`:响应带 `data.skinStationSynced`
+- `POST /api/user/minecraft/set`:响应带 `skinStationSynced`(角色改名同步)
+- `POST /api/register`:body 增 `playerType(premium/offline)`;offline 注册成功后调皮肤站 provision,响应带 `data.skinStation{provisioned,reason}`
+- `GET /api/auth/microsoft/start|callback`:Microsoft 正版绑定(XBL→XSTS→MC profile;需配置 microsoft.*)
+- `GET /api/admin/export/questionnaires?format=csv|json`:问卷导出
+- `GET /api/review/status`:响应补 regTime/questionnaireScoredAt/verifiedAt 时间戳(时间线)

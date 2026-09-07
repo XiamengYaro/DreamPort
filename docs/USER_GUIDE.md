@@ -1,7 +1,7 @@
 # DreamPort 使用文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 适用版本：v1.1.0+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
+> 适用版本：v1.2.0+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
 
 ---
 
@@ -30,10 +30,10 @@
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 1. 首次启动 —— 自动在工作目录生成 config.yml（数据库需先在 config.yml 填好）
-java -jar dreamport-server-1.1.0.jar
+java -jar dreamport-server-1.2.0.jar
 
 # 2. 编辑 config.yml：填 MySQL 连接（[必改]），改 jwt-secret / server-token，重启
-nano config.yml && java -jar dreamport-server-1.1.0.jar
+nano config.yml && java -jar dreamport-server-1.2.0.jar
 
 # 3. 浏览器打开 http://localhost:18898/setup 进入初始化向导：
 #    ① 创建管理员账号  ② 选择「全新部署」或「上传旧库 .sql 导入」
@@ -65,13 +65,13 @@ open http://localhost:18898/setup
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # ② 首次启动 —— 自动生成 config.yml（数据库未就绪时本次启动失败属预期，文件已生成）
-java -jar dreamport-server-1.1.0.jar
+java -jar dreamport-server-1.2.0.jar
 
 # ③ 编辑 config.yml（[必改]：spring.datasource 数据库、jwt-secret、server-token、SMTP）
 nano config.yml
 
 # ④ 再次启动 → 打开 http://域名:18898/setup 完成初始化向导
-java -jar dreamport-server-1.1.0.jar
+java -jar dreamport-server-1.2.0.jar
 ```
 
 向导完成两件事：**创建管理员账号**（写入管理员名单）+ **选择部署方式**（全新部署 / 上传旧库 .sql 导入）。
@@ -84,7 +84,7 @@ java -jar dreamport-server-1.1.0.jar
 **systemd（推荐）**：`deploy/dreamport-server.service` 无需环境变量，只需确认路径：
 
 ```bash
-sudo cp dreamport-server-1.1.0.jar /opt/dreamport/
+sudo cp dreamport-server-1.2.0.jar /opt/dreamport/
 sudo cp deploy/dreamport-server.service /etc/systemd/system/
 sudo systemctl enable --now dreamport-server
 ```
@@ -168,7 +168,7 @@ web-register-url: "https://你的域名"
 
 ### proxy（Velocity 代理端）
 
-Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-1.1.0.jar`（不是 Paper 版！二者不可混装）。
+Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-1.2.0.jar`（不是 Paper 版！二者不可混装）。
 首次启动自动生成 `plugins/dreamport-proxy/config.properties`：
 
 ```properties
@@ -180,7 +180,7 @@ check.fail-policy=cache
 ```
 
 功能：代理端统一白名单拦截（后端 login-check）+ 60 秒决策缓存 + fail_policy 兜底 + 心跳上报。
-Paper 子服从装 `dreamport-plugin-1.1.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
+Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
 
 ### 校验连通
 
@@ -256,6 +256,38 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 ```
 
 ---
+
+### 6.4 v1.2 新增门户功能
+
+- **公告页** `/announcements`：资讯中心 + 更新日志，后台「公告管理」编辑（草稿/定时发布）
+- **封禁公示页** `/bans`：临时封禁到期自动解封，封禁/解封有邮件
+- **聊天广场** `/chat`：独立聊天页 + 在线玩家列表
+- **通知中心**：网页右上角铃铛，审核/封禁/公告推送
+- **皮肤站互通**：见 §11
+
+## 11. 皮肤站互通（BlessingSkin）
+
+非正版玩家用皮肤站（外置登录）作为游戏身份来源，DreamPort 与其深度打通：
+
+### 11.1 两端配置
+
+- DreamPort：管理后台 → 系统设置 → BlessingSkin 互通（启用/皮肤站地址/Client ID/Secret/API 共享密钥）
+- 皮肤站：安装 `bs-plugin-dreamport/dreamport-oauth-*.zip`，插件配置页填 DreamPort 地址与同一组凭据
+- Client ID/Secret 为两端约定的自定义值，无需 Passport
+
+### 11.2 注册分型
+
+注册页玩家类型：正版 Java（不开通皮肤站）/ 非正版 Java（注册即开通：账号+密码同款+1000 积分+同名角色）/ 纯基岩版。游戏名收紧为 3-16 位字母数字下划线。
+
+### 11.3 账号同步
+
+改密码 → 皮肤站同步改密（失败不阻断）；改 Minecraft ID → 皮肤站角色改名；改邮箱 → 先同步皮肤站成功才落本站。存量玩家用控制台「一键开通」或皮肤站 SSO 首登兜底。
+
+### 11.4 纯 SSO 模式
+
+插件开启「隐藏登录页账密表单」后，皮肤站网页只能 DreamPort 授权登录；游戏内 Yggdrasil 认证不受影响（启动器账密=DreamPort 同款）。
+
+> 完整指南：docs/BLESSINGSKIN.md · 皮肤站插件分册：wiki/admin/plugin-skinstation/
 
 ## 7. 命令与权限
 

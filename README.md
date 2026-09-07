@@ -6,11 +6,11 @@
 
 **Minecraft 服务器门户与玩家管理系统**
 
-网页注册 · 问卷审核 · 玩家管理 · QQ 互通 · 社区门户 · 一体化部署
+网页注册 · 问卷审核 · 玩家管理 · QQ 互通 · 皮肤站互通 · 社区门户 · 一体化部署
 
 [快速开始](#-快速开始) · [功能总览](#-功能总览) · [旧版数据迁移](#-旧版数据一键迁移) · [常见问题](#-常见问题)
 
-`v1.1.0` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
+`v1.2.0` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
 
 </div>
 
@@ -52,6 +52,10 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 🏘️ **社区内容** | 村民族谱、公共机器展示（提交 → 审核公开展示） |
 | 💬 **网页聊天** | 网页 ↔ 游戏实时互通（SSE），可翻页查看**近 7 天历史消息** |
 | 🔗 **QQ 验证绑定** | QQ 群 `/dp 绑定` → 私聊验证码 → 网页或游戏内确认，单 QQ 单账号强绑定 |
+| 🎨 **皮肤站互通** | 非正版玩家注册即开通皮肤站(账密同款+1000 积分+同名角色)，网页 SSO 登录，改密/改名自动同步 |
+| 📰 **公告中心** | 资讯中心 + 更新日志双栏目，支持草稿/定时发布 |
+| 🔔 **通知中心** | 审核/封禁/公告等重要消息铃铛推送，配合邮件通知 |
+| 🚫 **封禁公示** | 公开封禁名单页，临时封禁到期自动解封 |
 
 ### 管理侧
 
@@ -66,6 +70,9 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 📜 **审计日志** | 全部管理操作留痕，支持 CSV/JSON 导出 |
 | 🤝 **QQ 互通（AstrBot）** | 群服消息双向桥接、进出服播报、模板可配，配套自研 AstrBot 插件 |
 | 📈 **服务器信息落库** | 心跳快照与在线采样持久化，重启不丢；在线趋势支持近 7 天曲线 |
+| 📄 **文档管理** | 官网文档库 Markdown 编辑 + 实时预览 |
+| 🛡 **临时封禁** | 按天数封禁、到期自动解封、全程邮件+铃铛通知 |
+| 🤖 **Microsoft 绑定** | 正版账号 OAuth 绑定(需配置 Azure 应用) |
 
 ## 🚀 快速开始
 
@@ -78,11 +85,11 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 首次启动 → 自动生成 config.yml
-java -jar dreamport-server-1.1.0.jar
+java -jar dreamport-server-1.2.0.jar
 # （数据库未配置时启动失败属预期，文件已生成）
 
 # 编辑 config.yml 后再次启动
-nano config.yml && java -jar dreamport-server-1.1.0.jar
+nano config.yml && java -jar dreamport-server-1.2.0.jar
 ```
 
 `config.yml` 中 `[必改]` 项：**数据库连接**、**jwt-secret**、**server-token**（生成随机串：`openssl rand -base64 48`）。所有部署配置集中在这一个文件，无需环境变量。
@@ -102,8 +109,8 @@ nano config.yml && java -jar dreamport-server-1.1.0.jar
 
 | 服务器 | 安装文件 | 说明 |
 |--------|----------|------|
-| **Paper/Folia 子服** | `dreamport-plugin-1.1.0.jar` | 进服拦截、聊天互通、经济采集 |
-| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.1.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
+| **Paper/Folia 子服** | `dreamport-plugin-1.2.0.jar` | 进服拦截、聊天互通、经济采集 |
+| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.2.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
 
 插件首次启动自动生成配置，把 `server-token` 改成与后端一致、`backend.url` 指向后端即可。启动控制台会打印**同款字符画 Banner + 中文启动记录**（角色/后端连通/拦截状态一目了然）。
 
@@ -144,6 +151,18 @@ mysqldump -uroot xmc > xmc-backup.sql
 打通后：QQ 群消息进游戏与网页聊天室（可配前缀/全转），游戏聊天、进出服、网页发言实时发群；`/dp 绑定` 走**验证码强绑定**（私聊发码 → 网页或游戏内确认），替代一切免验证直绑。
 
 > 详见 [USER_GUIDE §10](docs/USER_GUIDE.md) · [设计文档](docs/ASTRBOT_PLAN.md) · [插件部署与联调清单](astrbot-plugin/README.md)
+
+## 🎨 皮肤站互通(BlessingSkin)
+
+非正版服把皮肤站当作游戏身份来源？DreamPort 与皮肤站已深度打通：
+
+1. **DreamPort**:管理后台 → 系统设置 → **BlessingSkin 互通** → 填皮肤站地址与两端约定的 Client ID/Secret/共享密钥
+2. **皮肤站**:安装 `dreamport-oauth-1.1.0.zip` 插件，配置 DreamPort 地址与同一组凭据
+3. **验证**：注册页选「非正版」注册新号 → 皮肤站自动出现账号(1000 积分+同名角色)→ 启动器用**同一套账密**进服
+
+打通后：皮肤站网页用 DreamPort 账号 SSO 登录(可隐藏账密表单走纯 SSO);玩家改密码/游戏名/邮箱自动同步；控制台直接展示皮肤站角色与 3D 头像。
+
+> 详见 [docs/BLESSINGSKIN.md](docs/BLESSINGSKIN.md) · [皮肤站插件文档](wiki/admin/plugin-skinstation/introduction.md)
 
 ## ⌨️ 游戏内命令
 
@@ -197,9 +216,9 @@ mysqldump -uroot xmc > xmc-backup.sql
 ```bash
 ./scripts/build.sh        # 前端 + 后端 + 两个插件一次构建
 # 产物:
-#   dreamport-server/target/dreamport-server-1.1.0.jar
-#   dreamport-plugin/target/dreamport-plugin-1.1.0.jar
-#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.1.0.jar
+#   dreamport-server/target/dreamport-server-1.2.0.jar
+#   dreamport-plugin/target/dreamport-plugin-1.2.0.jar
+#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.2.0.jar
 ```
 
 ## 🗺️ 路线图
@@ -213,6 +232,7 @@ mysqldump -uroot xmc > xmc-backup.sql
 - [x] Microsoft 正版 OAuth 绑定（已实现，需 Azure 应用注册配置后联调）
 - [x] `v1.0.0` 正式发布
 - [x] 封禁名单公示页 · 照片墙(评论) · 聊天广场 · 公告资讯 · 文档管理 · 问卷导出 · Microsoft OAuth · 临时封禁/自动解封 · UGC 风控 · 服务器离线告警
+- [x] `v1.2.0` 皮肤站互通(注册一键开通/账号同步/纯 SSO) · 注册玩家类型分型 · 全插件文档库
 
 ## 📚 文档
 
@@ -224,6 +244,8 @@ mysqldump -uroot xmc > xmc-backup.sql
 | [插件部署](astrbot-plugin/README.md) | AstrBot 插件安装、配置与联调清单 |
 | [功能进度表](docs/IMPLEMENTATION_PROGRESS.md) | 128 项功能逐项实现状态 |
 | [变更日志](CHANGELOG.md) | 每个版本的详细变更 |
+| **[📖 全插件文档库](wiki/README.md)** | 玩家册 6 篇 + 服主册 24 篇(后端/Paper/Velocity/AstrBot/皮肤站) |
+| [皮肤站互通指南](docs/BLESSINGSKIN.md) | BlessingSkin 两端配置与故障排查 |
 | [运维检查清单](docs/OPERATIONS_CHECKLIST.md) | 部署核对、日常运维、日志速查 |
 
 ---

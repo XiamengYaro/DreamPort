@@ -1,6 +1,6 @@
 # DreamPort 部署与运维检查清单
 
-> 供生产部署与日常运维逐项核对。适用版本 v1.1.0+
+> 供生产部署与日常运维逐项核对。适用版本 v1.2.0+
 
 ---
 
@@ -15,7 +15,7 @@
 - [ ] 确认仅主服日志出现"经济快照已上报"（子服应为"经济快照上报已跳过"）
 - [ ] 如需后端硬保险：后端 config.yml 加 `wl.economy.accept-from: <主服serverId>`
 
-### 后端（dreamport-server-1.1.0.jar）
+### 后端（dreamport-server-1.2.0.jar）
 - [ ] 首次启动生成 `config.yml`，完成全部 `[必改]` 项：
   - [ ] `spring.datasource`：MySQL 连接
   - [ ] `wl.security.jwt-secret`：`openssl rand -base64 48` 生成
