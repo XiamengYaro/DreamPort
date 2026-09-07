@@ -1164,8 +1164,8 @@ const announcementEdit = ref('')
 
 const portalData = ref({
   photoTypes: ['announcement', 'event', 'milestone'] as string[],
-  server_name: '夏日小镇',
-  subtitle: 'XMCraft Minecraft 服务器',
+  server_name: '夏日小镇★XMCraft',
+  subtitle: 'Minecraft Java生存服务器',
   brand_short: 'XMCraft',
   brand_tagline: '玩家账户系统',
   favicon: '',
@@ -1457,7 +1457,7 @@ const loadPortalConfig = async () => {
     if (r.success && r.data.portal) {
       const p = r.data.portal
       portalData.value = {
-        server_name: p.server_name || '夏日小镇',
+        server_name: p.server_name || '夏日小镇★XMCraft',
         brand_short: p.brand_short || 'XMCraft',
         brand_tagline: p.brand_tagline || '玩家账户系统',
         favicon: p.favicon || '',

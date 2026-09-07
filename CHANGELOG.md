@@ -22,6 +22,7 @@
 
 ### Changed
 - **全局品牌可配置**:门户配置新增品牌短名/副标语/Favicon/品牌主色,登录注册页、导航、页脚、document.title、favicon 全部跟随;主题色以 CSS 变量驱动全站 orange 色阶(含透明度写法),换品牌=管理后台改配置零代码
+- 默认示例对齐 xmcraft.cn 生产内容(品牌全名/副标题/描述/公告/轮播/时间线)
 - 前端视觉两期升级:公共组件抽取(AppAvatar/AppModal/AppPagination/EmptyState/StatCard)+ 液态玻璃视觉规范
 - 顶部导航重构:一级菜单[首页 文档 公告 白名单 玩家 封禁 聊天 更多]+ SVG 图标 + 自适应单行 + 页面顶端全透明
 - 用户区改版:hover 用户卡 + 头像统一 MC 头像;弹窗不点空白关闭 + ESC

@@ -30,9 +30,9 @@ public class ConfigController {
     public Map<String, Object> config() {
         Map<String, Object> portal = settingService.getMap(SettingService.KEY_PORTAL);
         if (portal.isEmpty()) {
-            portal.put("server_name", "夏日小镇XMCraft");
-            portal.put("subtitle", "Minecraft 服务器");
-            portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，欢迎每一位玩家加入！");
+            portal.put("server_name", "夏日小镇★XMCraft");
+            portal.put("subtitle", "Minecraft Java生存服务器");
+            portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，起于 2020 年，欢迎每一位玩家加入！");
         }
         // 品牌字段(缺失时补默认值,前端据此渲染名称/主题色/favicon)
         portal.putIfAbsent("brand_short", "XMCraft");
@@ -42,9 +42,9 @@ public class ConfigController {
         Object announcement = settingService.get(SettingService.KEY_ANNOUNCEMENT, String.class);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("portal", portal);
-        data.put("serverName", portal.getOrDefault("server_name", "夏日小镇"));
+        data.put("serverName", portal.getOrDefault("server_name", "夏日小镇★XMCraft"));
         data.put("subtitle", portal.getOrDefault("subtitle", "Minecraft 服务器"));
-        data.put("announcement", announcement == null ? "欢迎来到夏日小镇！" : announcement);
+        data.put("announcement", announcement == null ? "欢迎加入夏日小镇XMCraft！遇到问题请及时联系管理团队。" : announcement);
         // 背景设置(外观设置卡保存的 image/opacity/blur),App.vue applyBackground 消费
         data.put("background", settingService.getMap(SettingService.KEY_BACKGROUND));
         data.put("registerEnabled", true);

@@ -49,13 +49,13 @@ public class DefaultContentSeeder implements ApplicationRunner {
             return;
         }
         Map<String, Object> portal = new LinkedHashMap<>();
-        portal.put("server_name", "夏日小镇XMCraft");
+        portal.put("server_name", "夏日小镇★XMCraft");
         portal.put("brand_short", "XMCraft");
         portal.put("brand_tagline", "玩家账户系统");
         portal.put("favicon", "");
         portal.put("accent", "#f97316");
-        portal.put("subtitle", "Minecraft Java/基岩双版生存服务器");
-        portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，起于 2020 年的夏日小镇，欢迎每一位玩家加入！");
+        portal.put("subtitle", "Minecraft Java生存服务器");
+        portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，起于 2020 年，欢迎每一位玩家加入！");
         portal.put("version", "1.20.4");
         portal.put("server_ip", "mc.xmcraft.cn");
         portal.put("server_port", 25565);

@@ -66,10 +66,10 @@ public class MailService {
 
     private String brandServerName() {
         try {
-            Object name = systemSettings.portalConfig().getOrDefault("server_name", "夏日小镇XMCraft");
+            Object name = systemSettings.portalConfig().getOrDefault("server_name", "夏日小镇★XMCraft");
             return String.valueOf(name);
         } catch (Exception e) {
-            return "夏日小镇XMCraft";
+            return "夏日小镇★XMCraft";
         }
     }
 

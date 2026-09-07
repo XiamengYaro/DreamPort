@@ -61,7 +61,7 @@
     <section class="py-16 px-4 bg-stone-800/30">
       <div class="max-w-4xl mx-auto text-center">
         <h2 class="text-3xl font-bold text-white mb-4">准备好加入我们了吗？</h2>
-        <p class="text-stone-400 mb-8">申请白名单，开始你在夏日小镇的冒险之旅</p>
+        <p class="text-stone-400 mb-8">申请白名单，开始你在 {{ portalConfig.server_name }} 的冒险之旅</p>
         <router-link to="/whitelist" class="btn-primary text-lg px-8 py-4">
           立即申请白名单
         </router-link>
@@ -81,14 +81,14 @@ const serverStatus = ref<any>({})
 const logoUrl = ref('/Logo111.png')
 
 const portalConfig = ref({
-  server_name: '夏日小镇',
-  subtitle: 'XMCraft Minecraft 服务器',
+  server_name: '夏日小镇★XMCraft',
+  subtitle: 'Minecraft Java生存服务器',
   description: '一个有趣、友好的 Minecraft 生存服务器，欢迎每一位玩家加入！',
   server_ip: 'play.xmcraft.cn',
   server_port: 25565,
   version: '1.20.4',
   carousel: [
-    { image: '/images/banner1.jpg', title: '欢迎来到夏日小镇', subtitle: '开始你的冒险之旅' },
+    { image: '/bg.png', title: '欢迎来到夏日小镇★XMCraft', subtitle: '开始你的冒险之旅' },
     { image: '/images/banner2.jpg', title: '社区活动', subtitle: '参与精彩活动赢取奖励' },
     { image: '/images/banner3.jpg', title: '建筑展示', subtitle: '展示你的创意建筑' }
   ],
@@ -105,7 +105,7 @@ const portalConfig = ref({
     { icon: 'star', title: '安全稳定', description: '专业的反作弊系统，24小时稳定运行' }
   ],
   timeline: [
-    { date: '2024-01-01', title: '服务器创立', description: '夏日小镇正式开服，欢迎各位玩家加入！', image: '' },
+    { date: '2020-07-15', title: '服务器创立', description: '夏日小镇正式开服，欢迎各位玩家加入！', image: '' },
     { date: '2024-06-15', title: '第一届建筑大赛', description: '成功举办首届建筑大赛，玩家们展示了惊人的创造力', image: '' }
   ]
 })

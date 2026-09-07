@@ -8,7 +8,7 @@ import { api } from '@/services/api'
  */
 const state = reactive({
   loaded: false,
-  full: '夏日小镇XMCraft',   // 品牌全名(portal.server_name)
+  full: '夏日小镇★XMCraft',   // 品牌全名(portal.server_name)
   short: 'XMCraft',          // 短名(登录/注册大标题、页脚;portal.brand_short)
   tagline: '玩家账户系统',    // 副标语(portal.brand_tagline)
   logo: '/Logo111.png',      // portal.logo
