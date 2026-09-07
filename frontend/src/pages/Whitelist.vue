@@ -175,6 +175,37 @@
             <button @click="goToQuestionnaire" class="btn-primary">重新答题</button>
             <router-link to="/dashboard" class="btn-secondary">返回控制台</router-link>
           </div>
+
+          <!-- 申诉区 -->
+          <div class="mt-8 pt-6 border-t border-stone-700 text-left">
+            <h3 class="text-white font-semibold mb-3">申诉</h3>
+            <div v-if="appeal && appeal.status === 'pending'" class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+              <p class="text-amber-400 text-sm font-medium">申诉处理中</p>
+              <p class="text-stone-400 text-xs mt-1">你于 {{ formatAppealDate(appeal.createdAt) }} 提交的申诉正在等待管理员处理</p>
+              <p class="text-stone-300 text-sm mt-2">{{ appeal.reason }}</p>
+            </div>
+            <div v-else-if="appeal && appeal.status === 'approved'" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
+              <p class="text-emerald-400 text-sm font-medium">申诉已通过,账号进入人工复核队列</p>
+            </div>
+            <div v-else-if="appeal && appeal.status === 'rejected'" class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl">
+              <p class="text-rose-400 text-sm font-medium">申诉未通过</p>
+              <p v-if="appeal.adminReply" class="text-stone-300 text-sm mt-1">管理员回复:{{ appeal.adminReply }}</p>
+            </div>
+            <div v-else-if="loggedIn" class="space-y-3">
+              <p class="text-stone-400 text-sm">对评分结果有异议?可以提交申诉,管理员会人工复核。</p>
+              <textarea v-model="appealReason" class="input w-full" rows="3" maxlength="500"
+                placeholder="填写申诉理由(至少 10 字)"></textarea>
+              <div class="flex justify-end">
+                <button @click="submitMyAppeal" class="btn-secondary text-sm"
+                  :disabled="appealReason.trim().length < 10 || appealPosting">
+                  {{ appealPosting ? '提交中...' : '提交申诉' }}
+                </button>
+              </div>
+            </div>
+            <p v-else class="text-stone-500 text-xs mt-2">
+              <router-link to="/login" class="text-orange-400 hover:text-orange-300">登录</router-link> 后可以提交申诉
+            </p>
+          </div>
         </div>
       </div>
 
@@ -212,6 +243,7 @@ const inviteCode = ref('')
 const submitting = ref(false)
 
 onMounted(async () => {
+  await loadMyAppeal()
   // 加载配置
   try {
     const res = await fetch('/api/config')

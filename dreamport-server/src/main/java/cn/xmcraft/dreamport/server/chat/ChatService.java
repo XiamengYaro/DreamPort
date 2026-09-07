@@ -1,5 +1,6 @@
 package cn.xmcraft.dreamport.server.chat;
 
+import cn.xmcraft.dreamport.server.settings.SettingService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,12 +30,15 @@ public class ChatService {
     static final int RETENTION_DAYS = 7;
     static final int MAX_ROWS = 50_000;
     public static final int DEFAULT_PAGE_SIZE = 200;
+    public static final String KEY_SENSITIVE_WORDS = "sensitive.words";
 
     private final JdbcTemplate jdbc;
+    private final SettingService settingService;
     private final ObjectMapper mapper = new ObjectMapper();
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    public ChatService(JdbcTemplate jdbc) {
+    public ChatService(SettingService settingService, JdbcTemplate jdbc) {
+        this.settingService = settingService;
         this.jdbc = jdbc;
     }
 
@@ -53,6 +57,19 @@ public class ChatService {
             emitters.remove(emitter);
         }
         return emitter;
+    }
+
+    /** 敏感词过滤(dp_setting sensitive.words 逗号分隔,命中替换 ***) */
+    public String filterSensitive(String text) {
+        String words = settingService == null ? "" : settingService.getRaw("sensitive.words");
+        if (words == null || words.isBlank()) return text;
+        for (String w : words.split("[,，]")) {
+            String word = w.trim();
+            if (word.length() >= 2 && text.contains(word)) {
+                text = text.replace(word, "*".repeat(word.length()));
+            }
+        }
+        return text;
     }
 
     /** 游戏聊天（插件上报）或网页聊天广播 + 落库（旧签名，等价 web 源） */

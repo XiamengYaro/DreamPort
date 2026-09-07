@@ -204,10 +204,10 @@ class ApiService {
     })
   }
 
-  async banUser(username: string, reason?: string) {
+  async banUser(username: string, reason?: string, days?: number) {
     return this.request('/admin/user/ban', {
       method: 'POST',
-      body: JSON.stringify({ username, reason })
+      body: JSON.stringify({ username, reason, days })
     })
   }
 
@@ -216,6 +216,11 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify({ username })
     })
+  }
+
+  // 公开封禁名单(/bans 页)
+  async getBans() {
+    return this.request('/bans')
   }
 
   async deleteUser(username: string) {
@@ -275,25 +280,35 @@ class ApiService {
     })
   }
 
-  // Docs Management
-  async createDoc(title: string, category: string, filename?: string) {
+  // Docs Management(参数对齐后端 DocBody{title,category,filename,content})
+  async getDocs() {
+    return this.request('/docs')
+  }
+
+  async readDoc(category: string | null, filename: string) {
+    const q = new URLSearchParams({ filename })
+    if (category) q.set('category', category)
+    return this.request(`/docs/detail?${q.toString()}`)
+  }
+
+  async createDoc(title: string, category: string, content?: string) {
     return this.request('/admin/docs/create', {
       method: 'POST',
-      body: JSON.stringify({ title, category, filename })
+      body: JSON.stringify({ title, category, content })
     })
   }
 
-  async deleteDoc(filename: string) {
+  async deleteDoc(category: string | null, filename: string) {
     return this.request('/admin/docs/delete', {
       method: 'POST',
-      body: JSON.stringify({ filename })
+      body: JSON.stringify({ category, filename })
     })
   }
 
-  async updateDoc(filename: string, content: string) {
+  async updateDoc(category: string | null, filename: string, content: string) {
     return this.request('/admin/docs/update', {
       method: 'POST',
-      body: JSON.stringify({ filename, content })
+      body: JSON.stringify({ category, filename, content })
     })
   }
 
@@ -397,6 +412,10 @@ class ApiService {
   }
 
   // Appeals
+  async getMyAppeal() {
+    return this.request('/questionnaire/appeal/mine')
+  }
+
   async submitAppeal(reason: string) {
     return this.request('/questionnaire/appeal', {
       method: 'POST',
@@ -456,6 +475,31 @@ class ApiService {
     return this.request('/user/qq/unbind', { method: 'POST' })
   }
 
+  // BlessingSkin 互通（docs/BLESSINGSKIN.md）
+  async getOAuth2AuthorizeInfo(clientId: string, redirectUri: string) {
+    return this.request(`/oauth2/authorize-info?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}`)
+  }
+
+  async postOAuth2Authorize(body: { clientId: string; redirectUri: string; state?: string; approved: boolean }) {
+    return this.request('/oauth2/authorize', { method: 'POST', body: JSON.stringify(body) })
+  }
+
+  async getBsPlayers() {
+    return this.request('/user/bs/players')
+  }
+
+  async provisionBs(password: string) {
+    return this.request('/user/bs/provision', { method: 'POST', body: JSON.stringify({ password }) })
+  }
+
+  async getBlessingskinConfig() {
+    return this.request('/admin/settings/blessingskin')
+  }
+
+  async saveBlessingskinConfig(body: any) {
+    return this.request('/admin/settings/blessingskin', { method: 'PUT', body: JSON.stringify(body) })
+  }
+
   // 聊天室（docs/CHAT_SERVERINFO_PLAN.md）
   async getChatHistory(params?: { before?: number; limit?: number; origin?: string }) {
     const q = new URLSearchParams()
@@ -473,6 +517,39 @@ class ApiService {
   // 免登录申请状态查询（/status 页；后端返回裸 {found, ...} 结构）
   async getReviewStatus(username: string) {
     return this.request(`/review/status?username=${encodeURIComponent(username)}`)
+  }
+
+  // 公告页(资讯中心 + 更新日志)
+  async getAnnouncements() {
+    return this.request('/announcements')
+  }
+
+  async getAnnouncementsAdmin() {
+    return this.request('/admin/settings/announcements')
+  }
+
+  async saveAnnouncementsAdmin(body: any) {
+    return this.request('/admin/settings/announcements', { method: 'PUT', body: JSON.stringify(body) })
+  }
+
+  // 照片墙留言（首页时光照片墙）
+  async getPhotoComments(photoKey: string) {
+    return this.request(`/portal/comments/${encodeURIComponent(photoKey)}`)
+  }
+
+  async getPhotoCommentCounts() {
+    return this.request('/portal/comments/counts')
+  }
+
+  async postPhotoComment(photoKey: string, content: string) {
+    return this.request(`/portal/comments/${encodeURIComponent(photoKey)}`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    })
+  }
+
+  async deletePhotoComment(id: number) {
+    return this.request(`/admin/portal/comments/${id}`, { method: 'DELETE' })
   }
 
   async updateUserProfile(data: { avatar?: string }) {
@@ -675,6 +752,10 @@ class ApiService {
 
   async markAllNotificationsRead() {
     return this.request('/notifications/read-all', { method: 'POST' })
+  }
+
+  async deleteNotification(id: number) {
+    return this.request(`/notifications/${id}`, { method: 'DELETE' })
   }
 
   // Verify

@@ -164,6 +164,19 @@ public class MailService {
                         "overall_summary", overallSummary));
     }
 
+    public void sendAccountBanned(String username, String to, String reason, String duration, String lang) {
+        String l = lang(lang);
+        String subject = "zh".equals(l) ? "账号封禁通知" : "Account banned notice";
+        send(to, subject, render("account_banned", l,
+                "username", username, "reason", reason, "duration", duration));
+    }
+
+    public void sendAccountUnbanned(String username, String to, String lang) {
+        String l = lang(lang);
+        String subject = "zh".equals(l) ? "封禁已解除" : "Ban lifted";
+        send(to, subject, render("account_unbanned", l, "username", username));
+    }
+
     public void sendAdminNotification(String content, String to) {
         if (to == null || to.isBlank()) {
             return;

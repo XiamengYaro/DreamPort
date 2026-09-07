@@ -37,6 +37,7 @@ public record UserRecord(
         Long bedrockVerifiedAt,
         String banReason,
         Long banTime,
+        Long banUntil,
         String avatar
 ) {
 
@@ -65,7 +66,7 @@ public record UserRecord(
                 questionnaireReviewSummary, questionnaireScoredAt, questionnaireReasons,
                 questionnaireAnswers, minecraftUuid, minecraftName, microsoftVerified,
                 verifiedAt, verifyType, invitedBy, bedrockUuid, bedrockName,
-                bedrockVerified, bedrockVerifiedAt, banReason, banTime, avatar);
+                bedrockVerified, bedrockVerifiedAt, banReason, banTime, banUntil, avatar);
     }
 
     public boolean approved() {

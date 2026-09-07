@@ -94,6 +94,28 @@ public class SystemSettingsService {
         settingService.set(SettingService.KEY_GAME_CONFIG, config);
     }
 
+    /** 公告页(资讯中心 + 更新日志):两个 JSON 数组键 */
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> announcementsConfig() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        List<Map<String, Object>> news = settingService.get(SettingService.KEY_NEWS, List.class);
+        List<Map<String, Object>> changelog = settingService.get(SettingService.KEY_CHANGELOG, List.class);
+        result.put("news", news == null ? List.of() : news);
+        result.put("changelog", changelog == null ? List.of() : changelog);
+        return result;
+    }
+
+    public void saveAnnouncementsConfig(Map<String, Object> config) {
+        if (config.containsKey("news")) {
+            settingService.set(SettingService.KEY_NEWS,
+                    config.get("news") == null ? List.of() : config.get("news"));
+        }
+        if (config.containsKey("changelog")) {
+            settingService.set(SettingService.KEY_CHANGELOG,
+                    config.get("changelog") == null ? List.of() : config.get("changelog"));
+        }
+    }
+
     /** QQ 互通（AstrBot）：enabled / api_token / 群绑定 JSON 分键存储，AstrBotController 与 QqBridgeService 直接按键读取 */
     public Map<String, Object> astrbotConfig() {
         Map<String, Object> result = new LinkedHashMap<>();
@@ -127,6 +149,40 @@ public class SystemSettingsService {
             } catch (Exception e) {
                 throw new IllegalArgumentException("群绑定 JSON 格式错误");
             }
+        }
+    }
+
+    /** BlessingSkin 互通：enabled / url / clientId / clientSecret / apiSecret（与 BS 端插件共享的服务端密钥） */
+    public Map<String, Object> blessingskinConfig() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("enabled", settingService.getBool(SettingService.KEY_BLESSINGSKIN_ENABLED, false));
+        result.put("url", text(SettingService.KEY_BLESSINGSKIN_URL));
+        result.put("clientId", text(SettingService.KEY_BLESSINGSKIN_CLIENT_ID));
+        result.put("clientSecret", text(SettingService.KEY_BLESSINGSKIN_CLIENT_SECRET));
+        result.put("apiSecret", text(SettingService.KEY_BLESSINGSKIN_API_SECRET));
+        return result;
+    }
+
+    public void saveBlessingskinConfig(Map<String, Object> config) {
+        if (config.containsKey("enabled")) {
+            settingService.set(SettingService.KEY_BLESSINGSKIN_ENABLED,
+                    Boolean.TRUE.equals(config.get("enabled")) || "true".equalsIgnoreCase(String.valueOf(config.get("enabled"))));
+        }
+        putText(config, "url", SettingService.KEY_BLESSINGSKIN_URL);
+        putText(config, "clientId", SettingService.KEY_BLESSINGSKIN_CLIENT_ID);
+        putText(config, "clientSecret", SettingService.KEY_BLESSINGSKIN_CLIENT_SECRET);
+        putText(config, "apiSecret", SettingService.KEY_BLESSINGSKIN_API_SECRET);
+    }
+
+    private String text(String key) {
+        String v = settingService.get(key, String.class);
+        return v == null ? "" : v;
+    }
+
+    private void putText(Map<String, Object> config, String field, String key) {
+        if (config.containsKey(field)) {
+            Object v = config.get(field);
+            settingService.set(key, v == null ? "" : String.valueOf(v).trim());
         }
     }
 

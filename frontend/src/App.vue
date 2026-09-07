@@ -101,7 +101,7 @@ onMounted(async () => {
     const data = await response.json()
     if (data.success) {
       config.value = data.data
-      applyBackground(data.data)
+      applyBackground({ ...(data.data || {}), ...((data.data && data.data.background) || {}) })
       if (data.data.portal?.icp) {
         icp.value = data.data.portal.icp
       }
@@ -168,7 +168,7 @@ const refreshBackground = async () => {
     const data = await response.json()
     if (data.success) {
       config.value = data.data
-      applyBackground(data.data)
+      applyBackground({ ...(data.data || {}), ...((data.data && data.data.background) || {}) })
     }
   } catch (error) {
     console.error('Failed to refresh config:', error)

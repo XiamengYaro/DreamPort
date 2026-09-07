@@ -96,6 +96,27 @@ const routes = [
     component: () => import('./pages/PlayerProfile.vue')
   },
   {
+    path: '/announcements',
+    name: 'Announcements',
+    component: () => import('./pages/Announcements.vue')
+  },
+  {
+    path: '/bans',
+    name: 'Bans',
+    component: () => import('./pages/Bans.vue')
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    component: () => import('./pages/Chat.vue')
+  },
+  {
+    path: '/oauth2/authorize',
+    name: 'OAuth2Authorize',
+    component: () => import('./pages/OAuth2Authorize.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/machines',
     name: 'PublicMachines',
     component: () => import('./pages/PublicMachines.vue')

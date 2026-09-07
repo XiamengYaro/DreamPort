@@ -52,9 +52,20 @@ public final class ScheduledTasks {
             }
         });
 
-        // 经济快照(tasks.economy-interval,默认 300s)
-        runAtRate(plugin, cfg.economyIntervalSeconds(), task -> new cn.xmcraft.dreamport.plugin.internal.EconomyCollector(plugin)
-                .collectAndReport());
+        // 经济/玩家数据快照(tasks.economy-interval,默认 300s)
+        // 上报策略 economy.report:auto=仅主服(role: primary)上报,群组服指定主服推送,避免多服快照互相覆盖
+        boolean reportEconomy = switch (cfg.economyReport()) {
+            case "off" -> false;
+            case "on" -> true;
+            default -> "primary".equals(cfg.role());
+        };
+        if (reportEconomy) {
+            runAtRate(plugin, cfg.economyIntervalSeconds(), task -> new cn.xmcraft.dreamport.plugin.internal.EconomyCollector(plugin)
+                    .collectAndReport());
+        } else {
+            plugin.getLogger().info("经济快照上报已跳过(economy.report=" + cfg.economyReport()
+                    + ", role=" + cfg.role() + ")——由群组主服负责推送");
+        }
 
         // 游戏收件箱轮询：网页/QQ 消息下行进服（docs/ASTRBOT_PLAN.md §5.3/§5.6）
         if (plugin.pluginConfig().receiveChat()) {

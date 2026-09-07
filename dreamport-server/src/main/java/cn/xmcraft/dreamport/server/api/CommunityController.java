@@ -3,6 +3,7 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.appeal.AppealRecord;
 import cn.xmcraft.dreamport.server.appeal.AppealRepository;
 import cn.xmcraft.dreamport.server.config.WlProps;
+import cn.xmcraft.dreamport.server.economy.EconomyService;
 import cn.xmcraft.dreamport.server.invite.InviteRecord;
 import cn.xmcraft.dreamport.server.invite.InviteRepository;
 import cn.xmcraft.dreamport.server.invite.InviteService;
@@ -20,6 +21,7 @@ import cn.xmcraft.dreamport.server.village.VillageTradeRepository;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -59,12 +61,15 @@ public class CommunityController {
     private final WlProps props;
     private final SettingService settingService;
 
+    private final EconomyService economyService;
+
     public CommunityController(VillageTradeRepository villageRepository,
                                PublicMachineRepository machineRepository,
                                InviteRepository inviteRepository, InviteService inviteService,
                                NotificationRepository notificationRepository,
                                AppealRepository appealRepository, UserRepository userRepository,
-                               ReviewService reviewService, WlProps props, SettingService settingService) {
+                               ReviewService reviewService, WlProps props, SettingService settingService,
+                               EconomyService economyService) {
         this.villageRepository = villageRepository;
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
@@ -74,6 +79,7 @@ public class CommunityController {
         this.userRepository = userRepository;
         this.reviewService = reviewService;
         this.props = props;
+        this.economyService = economyService;
         this.settingService = settingService;
     }
 
@@ -134,6 +140,10 @@ public class CommunityController {
         villageRepository.save(new VillageTradeRecord(t.id(), t.playerName(), t.world(), t.x(), t.y(),
                 t.z(), t.itemInput(), t.itemOutput(), t.price(), "approve".equals(action) ? "approved" : "rejected",
                 t.createdAt(), AuthUtil.currentUser(request), System.currentTimeMillis()));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, t.playerName(), "village_" + action,
+                "村民族谱投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
+                "你的村民族谱投稿已" + ("approve".equals(action) ? "通过审核,已展示在村谱页" : "被拒绝"), null, null, null));
         return ResponseEntity.ok(ApiResponse.success("已" + ("approve".equals(action) ? "通过" : "拒绝")));
     }
 
@@ -237,6 +247,11 @@ public class CommunityController {
                 m.z(), m.builder(), m.usageText(), m.screenshotUrl(),
                 "approve".equals(action) ? "approved" : "rejected", m.submitter(), m.createdAt(),
                 AuthUtil.currentUser(request), System.currentTimeMillis()));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, m.builder(), "machine_" + action,
+                "公共机器投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
+                "你提交的公共机器「" + m.name() + "」已" + ("approve".equals(action) ? "通过审核,已展示在公共机器页" : "被拒绝"),
+                null, null, null));
         return ResponseEntity.ok(ApiResponse.success("已处理"));
     }
 
@@ -279,7 +294,36 @@ public class CommunityController {
         profile.put("qqNumber", u.qqNumber());
         profile.put("banReason", u.banReason());
         profile.put("status", u.status());
+        // 合并服务器内数据(经济快照,按游戏名匹配)
+        var econ = economyService.playerData(u.username());
+        profile.put("balance", econ.getOrDefault("balance", 0));
+        profile.put("timePlayed", econ.getOrDefault("timePlayed", 0L));
+        profile.put("activeDaysLast30", econ.getOrDefault("activeDaysLast30", 0));
+        profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
+        profile.put("banUntil", u.banUntil());
         return ResponseEntity.ok(profile);
+    }
+
+    /** 公开封禁名单(状态 banned,按封禁时间倒序) */
+    @GetMapping("/bans")
+    public Map<String, Object> bans() {
+        var list = userRepository.listAll().stream()
+                .filter(u -> "banned".equals(u.status()))
+                .sorted((a, b) -> Long.compare(b.banTime() == null ? 0 : b.banTime(),
+                        a.banTime() == null ? 0 : a.banTime()))
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("username", u.username());
+                    m.put("minecraftName", u.minecraftName());
+                    m.put("uuid", u.minecraftUuid());
+                    m.put("avatarUrl", "https://crafthead.net/avatar/"
+                            + (u.minecraftUuid() != null ? u.minecraftUuid() : u.username()) + "/128");
+                    m.put("banReason", u.banReason());
+                    m.put("banTime", u.banTime());
+                    m.put("banUntil", u.banUntil());
+                    return m;
+                }).toList();
+        return Map.of("success", true, "data", Map.of("bans", list));
     }
 
     // ---------- 邀请 ----------
@@ -393,6 +437,21 @@ public class CommunityController {
                 .map(NotificationRecord::markRead)
                 .ifPresent(notificationRepository::save);
         return ResponseEntity.ok(ApiResponse.success("已读"));
+    }
+
+    @DeleteMapping("/notifications/{id}")
+    public ResponseEntity<Object> deleteNotification(@PathVariable long id, HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return unauthorized();
+        }
+        var list = notificationRepository.findByUsernameIgnoreCase(me);
+        var target = list.stream().filter(n -> n.id() == id).findFirst();
+        if (target.isEmpty()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("通知不存在"));
+        }
+        notificationRepository.delete(target.get());
+        return ResponseEntity.ok(ApiResponse.success("已删除"));
     }
 
     @PostMapping("/notifications/read-all")

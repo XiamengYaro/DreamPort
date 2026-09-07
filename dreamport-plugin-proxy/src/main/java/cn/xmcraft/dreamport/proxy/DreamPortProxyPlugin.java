@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
  *   heartbeat-interval=60
  */
 @Plugin(id = "dreamport-proxy", name = "DreamPort Proxy",
-        version = "1.0.1", description = "DreamPort Velocity 代理端：统一白名单拦截与状态上报",
+        version = "1.2.0", description = "DreamPort Velocity 代理端：统一白名单拦截与状态上报",
         authors = {"Xia_Meng_"})
 public class DreamPortProxyPlugin {
 

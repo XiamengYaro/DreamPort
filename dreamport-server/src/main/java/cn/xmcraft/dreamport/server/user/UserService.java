@@ -79,7 +79,7 @@ public class UserService {
                 "bcrypt", passwordService.hash(password), null,
                 null, null, null, null, null, null, null, null, null,
                 null, username, null, null, null, null, null, null, null, null,
-                null, null, null);
+                null, null, null, null);
         return new RegisterResult(userRepository.save(user), null);
     }
 

@@ -5,10 +5,8 @@
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
         <div v-for="member in team" :key="member.name"
           class="card p-6 text-center card-hover">
-          <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center">
-            <img v-if="member.avatar" :src="member.avatar" :alt="member.name" class="w-full h-full object-cover"
-              @error="handleAvatarError($event)" />
-            <span v-else class="text-2xl font-bold text-white">{{ member.name.charAt(0) }}</span>
+          <div class="w-20 h-20 rounded-full mx-auto mb-4 overflow-hidden">
+            <AppAvatar :name="member.name" :avatar-url="member.avatar || null" size-class="w-20 h-20" />
           </div>
           <h3 class="text-white font-semibold mb-1">{{ member.name }}</h3>
           <p class="text-orange-400 text-sm">{{ member.role }}</p>
@@ -19,6 +17,7 @@
 </template>
 
 <script setup lang="ts">
+import AppAvatar from './ui/AppAvatar.vue'
 defineProps<{
   team: Array<{ name: string; role: string; avatar?: string }>
 }>()

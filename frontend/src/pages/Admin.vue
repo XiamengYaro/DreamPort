@@ -1,6 +1,6 @@
 <template>
   <div class="p-6 pt-24 pb-20">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
       <div class="card p-6 mb-6 flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-bold text-white">管理面板</h1>
@@ -13,17 +13,18 @@
         </label>
       </div>
 
-      <!-- Tab 按钮 -->
-            <!-- Tab 按钮（单行，可横向滚动） -->
-      <div class="card p-2 mb-6 flex gap-1 overflow-x-auto">
-        <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
-          class="flex-1 min-w-fit shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-sm transition-all duration-200"
-          :class="activeTab === m.key ? 'bg-orange-500/15 text-orange-400 font-medium' : 'text-stone-400 hover:text-white hover:bg-white/5'">
-          <AppIcon :name="m.icon" class="w-4 h-4" /><span>{{ m.label }}</span>
-        </button>
-      </div>
-
-      <!-- Loading -->
+      <!-- 左侧菜单(桌面竖排 / 移动端横滚) + 右侧内容区 -->
+      <div class="flex flex-col lg:flex-row gap-6 items-start">
+        <nav class="card p-2 w-full lg:w-52 lg:sticky lg:top-24 shrink-0 flex lg:flex-col gap-1 overflow-x-auto">
+          <button v-for="m in menuItems" :key="m.key" @click="activeTab = m.key"
+            class="flex items-center gap-2 whitespace-nowrap px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+            :class="activeTab === m.key ? 'text-orange-400 bg-orange-500/15' : 'text-stone-400 hover:text-white hover:bg-white/5'">
+            <AppIcon :name="m.icon" class="w-4 h-4" />
+            {{ m.label }}
+          </button>
+        </nav>
+        <!-- 内容区 -->
+        <div class="flex-1 min-w-0 w-full">
       <div v-if="loading" class="card p-12 text-center">
         <div class="inline-flex items-center gap-3 text-stone-400">
           <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -132,10 +133,7 @@
           </div>
           <div class="space-y-4">
             <div v-for="(member, index) in portalData.team" :key="index" class="flex items-center gap-4 p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <div class="w-12 h-12 rounded-full overflow-hidden bg-stone-700 flex-shrink-0">
-                <img v-if="member.avatar" :src="member.avatar" class="w-full h-full object-cover" @error="$event.target.src=''" />
-                <div v-else class="w-full h-full flex items-center justify-center text-stone-500 text-lg font-bold">{{ member.name?.charAt(0) }}</div>
-              </div>
+              <AppAvatar :name="member.name || ''" :avatar-url="member.avatar || null" size-class="w-12 h-12" />
               <div class="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input v-model="member.name" type="text" class="input text-sm" placeholder="名称" />
                 <input v-model="member.role" type="text" class="input text-sm" placeholder="角色" />
@@ -159,7 +157,12 @@
           <div class="space-y-4">
             <div v-for="(feature, index) in portalData.features" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
               <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input v-model="feature.icon" type="text" class="input text-sm" placeholder="图标 (emoji)" />
+                <div class="flex items-center gap-2">
+                  <AppIcon :name="feature.icon || 'star'" class="w-7 h-7 shrink-0" />
+                  <select v-model="feature.icon" class="input text-sm flex-1">
+                    <option v-for="n in iconNames" :key="n" :value="n">{{ n }}</option>
+                  </select>
+                </div>
                 <input v-model="feature.title" type="text" class="input text-sm" placeholder="标题" />
                 <input v-model="feature.description" type="text" class="input text-sm" placeholder="描述" />
               </div>
@@ -169,11 +172,25 @@
           <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存特色</button>
         </div>
 
-        <!-- 历史事件 -->
+        <!-- 时光照片墙(首页展示,玩家可留言) -->
         <div class="card p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">历史事件</h3>
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-lg font-semibold text-white">时光照片墙</h3>
             <button @click="addTimelineEvent" class="btn-secondary text-sm">+ 添加事件</button>
+          </div>
+          <p class="text-xs text-stone-500 mb-3">这里的内容与图片会展示在首页照片墙,玩家点击照片可放大并留言;分类用于首页筛选,可在下方添加</p>
+          <div class="mb-4 flex flex-wrap items-center gap-2">
+              <span class="text-xs text-stone-500">照片分类:</span>
+              <span v-for="(t, ti) in portalData.photoTypes" :key="t"
+                class="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-orange-500/10 text-orange-400 text-xs">
+                {{ typeName(t) }}
+                <button v-if="!['announcement', 'event', 'milestone'].includes(t)"
+                  @click="portalData.photoTypes.splice(ti, 1)" class="hover:text-rose-400" title="删除分类">×</button>
+              </span>
+              <input v-model="newPhotoType" placeholder="添加分类" maxlength="12"
+                class="input text-xs w-28 py-1" @keyup.enter="addPhotoType" />
+              <button @click="addPhotoType" class="btn-secondary text-xs py-1 px-3">添加</button>
+            </div>
           </div>
           <div class="space-y-4">
             <div v-for="(event, index) in portalData.timeline" :key="index" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
@@ -192,9 +209,8 @@
               </div>
             </div>
           </div>
-          <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存历史事件</button>
+          <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存照片墙</button>
         </div>
-      </div>
 
       <!-- 外观设置 Tab -->
       <div v-if="activeTab === 'settings' && !loading" class="card p-6 space-y-4">
@@ -227,8 +243,17 @@
       </div>
 
       <!-- 系统设置（注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
-      <div v-if="activeTab === 'settings' && !loading" class="space-y-6 mt-6">
+      <div v-if="activeTab === 'system' && !loading" class="space-y-6">
         <div class="card p-6 space-y-4">
+          <div class="card p-6 space-y-4 mb-6">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="users" class="w-5 h-5" /> 管理员名单</h3>
+            <p class="text-xs text-stone-500">名单内的用户登录后即拥有管理权限。每行一个用户名;<span class="text-amber-400">注意不要移除你自己</span>。</p>
+            <textarea v-model="adminsStr" rows="3" class="input w-full font-mono text-sm" placeholder="管理员用户名,每行一个"></textarea>
+            <button @click="saveAdmins" class="btn-primary text-sm" :disabled="savingAdmins">
+              {{ savingAdmins ? '保存中...' : '保存管理员名单' }}
+            </button>
+          </div>
+
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
@@ -326,6 +351,39 @@
         </div>
 
         <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> BlessingSkin 互通</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="bsCfg.enabled" class="accent-orange-500" /> 启用皮肤站互通（OAuth2 登录 + 角色数据）
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs text-stone-500 mb-1">皮肤站地址（末尾不带 /）</label>
+              <input v-model="bsCfg.url" class="input w-full font-mono" placeholder="http://skin.example.com" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">Client ID（自定义,两端一致即可）</label>
+              <input v-model="bsCfg.clientId" class="input w-full font-mono" placeholder="如 dreamport-oauth" /></div>
+          </div>
+          <div><label class="block text-xs text-stone-500 mb-1">Client Secret（自定义,两端一致即可）</label>
+            <div class="flex gap-2">
+              <input v-model="bsCfg.clientSecret" type="text" class="input flex-1 font-mono"
+                :placeholder="bsCfg.hasClientSecret ? '已配置（输入新值可覆盖）' : '40 位随机串'" />
+              <button @click="genBsSecret('clientSecret')" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+            </div>
+          </div>
+          <div><label class="block text-xs text-stone-500 mb-1">API 共享密钥（皮肤站插件向本站提供角色数据时校验）</label>
+            <div class="flex gap-2">
+              <input v-model="bsCfg.apiSecret" type="text" class="input flex-1 font-mono"
+                :placeholder="bsCfg.hasApiSecret ? '已配置（输入新值可覆盖）' : ''" />
+              <button @click="genBsSecret('apiSecret')" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+            </div>
+            <div class="text-xs text-stone-600 mt-1">需与皮肤站插件配置页的「角色数据接口密钥」一致</div>
+          </div>
+          <div class="text-xs text-stone-500">
+            皮肤站回调地址固定为 <code class="text-orange-400">皮肤站地址/auth/login/dreamport/callback</code>；
+            两端配置步骤见 docs/BLESSINGSKIN.md。
+          </div>
+          <button @click="saveBsSettings" class="btn-primary text-sm">保存 BlessingSkin 设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 游戏设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label class="block text-xs text-stone-500 mb-1">注册页地址</label>
@@ -348,13 +406,122 @@
         </div>
       </div>
 
+      <!-- 公告管理 Tab -->
+      <div v-if="activeTab === 'announcements' && !loading" class="space-y-6">
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="chat-bubble" class="w-5 h-5" /> 资讯中心</h3>
+            <button @click="addNews" class="btn-secondary text-sm">+ 添加资讯</button>
+          </div>
+          <div v-if="newsList.length === 0" class="text-sm text-stone-500">暂无资讯,点右上角添加</div>
+          <div class="space-y-4">
+            <div v-for="(n, i) in newsList" :key="n.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <input v-model="n.title" class="input text-sm" placeholder="标题" />
+                <input v-model="n.date" type="date" class="input text-sm" />
+              </div>
+              <div class="flex items-center gap-4 mb-2 text-xs text-stone-400">
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" v-model="n.pinned" class="accent-orange-500" /> 置顶
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" v-model="n.isDraft" class="accent-orange-500" /> 草稿(不展示)
+                </label>
+                <label class="flex items-center gap-1.5">
+                  定时发布 <input v-model="n.publishAt" type="datetime-local" class="input text-xs py-1 w-48" />
+                </label>
+              </div>
+              <textarea v-model="n.content" class="input text-sm" rows="5" placeholder="内容(支持 Markdown)"></textarea>
+              <div class="text-right mt-2"><button @click="newsList.splice(i, 1)" class="text-rose-400 hover:text-rose-300 text-sm">删除</button></div>
+            </div>
+          </div>
+          <button @click="saveAnnouncements" class="btn-primary mt-4" :disabled="savingAnnouncements">
+            {{ savingAnnouncements ? '保存中...' : '保存资讯中心' }}
+          </button>
+        </div>
+
+        <div class="card p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="document-text" class="w-5 h-5" /> 更新日志</h3>
+            <button @click="addChangelog" class="btn-secondary text-sm">+ 添加版本记录</button>
+          </div>
+          <div v-if="changelogList.length === 0" class="text-sm text-stone-500">暂无版本记录</div>
+          <div class="space-y-4">
+            <div v-for="(c, i) in changelogList" :key="c.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+                <input v-model="c.version" class="input text-sm" placeholder="版本(如: v1.1.0)" />
+                <input v-model="c.date" type="date" class="input text-sm" />
+              </div>
+              <textarea v-model="c.content" class="input text-sm" rows="5" placeholder="更新内容(支持 Markdown,一行一条)"></textarea>
+              <div class="text-right mt-2"><button @click="changelogList.splice(i, 1)" class="text-rose-400 hover:text-rose-300 text-sm">删除</button></div>
+            </div>
+          </div>
+          <button @click="saveAnnouncements" class="btn-primary mt-4" :disabled="savingAnnouncements">
+            {{ savingAnnouncements ? '保存中...' : '保存更新日志' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- 文档管理 Tab -->
+      <div v-if="activeTab === 'docs' && !loading" class="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-6 items-start">
+        <!-- 左:文档列表 -->
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-white">文档列表</h3>
+            <button @click="newDoc" class="btn-secondary text-xs">+ 新建文档</button>
+          </div>
+          <div v-for="cat in docsData.categories" :key="cat.name" class="mb-3">
+            <div class="text-xs text-stone-500 mb-1 px-1">{{ cat.displayName || cat.name }}</div>
+            <button v-for="f in cat.files" :key="f"
+              class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors"
+              :class="docForm.category === cat.name && docForm.filename === f ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+              @click="openDoc(cat.name, f)">
+              {{ f.replace(/\.md$/, '') }}
+            </button>
+          </div>
+          <div v-if="docsData.uncategorized.length" class="mb-3">
+            <div class="text-xs text-stone-500 mb-1 px-1">未分类</div>
+            <button v-for="f in docsData.uncategorized" :key="f"
+              class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors"
+              :class="!docForm.category && docForm.filename === f ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+              @click="openDoc(null, f)">
+              {{ f.replace(/\.md$/, '') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- 右:编辑器 + 实时预览 -->
+        <div class="card p-4" v-if="docForm.isNew || docForm.filename">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
+            <input v-model="docForm.title" class="input text-sm" placeholder="标题(即文件名)" />
+            <select v-model="docForm.category" class="input text-sm">
+              <option value="">未分类</option>
+              <option v-for="cat in docsData.categories" :key="cat.name" :value="cat.name">{{ cat.displayName || cat.name }}</option>
+            </select>
+          </div>
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <textarea v-model="docForm.content" class="input text-sm font-mono" rows="18"
+              placeholder="Markdown 内容…"></textarea>
+            <div class="rounded-xl bg-stone-900/60 border border-stone-700 p-4 overflow-y-auto max-h-[60vh]">
+              <div class="prose prose-invert max-w-none text-sm" v-html="docPreview"></div>
+            </div>
+          </div>
+          <div class="flex gap-2 mt-3">
+            <button @click="saveDoc" class="btn-primary text-sm" :disabled="!docForm.title || savingDocs">
+              {{ savingDocs ? '保存中...' : (docForm.isNew ? '创建文档' : '保存修改') }}
+            </button>
+            <button v-if="!docForm.isNew" @click="deleteDocCurrent" class="btn-secondary text-sm text-rose-400">删除文档</button>
+          </div>
+        </div>
+        <div class="card p-10 text-center text-stone-500 text-sm" v-else>
+          从左侧选择一篇文档,或点击「+ 新建文档」开始撰写(支持 Markdown,右侧实时预览)
+        </div>
+      </div>
+
       <!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
-        <div v-if="pendingUsers.length === 0" class="text-center py-12 text-stone-500">
-          <svg class="w-16 h-16 mx-auto mb-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
-          <div>暂无待审核玩家</div>
-        </div>
+        <EmptyState v-if="pendingUsers.length === 0" icon="check-circle" text="暂无待审核玩家" />
         <div v-else class="space-y-4">
           <div v-for="user in paginatedPendingUsers" :key="user.username" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -370,11 +537,7 @@
               </div>
             </div>
           </div>
-          <div v-if="pendingUsers.length > pageSize" class="flex justify-center gap-2 mt-4">
-            <button @click="pendingPage--" :disabled="pendingPage <= 1" class="btn-ghost text-sm">上一页</button>
-            <span class="text-stone-400 text-sm py-2">{{ pendingPage }} / {{ totalPendingPages }}</span>
-            <button @click="pendingPage++" :disabled="pendingPage >= totalPendingPages" class="btn-ghost text-sm">下一页</button>
-          </div>
+          <AppPagination :page="pendingPage" :pages="totalPendingPages" @change="pendingPage = $event" />
         </div>
       </div>
 
@@ -471,11 +634,7 @@
             </tbody>
           </table>
         </div>
-        <div v-if="filteredUsers.length > pageSize" class="flex justify-center gap-2 mt-4">
-          <button @click="playerPage--" :disabled="playerPage <= 1" class="btn-ghost text-sm">上一页</button>
-          <span class="text-stone-400 text-sm py-2">{{ playerPage }} / {{ totalPlayerPages }}</span>
-          <button @click="playerPage++" :disabled="playerPage >= totalPlayerPages" class="btn-ghost text-sm">下一页</button>
-        </div>
+        <AppPagination :page="playerPage" :pages="totalPlayerPages" @change="playerPage = $event" />
       </div>
 
       <!-- 统计分析 Tab -->
@@ -484,22 +643,10 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">数据总览</h3>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-orange-400">{{ statsOverview.totalUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">总用户数</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-emerald-400">{{ statsOverview.approvedUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">已通过</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-amber-400">{{ statsOverview.pendingUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">待审核</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-2xl font-bold text-rose-400">{{ statsOverview.bannedUsers || 0 }}</div>
-              <div class="text-xs text-stone-400">已封禁</div>
-            </div>
+            <StatCard :value="statsOverview.totalUsers || 0" label="总用户数" tone="orange" />
+            <StatCard :value="statsOverview.approvedUsers || 0" label="已通过" tone="emerald" />
+            <StatCard :value="statsOverview.pendingUsers || 0" label="待审核" tone="amber" />
+            <StatCard :value="statsOverview.bannedUsers || 0" label="已封禁" tone="rose" />
           </div>
         </div>
         
@@ -507,18 +654,9 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">注册统计</h3>
           <div class="grid grid-cols-3 gap-4">
-            <div class="text-center p-4 rounded-xl bg-blue-500/10">
-              <div class="text-xl font-bold text-blue-400">{{ statsOverview.todayRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">今日注册</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-purple-500/10">
-              <div class="text-xl font-bold text-purple-400">{{ statsOverview.weekRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">本周注册</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-cyan-500/10">
-              <div class="text-xl font-bold text-cyan-400">{{ statsOverview.monthRegistrations || 0 }}</div>
-              <div class="text-xs text-stone-400">本月注册</div>
-            </div>
+            <StatCard :value="statsOverview.todayRegistrations || 0" label="今日注册" tone="blue" />
+            <StatCard :value="statsOverview.weekRegistrations || 0" label="本周注册" tone="purple" />
+            <StatCard :value="statsOverview.monthRegistrations || 0" label="本月注册" tone="cyan" />
           </div>
         </div>
         
@@ -526,18 +664,9 @@
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">问卷统计</h3>
           <div class="grid grid-cols-3 gap-4">
-            <div class="text-center p-4 rounded-xl bg-emerald-500/10">
-              <div class="text-xl font-bold text-emerald-400">{{ statsOverview.questionnairePassRate?.toFixed(1) || 0 }}%</div>
-              <div class="text-xs text-stone-400">通过率</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-orange-500/10">
-              <div class="text-xl font-bold text-orange-400">{{ statsOverview.averageScore?.toFixed(1) || 0 }}</div>
-              <div class="text-xs text-stone-400">平均分</div>
-            </div>
-            <div class="text-center p-4 rounded-xl bg-stone-800/50">
-              <div class="text-xl font-bold text-white">{{ (statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0) }}</div>
-              <div class="text-xs text-stone-400">总提交数</div>
-            </div>
+            <StatCard :value="(statsOverview.questionnairePassRate?.toFixed(1) || 0) + '%'" label="通过率" tone="emerald" />
+            <StatCard :value="statsOverview.averageScore?.toFixed(1) || 0" label="平均分" tone="orange" />
+            <StatCard :value="(statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0)" label="总提交数" />
           </div>
         </div>
       </div>
@@ -549,7 +678,7 @@
           <table class="table min-w-[600px]">
             <thead><tr><th>时间</th><th>操作</th><th>操作者</th><th>目标</th><th>详情</th></tr></thead>
             <tbody>
-              <tr v-for="audit in auditLogs" :key="audit.id">
+              <tr v-for="audit in paginatedAuditLogs" :key="audit.id">
                 <td class="text-stone-400 text-sm whitespace-nowrap">{{ formatTime(audit.timestamp) }}</td>
                 <td><span class="badge-info text-xs">{{ audit.action }}</span></td>
                 <td class="text-white">{{ audit.operator }}</td>
@@ -564,12 +693,9 @@
       <!-- 申诉管理 Tab -->
       <div v-if="activeTab === 'appeals' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">申诉管理</h3>
-        <div v-if="appeals.length === 0" class="text-center py-12 text-stone-500">
-          <AppIcon name="envelope" class="w-10 h-10 mx-auto mb-2 text-stone-500" />
-          <div>暂无申诉</div>
-        </div>
+        <EmptyState v-if="appeals.length === 0" icon="envelope" text="暂无申诉" />
         <div v-else class="space-y-4">
-          <div v-for="appeal in appeals" :key="appeal.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <div v-for="appeal in paginatedAppeals" :key="appeal.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
             <div class="flex items-start justify-between mb-3">
               <div>
                 <div class="font-medium text-white">{{ appeal.username }}</div>
@@ -590,6 +716,14 @@
             </div>
           </div>
         </div>
+        <AppPagination :page="appealPage" :pages="totalAppealPages" @change="appealPage = $event" />
+      </div>
+
+      <!-- 问卷导出按钮 -->
+      <div v-if="activeTab === 'questionnaires' && !loading" class="card p-4 mb-6 flex gap-2">
+        <span class="text-sm text-stone-400 flex items-center">问卷数据:</span>
+        <a href="/api/admin/export/questionnaires?format=csv" class="btn-secondary text-sm">导出 CSV</a>
+        <a href="/api/admin/export/questionnaires?format=json" class="btn-secondary text-sm">导出 JSON</a>
       </div>
 
       <!-- 问卷管理 Tab -->
@@ -701,132 +835,112 @@
         </button>
       </div>
 
-    <!-- 确认对话框 -->
-    <div v-if="showConfirmDialog" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showConfirmDialog = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <h3 class="text-lg font-semibold text-white mb-2">{{ confirmTitle }}</h3>
-        <p class="text-stone-400 mb-6">{{ confirmMessage }}</p>
-        <div class="flex gap-3 justify-end">
-          <button @click="showConfirmDialog = false" class="btn-secondary">取消</button>
-          <button @click="executeConfirmAction" class="btn-primary">确认</button>
-        </div>
       </div>
-    </div>
-
-    <!-- 删除用户确认对话框（两次确认） -->
-    <div v-if="showDeleteDialog" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showDeleteDialog = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <!-- 第一次确认 -->
-        <template v-if="deleteStep === 1">
-          <h3 class="text-lg font-semibold text-red-400 mb-2">确认删除用户</h3>
-          <p class="text-stone-400 mb-4">你确定要删除用户 <span class="text-white font-medium">{{ deleteUsername }}</span> 吗？</p>
-          <p class="text-red-400 text-sm mb-6">此操作不可撤销，用户的所有数据将被永久删除。</p>
-          <div class="flex gap-3 justify-end">
-            <button @click="showDeleteDialog = false" class="btn-secondary">取消</button>
-            <button @click="deleteStep = 2" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl">继续</button>
-          </div>
-        </template>
-        <!-- 第二次确认 -->
-        <template v-else>
-          <h3 class="text-lg font-semibold text-red-400 mb-2">最终确认</h3>
-          <p class="text-stone-400 mb-4">请输入用户名 <span class="text-white font-medium">{{ deleteUsername }}</span> 以确认删除：</p>
-          <input v-model="deleteConfirmInput" type="text" class="input w-full mb-4" :placeholder="deleteUsername" />
-          <div class="flex gap-3 justify-end">
-            <button @click="showDeleteDialog = false; deleteStep = 1" class="btn-secondary">取消</button>
-            <button @click="executeDelete" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl" :disabled="deleteConfirmInput !== deleteUsername">确认删除</button>
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <!-- 基岩版 ID 设置弹窗 -->
-    <div v-if="showBedrockModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showBedrockModal = false">
-      <div class="card w-full max-w-md p-6 animate-scale-in">
-        <h3 class="text-lg font-semibold text-white mb-4">设置基岩版 ID</h3>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">玩家用户名</label>
-            <input :value="bedrockTargetUser?.username" type="text" class="input w-full" disabled />
-          </div>
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">当前 Java 版 ID</label>
-            <input :value="bedrockTargetUser?.minecraftName || '未验证'" type="text" class="input w-full" disabled />
-          </div>
-          <div>
-            <label class="block text-sm text-stone-300 mb-1">基岩版用户名</label>
-            <input v-model="bedrockNameInput" type="text" class="input w-full" placeholder="输入基岩版用户名（不含前缀）" />
-            <p class="mt-1 text-xs text-stone-500">系统会自动添加 "." 前缀</p>
-          </div>
-          <div v-if="bedrockTargetUser?.bedrockName" class="p-3 bg-stone-800/50 rounded-xl">
-            <p class="text-sm text-stone-400">当前基岩版 ID: <span class="text-white">{{ bedrockTargetUser.bedrockName }}</span></p>
-            <p class="text-sm text-stone-400 mt-1">验证状态: <span :class="bedrockTargetUser.bedrockVerified ? 'text-emerald-400' : 'text-amber-400'">{{ bedrockTargetUser.bedrockVerified ? '已验证' : '待验证' }}</span></p>
-          </div>
-          <div v-if="bedrockVerifyMessage" class="p-3 rounded-xl" :class="bedrockVerifySuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'">
-            {{ bedrockVerifyMessage }}
-          </div>
-        </div>
-        <div class="flex gap-3 justify-end mt-6">
-          <button @click="showBedrockModal = false" class="btn-secondary">取消</button>
-          <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
-            {{ bedrockLoading ? '设置中...' : '设置' }}
-          </button>
-          <button v-if="bedrockTargetUser?.bedrockName && !bedrockTargetUser?.bedrockVerified" @click="verifyBedrockId" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl" :disabled="bedrockLoading">
-            {{ bedrockLoading ? '验证中...' : '验证' }}
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 问卷详情弹窗 -->
-    <div v-if="showQuestionnaireDetail" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showQuestionnaireDetail = false">
-      <div class="card w-full max-w-4xl max-h-[85vh] overflow-hidden">
-        <div class="p-4 flex items-center justify-between border-b border-stone-700">
-          <h3 class="text-lg font-semibold text-white">{{ selectedUser?.username }} 的问卷详情</h3>
-          <button @click="showQuestionnaireDetail = false" class="text-stone-400 hover:text-white text-2xl">&times;</button>
-        </div>
-        <div class="p-4 overflow-auto max-h-[70vh]">
-          <div v-if="questionnaireDetail" class="space-y-4">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-orange-900/20 rounded-xl">
-              <div><div class="text-xs text-stone-400">分数</div><div class="text-2xl font-bold text-orange-400">{{ questionnaireDetail.questionnaireScore || 0 }}</div></div>
-              <div><div class="text-xs text-stone-400">状态</div><div :class="questionnaireDetail.questionnairePassed ? 'text-emerald-400' : 'text-rose-400'">{{ questionnaireDetail.questionnairePassed ? '已通过' : '未通过' }}</div></div>
-              <div><div class="text-xs text-stone-400">账号状态</div><div class="text-white">{{ getStatusText(questionnaireDetail.status) }}</div></div>
-              <div><div class="text-xs text-stone-400">答题时间</div><div class="text-sm text-stone-300">{{ formatTime(questionnaireDetail.questionnaireScoredAt) }}</div></div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">修改分数</h4>
-              <div class="flex flex-col sm:flex-row gap-4 items-end">
-                <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">分数</label><input v-model="editScore" type="number" class="input" min="0" /></div>
-                <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">通过状态</label><select v-model="editPassed" class="input"><option :value="true">通过</option><option :value="false">未通过</option></select></div>
-                <button @click="saveQuestionnaire" class="btn-primary w-full sm:w-auto">保存</button>
-              </div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">玩家答案</h4>
-              <div v-if="questionnaireDetail.questionnaireAnswers" class="space-y-3">
-                <div v-for="(answer, index) in parsedAnswers" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
-                  <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
-                  <p class="text-stone-300 text-sm">{{ answer }}</p>
-                </div>
-              </div>
-              <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
-            </div>
-            <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <h4 class="font-medium text-white mb-3">AI 评语</h4>
-              <div v-if="parsedReasons.length > 0" class="space-y-3">
-                <div v-for="(reason, index) in parsedReasons" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
-                  <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
-                  <textarea v-model="parsedReasons[index]" class="input text-sm" rows="2"></textarea>
-                </div>
-              </div>
-              <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
-              <button v-if="parsedReasons.length > 0" @click="saveReasons" class="btn-secondary mt-3 text-sm">保存评语</button>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
-    </div>
+
+    <!-- 确认对话框 -->
+    <AppModal :open="showConfirmDialog" :title="confirmTitle" @close="showConfirmDialog = false">
+      <p class="text-stone-400">{{ confirmMessage }}</p>
+      <template #footer>
+        <button @click="showConfirmDialog = false" class="btn-secondary">取消</button>
+        <button @click="executeConfirmAction" class="btn-primary">确认</button>
+      </template>
+    </AppModal>
+
+    <!-- 删除用户确认对话框（两次确认） -->
+    <AppModal :open="showDeleteDialog" :title="deleteStep === 1 ? '确认删除用户' : '最终确认'" @close="showDeleteDialog = false; deleteStep = 1">
+      <template v-if="deleteStep === 1">
+        <p class="text-stone-400 mb-4">你确定要删除用户 <span class="text-white font-medium">{{ deleteUsername }}</span> 吗？</p>
+        <p class="text-red-400 text-sm mb-6">此操作不可撤销，用户的所有数据将被永久删除。</p>
+      </template>
+      <template v-else>
+        <p class="text-stone-400 mb-4">请输入用户名 <span class="text-white font-medium">{{ deleteUsername }}</span> 以确认删除：</p>
+        <input v-model="deleteConfirmInput" type="text" class="input w-full" :placeholder="deleteUsername" />
+      </template>
+      <template #footer>
+        <button @click="showDeleteDialog = false; deleteStep = 1" class="btn-secondary">取消</button>
+        <button v-if="deleteStep === 1" @click="deleteStep = 2" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl">继续</button>
+        <button v-else @click="executeDelete" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl" :disabled="deleteConfirmInput !== deleteUsername">确认删除</button>
+      </template>
+    </AppModal>
+
+    <!-- 基岩版 ID 设置弹窗 -->
+    <AppModal :open="showBedrockModal" title="设置基岩版 ID" @close="showBedrockModal = false">
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">玩家用户名</label>
+          <input :value="bedrockTargetUser?.username" type="text" class="input w-full" disabled />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">当前 Java 版 ID</label>
+          <input :value="bedrockTargetUser?.minecraftName || '未验证'" type="text" class="input w-full" disabled />
+        </div>
+        <div>
+          <label class="block text-sm text-stone-300 mb-1">基岩版用户名</label>
+          <input v-model="bedrockNameInput" type="text" class="input w-full" placeholder="输入基岩版用户名（不含前缀）" />
+          <p class="mt-1 text-xs text-stone-500">系统会自动添加 "." 前缀</p>
+        </div>
+        <div v-if="bedrockTargetUser?.bedrockName" class="p-3 bg-stone-800/50 rounded-xl">
+          <p class="text-sm text-stone-400">当前基岩版 ID: <span class="text-white">{{ bedrockTargetUser.bedrockName }}</span></p>
+          <p class="text-sm text-stone-400 mt-1">验证状态: <span :class="bedrockTargetUser.bedrockVerified ? 'text-emerald-400' : 'text-amber-400'">{{ bedrockTargetUser.bedrockVerified ? '已验证' : '待验证' }}</span></p>
+        </div>
+        <div v-if="bedrockVerifyMessage" class="p-3 rounded-xl" :class="bedrockVerifySuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-amber-500/10 text-amber-400'">
+          {{ bedrockVerifyMessage }}
+        </div>
+      </div>
+      <template #footer>
+        <button @click="showBedrockModal = false" class="btn-secondary">取消</button>
+        <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
+          {{ bedrockLoading ? '设置中...' : '设置' }}
+        </button>
+        <button v-if="bedrockTargetUser?.bedrockName && !bedrockTargetUser?.bedrockVerified" @click="verifyBedrockId" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl" :disabled="bedrockLoading">
+          {{ bedrockLoading ? '验证中...' : '验证' }}
+        </button>
+      </template>
+    </AppModal>
+
+    <!-- 问卷详情弹窗 -->
+    <AppModal :open="showQuestionnaireDetail" size="xl" :title="(selectedUser?.username ?? '') + ' 的问卷详情'" @close="showQuestionnaireDetail = false">
+      <div v-if="questionnaireDetail" class="space-y-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-orange-900/20 rounded-xl">
+          <div><div class="text-xs text-stone-400">分数</div><div class="text-2xl font-bold text-orange-400">{{ questionnaireDetail.questionnaireScore || 0 }}</div></div>
+          <div><div class="text-xs text-stone-400">状态</div><div :class="questionnaireDetail.questionnairePassed ? 'text-emerald-400' : 'text-rose-400'">{{ questionnaireDetail.questionnairePassed ? '已通过' : '未通过' }}</div></div>
+          <div><div class="text-xs text-stone-400">账号状态</div><div class="text-white">{{ getStatusText(questionnaireDetail.status) }}</div></div>
+          <div><div class="text-xs text-stone-400">答题时间</div><div class="text-sm text-stone-300">{{ formatTime(questionnaireDetail.questionnaireScoredAt) }}</div></div>
+        </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">修改分数</h4>
+          <div class="flex flex-col sm:flex-row gap-4 items-end">
+            <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">分数</label><input v-model="editScore" type="number" class="input" min="0" /></div>
+            <div class="flex-1 w-full"><label class="block text-sm text-stone-300 mb-1">通过状态</label><select v-model="editPassed" class="input"><option :value="true">通过</option><option :value="false">未通过</option></select></div>
+            <button @click="saveQuestionnaire" class="btn-primary w-full sm:w-auto">保存</button>
+          </div>
+        </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">玩家答案</h4>
+          <div v-if="questionnaireDetail.questionnaireAnswers" class="space-y-3">
+            <div v-for="(answer, index) in parsedAnswers" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
+              <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
+              <p class="text-stone-300 text-sm">{{ answer }}</p>
+            </div>
+          </div>
+          <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
+        </div>
+        <div class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
+          <h4 class="font-medium text-white mb-3">AI 评语</h4>
+          <div v-if="parsedReasons.length > 0" class="space-y-3">
+            <div v-for="(reason, index) in parsedReasons" :key="index" class="p-3 bg-stone-700/50 rounded-lg">
+              <div class="text-sm font-medium text-stone-200 mb-2">第 {{ index + 1 }} 题</div>
+              <textarea v-model="parsedReasons[index]" class="input text-sm" rows="2"></textarea>
+            </div>
+          </div>
+          <div v-else class="text-stone-400 text-sm">暂无答题记录</div>
+          <button v-if="parsedReasons.length > 0" @click="saveReasons" class="btn-secondary mt-3 text-sm">保存评语</button>
+        </div>
+      </div>
+    </AppModal>
 </template>
 
 <script setup lang="ts">
@@ -834,7 +948,14 @@ import { ref, onMounted, inject, computed, watch } from 'vue'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import QuestionnaireEditor from '@/components/QuestionnaireEditor.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppPagination from '@/components/ui/AppPagination.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import StatCard from '@/components/ui/StatCard.vue'
+import AppAvatar from '@/components/ui/AppAvatar.vue'
+import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
+import { renderMarkdown } from '@/lib/markdown'
 
 const notify = inject('notify') as any
 
@@ -843,6 +964,9 @@ const maintenanceEnabled = ref(false)
 const menuItems = [
   { key: 'portal', icon: 'home', label: '门户管理' },
   { key: 'settings', icon: 'cog', label: '外观设置' },
+  { key: 'system', icon: 'cpu', label: '系统设置' },
+  { key: 'announcements', icon: 'chat-bubble', label: '公告管理' },
+  { key: 'docs', icon: 'document-text', label: '文档管理' },
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
@@ -860,16 +984,18 @@ const llmCfg = ref<any>({ enabled: false, apiBase: '', apiKey: '', model: '', sy
 const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser: 3 })
 const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
 const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false, groupBindingsStr: '[]' })
+const bsCfg = ref<any>({ enabled: false, url: '', clientId: '', clientSecret: '', hasClientSecret: false, apiSecret: '', hasApiSecret: false })
 const downloadsJson = ref('{}')
 
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, bs] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
-      api.getAstrbotSettings()
+      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
+      api.getBlessingskinConfig()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -878,11 +1004,13 @@ const loadSystemSettings = async () => {
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
     if (quest.success) Object.assign(questCfg.value, quest.data)
+    if (syscfg.success) adminsStr.value = (syscfg.data.admins || []).join('\n')
     if (astr.success) {
       Object.assign(astrbotCfg.value, astr.data)
       try { astrbotCfg.value.groupBindingsStr = JSON.stringify(JSON.parse(astr.data.groupBindings || '[]'), null, 2) }
       catch { astrbotCfg.value.groupBindingsStr = '[]' }
     }
+    if (bs.success) Object.assign(bsCfg.value, bs.data)
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -934,6 +1062,22 @@ const genAstrbotToken = () => {
   for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
   astrbotCfg.value.apiToken = t
 }
+const saveBsSettings = async () => {
+  try {
+    const r: any = await api.saveBlessingskinConfig(bsCfg.value)
+    if (r.success) {
+      notify?.success('BlessingSkin 设置已保存')
+      const fresh: any = await api.getBlessingskinConfig()
+      if (fresh.success) Object.assign(bsCfg.value, fresh.data)
+    }
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const genBsSecret = (field: string) => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let t = ''
+  for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
+  bsCfg.value[field] = t
+}
 const saveDownloads = async () => {
   try {
     const parsed = JSON.parse(downloadsJson.value)
@@ -954,8 +1098,6 @@ const toggleMaintenance = async () => {
     notify?.error(e.message || '操作失败')
   }
 }
-loadMaintenance()
-loadSystemSettings()
 const migrationFileInput = ref<HTMLInputElement | null>(null)
 const migrationFile = ref<File | null>(null)
 const migrationLoading = ref(false)
@@ -1002,6 +1144,7 @@ const bgBlur = ref(16)
 const announcementEdit = ref('')
 
 const portalData = ref({
+  photoTypes: ['announcement', 'event', 'milestone'] as string[],
   server_name: '夏日小镇',
   subtitle: 'XMCraft Minecraft 服务器',
   description: '',
@@ -1035,12 +1178,16 @@ const verifyConfig = ref({
 })
 const pendingPage = ref(1)
 const playerPage = ref(1)
+const auditPage = ref(1)
+const appealPage = ref(1)
 const pageSize = 10
 
 const showConfirmDialog = ref(false)
 const confirmTitle = ref('')
 const confirmMessage = ref('')
 const confirmAction = ref<() => void>(() => {})
+const showBanDaysInput = ref(false)
+const banDays = ref<number | null>(null)
 
 // 删除用户相关
 const showDeleteDialog = ref(false)
@@ -1064,7 +1211,25 @@ const filteredUsers = computed(() => {
   if (statusFilter.value) result = result.filter(u => u.status === statusFilter.value)
   return result
 })
+const knownTypeNames: Record<string, string> = {
+  announcement: '公告更新', event: '活动赛事', milestone: '成就纪念'
+}
+const typeName = (t: string) => knownTypeNames[t] || t
+const newPhotoType = ref('')
+const addPhotoType = () => {
+  const t = newPhotoType.value.trim()
+  if (!t) return
+  if (t.length > 12) { notify?.error('分类名过长(≤12 字)'); return }
+  if (portalData.value.photoTypes.includes(t) || knownTypeNames[t]) { notify?.error('该分类已存在'); return }
+  portalData.value.photoTypes.push(t)
+  newPhotoType.value = ''
+}
+
 const totalPendingPages = computed(() => Math.ceil(pendingUsers.value.length / pageSize))
+const totalAuditPages = computed(() => Math.max(1, Math.ceil(auditLogs.value.length / pageSize)))
+const paginatedAuditLogs = computed(() => auditLogs.value.slice((auditPage.value - 1) * pageSize, auditPage.value * pageSize))
+const totalAppealPages = computed(() => Math.max(1, Math.ceil(appeals.value.length / pageSize)))
+const paginatedAppeals = computed(() => appeals.value.slice((appealPage.value - 1) * pageSize, appealPage.value * pageSize))
 const totalPlayerPages = computed(() => Math.ceil(filteredUsers.value.length / pageSize))
 const paginatedPendingUsers = computed(() => { const s = (pendingPage.value - 1) * pageSize; return pendingUsers.value.slice(s, s + pageSize) })
 const paginatedUsers = computed(() => { const s = (playerPage.value - 1) * pageSize; return filteredUsers.value.slice(s, s + pageSize) })
@@ -1073,7 +1238,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings()])
   loading.value = false
 })
 
@@ -1282,7 +1447,10 @@ const loadPortalConfig = async () => {
         carousel: Array.isArray(p.carousel) ? p.carousel : [],
         team: Array.isArray(p.team) ? p.team : [],
         features: Array.isArray(p.features) ? p.features : [],
-        timeline: Array.isArray(p.timeline) ? p.timeline : []
+        timeline: (Array.isArray(p.timeline) ? p.timeline : []).map((t: any) =>
+          t && !t.id ? { ...t, id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6) } : t),
+        photoTypes: Array.isArray(p.photo_types) && p.photo_types.length
+          ? p.photo_types : ['announcement', 'event', 'milestone'],
       }
     }
   } catch (e) { console.error(e) }
@@ -1295,7 +1463,108 @@ const addTeamMember = () => { portalData.value.team.push({ name: '', role: '', a
 const removeTeamMember = (i: number) => { portalData.value.team.splice(i, 1) }
 const addFeature = () => { portalData.value.features.push({ icon: 'star', title: '', description: '' }) }
 const removeFeature = (i: number) => { portalData.value.features.splice(i, 1) }
-const addTimelineEvent = () => { portalData.value.timeline.push({ date: '', title: '', description: '', image: '' }) }
+const newTimelineId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+
+// ===== 文档管理(读取/新建/编辑/删除,MD 实时预览) =====
+const docsData = ref<any>({ categories: [], uncategorized: [] })
+const docForm = ref({ isNew: false, category: '' as string | null, filename: '', title: '', content: '' })
+const savingDocs = ref(false)
+const docPreview = computed(() => renderMarkdown(docForm.value.content || ''))
+
+const loadDocs = async () => {
+  try {
+    const r: any = await api.getDocs()
+    if (r.success || r.categories) docsData.value = r.data ?? r
+  } catch (e) { console.error(e) }
+}
+
+const openDoc = async (category: string | null, filename: string) => {
+  try {
+    const r: any = await api.readDoc(category, filename)
+    if (r.success || r.filename) {
+      const d = r.data ?? r
+      docForm.value = { isNew: false, category: d.category || category || '', filename: d.filename || filename, title: d.title || filename, content: d.content || '' }
+    }
+  } catch (e: any) { notify?.error(e.message || '读取失败') }
+}
+
+const newDoc = () => {
+  docForm.value = { isNew: true, category: '', filename: '', title: '', content: '' }
+}
+
+const saveDoc = async () => {
+  savingDocs.value = true
+  try {
+    let r: any
+    if (docForm.value.isNew) {
+      r = await api.createDoc(docForm.value.title, docForm.value.category, docForm.value.content)
+    } else {
+      r = await api.updateDoc(docForm.value.category, docForm.value.filename, docForm.value.content)
+    }
+    if (r.success) {
+      notify?.success('文档已保存')
+      await loadDocs()
+      if (docForm.value.isNew && r.data?.filename) {
+        docForm.value = { isNew: false, category: docForm.value.category, filename: r.data.filename, title: r.data.title || docForm.value.title, content: docForm.value.content }
+      }
+    } else { notify?.error(r.message || '保存失败') }
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingDocs.value = false
+}
+
+const deleteDocCurrent = async () => {
+  if (!confirm(`确认删除文档「${docForm.value.filename}」吗?`)) return
+  try {
+    const r: any = await api.deleteDoc(docForm.value.category, docForm.value.filename)
+    if (r.success) {
+      notify?.success('已删除')
+      docForm.value = { isNew: false, category: '', filename: '', title: '', content: '' }
+      await loadDocs()
+    } else { notify?.error(r.message || '删除失败') }
+  } catch (e: any) { notify?.error(e.message || '删除失败') }
+}
+
+// ===== 管理员名单 =====
+const adminsStr = ref('')
+const savingAdmins = ref(false)
+const loadAdmins = async () => {
+  try {
+    const r: any = await api.getSystemConfig()
+    if (r.success) adminsStr.value = (r.data.admins || []).join('\n')
+  } catch (e) { console.error(e) }
+}
+const saveAdmins = async () => {
+  savingAdmins.value = true
+  try {
+    const admins = adminsStr.value.split('\n').map((x: string) => x.trim()).filter(Boolean)
+    const r: any = await api.updateSystemConfig({ admins })
+    if (r.success) notify?.success('管理员名单已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingAdmins.value = false
+}
+
+// ===== 公告管理(资讯中心 + 更新日志) =====
+const newsList = ref<any[]>([])
+const changelogList = ref<any[]>([])
+const savingAnnouncements = ref(false)
+const newItemId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+const addNews = () => newsList.value.unshift({ id: newItemId(), title: '', date: new Date().toISOString().slice(0, 10), content: '', pinned: false, isDraft: false, publishAt: '', status: 'published' })
+const addChangelog = () => changelogList.value.unshift({ id: newItemId(), version: '', date: new Date().toISOString().slice(0, 10), content: '' })
+const saveAnnouncements = async () => {
+  savingAnnouncements.value = true
+  try {
+    for (const n of newsList.value) {
+      if (!n.id) n.id = newItemId()
+      if (!n.publishAt) n.publishAt = ''
+      n.status = n.isDraft ? 'draft' : 'published'
+    }
+    for (const c of changelogList.value) if (!c.id) c.id = newItemId()
+    const r: any = await api.saveAnnouncementsAdmin({ news: newsList.value, changelog: changelogList.value })
+    if (r.success) notify?.success('公告内容已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingAnnouncements.value = false
+}
+const addTimelineEvent = () => { portalData.value.timeline.push({ id: newTimelineId(), date: '', title: '', description: '', image: '', type: '' }) }
 const removeTimelineEvent = (i: number) => { portalData.value.timeline.splice(i, 1) }
 
 const savePortalConfig = async () => {
@@ -1351,9 +1620,9 @@ const saveSettings = async () => {
 }
 
 // 审核操作
-const confirmApprove = (u: string) => { confirmTitle.value = '确认通过'; confirmMessage.value = `确定通过 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.approveUser(u); notify?.success('已通过'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
-const confirmReject = (u: string) => { confirmTitle.value = '确认拒绝'; confirmMessage.value = `确定拒绝 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.rejectUser(u); notify?.success('已拒绝'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
-const confirmBan = (u: string) => { confirmTitle.value = '确认封禁'; confirmMessage.value = `确定封禁 ${u} 吗？`; confirmAction.value = async () => { try { await api.banUser(u); notify?.success('已封禁'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmApprove = (u: string) => { showBanDaysInput.value = false; confirmTitle.value = '确认通过'; confirmMessage.value = `确定通过 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.approveUser(u); notify?.success('已通过'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmReject = (u: string) => { showBanDaysInput.value = false; confirmTitle.value = '确认拒绝'; confirmMessage.value = `确定拒绝 ${u} 的白名单申请吗？`; confirmAction.value = async () => { try { await api.rejectUser(u); notify?.success('已拒绝'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
+const confirmBan = (u: string) => { banDays.value = null; showBanDaysInput.value = true; confirmTitle.value = '确认封禁'; confirmMessage.value = `确定封禁 ${u} 吗？可设置临时封禁天数(留空 = 永久)`; confirmAction.value = async () => { try { await api.banUser(u, undefined, banDays.value ?? undefined); notify?.success('已封禁'); await loadUsers() } catch (e: any) { notify?.error(e.message) } }; showConfirmDialog.value = true }
 const confirmDelete = (u: string) => { deleteUsername.value = u; deleteStep.value = 1; deleteConfirmInput.value = ''; showDeleteDialog.value = true }
 const executeDelete = async () => {
   if (deleteConfirmInput.value !== deleteUsername.value) return

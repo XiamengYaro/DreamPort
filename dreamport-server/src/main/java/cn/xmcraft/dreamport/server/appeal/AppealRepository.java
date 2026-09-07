@@ -8,6 +8,8 @@ public interface AppealRepository extends CrudRepository<AppealRecord, Long> {
 
     List<AppealRecord> findByStatusOrderByCreatedAtDesc(String status);
 
+    List<AppealRecord> findByUsernameIgnoreCaseOrderByCreatedAtDesc(String username);
+
     List<AppealRecord> findAllByOrderByCreatedAtDesc();
 
     boolean existsByUsernameIgnoreCaseAndStatus(String username, String status);

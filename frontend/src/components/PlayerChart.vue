@@ -8,7 +8,7 @@
       </svg>
       加载中...
     </div>
-    <div v-else-if="data.length === 0" class="text-center py-8 text-stone-500">暂无数据</div>
+    <EmptyState v-else-if="data.length === 0" text="暂无数据" />
     <div v-else class="relative" style="height: 200px;">
       <svg :viewBox="`0 0 ${width} ${height}`" class="w-full h-full" preserveAspectRatio="none">
         <!-- 网格线 -->
@@ -54,6 +54,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import EmptyState from './ui/EmptyState.vue'
 
 const props = defineProps<{ days?: number }>()
 

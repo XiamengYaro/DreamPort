@@ -63,8 +63,10 @@ public class EconomyService {
                 .findFirst()
                 .ifPresentOrElse(
                         p -> {
+                            result.put("name", username);
                             result.put("balance", p.balance());
                             result.put("playtimeSeconds", p.playtimeSeconds());
+                            result.put("timePlayed", p.playtimeSeconds() * 1000L);
                             result.put("activeDaysLast30", p.playtimeDays());
                             result.put("lastLogin", p.lastLogin());
                         },

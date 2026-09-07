@@ -161,6 +161,6 @@ public class InviteService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), invitedBy, user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 }

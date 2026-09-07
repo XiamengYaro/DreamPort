@@ -17,38 +17,13 @@
         </div>
       </div>
 
-      <!-- 服务器状态 -->
-      <div class="card p-6 mb-6">
-        <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.onlinePlayers || 0 }}</div>
-            <div class="text-xs text-stone-400">在线玩家</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.maxPlayers || 0 }}</div>
-            <div class="text-xs text-stone-400">最大人数</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.tps?.toFixed(1) || '0.0' }}</div>
-            <div class="text-xs text-stone-400">TPS</div>
-          </div>
-          <div class="text-center p-3 rounded-xl bg-stone-800/50">
-            <div class="text-2xl font-bold text-white">{{ serverStatus.minecraftVersion || '-' }}</div>
-            <div class="text-xs text-stone-400">版本</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 在线人数趋势图 -->
-      <PlayerChart :days="7" class="mb-6" />
-
-      <!-- 服务器聊天（网页 ↔ 服内消息互通，docs/CHAT_SERVERINFO_PLAN.md） -->
-      <ChatBox class="mb-6" />
-
       <!-- 个人游戏数据 -->
-      <div v-if="cmiEnabled && playerData.name" class="card p-6 mb-6">
+      <div v-if="cmiEnabled" class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4">我的游戏数据</h2>
+        <div v-if="!playerData.name" class="text-stone-500 text-sm py-4 text-center">
+          暂无服务器数据 —— 进入服务器后系统会自动采集(余额/时长/最近登录)
+        </div>
+        <template v-else>
         <!-- 在线状态 -->
         <div class="flex items-center gap-2 mb-4">
           <span class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
@@ -88,10 +63,50 @@
             </div>
           </div>
         </div>
+        </template>
       </div>
 
-      <!-- 基岩版 ID 管理 -->
+      <!-- 概览行：服务器状态 + 在线趋势 -->
+      <div class="mb-6 grid gap-6 md:grid-cols-2">
+        <div class="card p-6">
+          <h2 class="text-lg font-semibold text-white mb-4">服务器状态</h2>
+          <div class="grid grid-cols-2 gap-3">
+            <StatCard :value="serverStatus.onlinePlayers || 0" label="在线玩家" />
+            <StatCard :value="serverStatus.maxPlayers || 0" label="最大人数" />
+            <StatCard :value="serverStatus.tps?.toFixed(1) || '0.0'" label="TPS" />
+            <StatCard :value="serverStatus.minecraftVersion || '-'" label="版本" />
+          </div>
+        </div>
+        <!-- 在线人数趋势图 -->
+        <PlayerChart :days="7" />
+      </div>
+
+
+      <!-- 账号安全 -->
       <div class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <AppIcon name="shield-check" class="w-5 h-5 text-emerald-400" />
+          账号安全
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <input v-model="pwdForm.oldPassword" type="password" class="input" placeholder="当前密码" autocomplete="current-password" />
+          <input v-model="pwdForm.newPassword" type="password" class="input" placeholder="新密码(至少 8 位)" autocomplete="new-password" />
+          <input v-model="pwdForm.confirm" type="password" class="input" placeholder="确认新密码" autocomplete="new-password" />
+        </div>
+        <div v-if="pwdMessage" class="p-3 rounded-xl mb-3 text-sm"
+          :class="pwdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+          {{ pwdMessage }}
+        </div>
+        <button @click="changeMyPassword" class="btn-primary text-sm"
+          :disabled="!pwdForm.oldPassword || pwdForm.newPassword.length < 8 || pwdForm.newPassword !== pwdForm.confirm || pwdLoading">
+          {{ pwdLoading ? '修改中...' : '修改密码' }}
+        </button>
+      </div>
+
+      <!-- 账户绑定区（桌面双栏） -->
+      <div class="mb-6 grid gap-6 lg:grid-cols-2">
+        <!-- 基岩版 ID 管理 -->
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -140,7 +155,7 @@
         <!-- 未设置状态 -->
         <div v-else class="space-y-4">
           <p class="text-stone-400 text-sm">设置基岩版 ID 后，你可以使用基岩版登录服务器。</p>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <input v-model="bedrockNameInput" type="text" class="input flex-1" placeholder="输入基岩版用户名（不含前缀）" />
             <button @click="setBedrockId" class="btn-primary" :disabled="!bedrockNameInput || bedrockLoading">
               {{ bedrockLoading ? '设置中...' : '设置' }}
@@ -204,7 +219,7 @@
       </div>
 
       <!-- QQ 绑定 -->
-      <div class="card p-6 mb-6">
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -229,7 +244,7 @@
             在 QQ 群内向机器人发送 <code class="text-orange-400">/dp绑定</code>，验证码将私聊发送给你（5 分钟内有效）；
             也可以在游戏内执行 <code class="text-orange-400">/xmw qq bind &lt;验证码&gt;</code> 完成绑定。
           </p>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <input v-model="qqCode" type="text" class="input flex-1" maxlength="6" placeholder="输入 6 位验证码" />
             <button @click="bindQq" class="btn-primary" :disabled="qqCode.trim().length !== 6 || qqLoading">
               {{ qqLoading ? '绑定中...' : '绑定' }}
@@ -242,34 +257,8 @@
         </div>
       </div>
 
-      <!-- 修改 Minecraft ID 弹窗 -->
-      <div v-if="showChangeIdModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showChangeIdModal = false">
-        <div class="card w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">修改 Minecraft ID</h3>
-          <div class="space-y-4">
-            <div v-if="minecraftStatus.name">
-              <p class="text-sm text-stone-400">当前 ID: <span class="text-white">{{ minecraftStatus.name }}</span></p>
-            </div>
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">新的 Minecraft 用户名</label>
-              <input v-model="newMinecraftName" type="text" class="input w-full" placeholder="输入新的 Minecraft 用户名" />
-              <p class="mt-1 text-xs text-stone-500">修改后需要重新登录服务器验证（3分钟内有效）</p>
-            </div>
-            <div v-if="changeIdMessage" class="p-3 rounded-xl" :class="changeIdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-              {{ changeIdMessage }}
-            </div>
-          </div>
-          <div class="flex gap-3 justify-end mt-6">
-            <button @click="showChangeIdModal = false" class="btn-secondary">取消</button>
-            <button @click="setMinecraftId" class="btn-primary" :disabled="!newMinecraftName || minecraftLoading">
-              {{ minecraftLoading ? '设置中...' : '确认修改' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- 个人资料编辑 -->
-      <div class="card p-6 mb-6">
+      <div class="card p-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <svg class="w-5 h-5 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -280,9 +269,8 @@
         <div class="flex items-start gap-6">
           <!-- 头像 -->
           <div class="flex flex-col items-center gap-2">
-            <div class="w-20 h-20 rounded-full bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center overflow-hidden">
-              <img v-if="userProfile.avatar" :src="userProfile.avatar" alt="头像" class="w-full h-full object-cover" />
-              <span v-else class="text-3xl text-white font-bold">{{ username.charAt(0).toUpperCase() }}</span>
+            <div class="w-20 h-20 rounded-full overflow-hidden">
+              <AppAvatar :name="username" :avatar-url="userProfile.avatar || null" size-class="w-20 h-20" alt="头像" />
             </div>
             <label class="text-xs text-orange-400 cursor-pointer hover:text-orange-300">
               更换头像
@@ -306,34 +294,40 @@
           </div>
         </div>
       </div>
+      </div>
 
-      <!-- 修改邮箱弹窗 -->
-      <div v-if="showEmailModal" class="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50" @click.self="showEmailModal = false">
-        <div class="card w-full max-w-md p-6">
-          <h3 class="text-lg font-semibold text-white mb-4">修改邮箱</h3>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">新邮箱</label>
-              <input v-model="newEmail" type="email" class="input w-full" placeholder="输入新邮箱" />
-            </div>
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">验证码</label>
-              <div class="flex gap-2">
-                <input v-model="emailVerifyCode" type="text" class="input flex-1" placeholder="输入验证码" />
-                <button @click="sendEmailVerifyCode" class="btn-secondary text-sm whitespace-nowrap" :disabled="emailCooldown > 0">
-                  {{ emailCooldown > 0 ? `${emailCooldown}s` : '发送验证码' }}
-                </button>
+      <!-- 皮肤站角色（BlessingSkin 互通，管理员开启后才显示） -->
+      <div v-if="bsPlayers.configured" class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <AppIcon name="user" class="w-5 h-5 text-amber-400" />
+          皮肤站角色
+        </h2>
+        <div v-if="bsPlayers.loading" class="text-stone-500 text-sm py-4 text-center">加载中...</div>
+        <div v-else-if="!bsPlayers.linked" class="py-4 text-center space-y-3">
+          <p class="text-stone-500 text-sm">
+            尚未开通皮肤站账号 —— 开通后将自动创建同名角色，启动器账密与 DreamPort 相同
+          </p>
+          <button class="btn-primary text-sm" @click="showBsProvisionModal = true">一键开通</button>
+        </div>
+        <div v-else-if="bsPlayers.list.length === 0" class="text-stone-500 text-sm py-4 text-center">
+          皮肤站账号下还没有角色：修改 DreamPort 密码一次即可自动同步创建，或在皮肤站用户中心添加
+        </div>
+        <div v-else class="grid gap-3 sm:grid-cols-2">
+          <div v-for="p in bsPlayers.list" :key="p.pid"
+            class="flex items-center gap-4 p-3 rounded-xl bg-stone-900/40 border border-stone-800">
+            <img :src="`${bsPlayers.bsUrl}/avatar/player/${encodeURIComponent(p.name)}?3d=true&png=true&size=96`"
+              :alt="p.name" class="w-16 h-16 rounded-lg bg-stone-800 shrink-0"
+              @error="(e: Event) => ((e.target as HTMLImageElement).style.visibility = 'hidden')" />
+            <div class="flex-1 min-w-0">
+              <div class="text-white font-medium truncate">{{ p.name }}</div>
+              <div class="text-xs text-stone-500">{{ p.model === 'slim' ? 'Alex 模型' : 'Steve 模型' }}</div>
+              <div class="flex gap-3 mt-1 text-xs">
+                <a v-if="p.skinUrl" :href="p.skinUrl" target="_blank" rel="noopener"
+                  class="text-orange-400 hover:text-orange-300">查看皮肤</a>
+                <a v-if="p.capeUrl" :href="p.capeUrl" target="_blank" rel="noopener"
+                  class="text-orange-400 hover:text-orange-300">查看披风</a>
               </div>
             </div>
-            <div v-if="emailMessage" class="p-3 rounded-xl text-sm" :class="emailSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-              {{ emailMessage }}
-            </div>
-          </div>
-          <div class="flex gap-3 justify-end mt-6">
-            <button @click="showEmailModal = false" class="btn-secondary">取消</button>
-            <button @click="updateEmail" class="btn-primary" :disabled="!newEmail || !emailVerifyCode || emailLoading">
-              {{ emailLoading ? '修改中...' : '确认修改' }}
-            </button>
           </div>
         </div>
       </div>
@@ -342,6 +336,79 @@
       <div class="mb-6">
         <InviteManager @notify="(type: string, msg: string) => notify?.[type](msg)" />
       </div>
+
+      <!-- 修改 Minecraft ID 弹窗 -->
+      <AppModal :open="showChangeIdModal" title="修改 Minecraft ID" @close="showChangeIdModal = false">
+        <div class="space-y-4">
+          <div v-if="minecraftStatus.name">
+            <p class="text-sm text-stone-400">当前 ID: <span class="text-white">{{ minecraftStatus.name }}</span></p>
+          </div>
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">新的 Minecraft 用户名</label>
+            <input v-model="newMinecraftName" type="text" class="input w-full" placeholder="输入新的 Minecraft 用户名" />
+            <p class="mt-1 text-xs text-stone-500">修改后需要重新登录服务器验证（3分钟内有效）</p>
+          </div>
+          <div v-if="changeIdMessage" class="p-3 rounded-xl" :class="changeIdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ changeIdMessage }}
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-secondary" @click="showChangeIdModal = false">取消</button>
+          <button class="btn-primary" :disabled="!newMinecraftName || minecraftLoading" @click="setMinecraftId">
+            {{ minecraftLoading ? '设置中...' : '确认修改' }}
+          </button>
+        </template>
+      </AppModal>
+
+      <!-- 开通皮肤站账号弹窗 -->
+      <AppModal :open="showBsProvisionModal" title="开通皮肤站账号" @close="showBsProvisionModal = false">
+        <div class="space-y-4">
+          <p class="text-sm text-stone-400">
+            将在皮肤站创建与你同名的账号和角色，密码使用你当前输入的 DreamPort 密码
+            （两者保持一致，可直接用于启动器登录；之后修改 DreamPort 密码会自动同步）。
+          </p>
+          <input v-model="bsPassword" type="password" class="input w-full" placeholder="当前 DreamPort 密码"
+            autocomplete="current-password" />
+          <div v-if="bsProvisionMessage" class="p-3 rounded-xl text-sm"
+            :class="bsProvisionSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ bsProvisionMessage }}
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-secondary" @click="showBsProvisionModal = false">取消</button>
+          <button class="btn-primary" :disabled="!bsPassword || bsProvisionLoading" @click="provisionBs">
+            {{ bsProvisionLoading ? '开通中...' : '开通' }}
+          </button>
+        </template>
+      </AppModal>
+
+      <!-- 修改邮箱弹窗 -->
+      <AppModal :open="showEmailModal" title="修改邮箱" @close="showEmailModal = false">        <div class="space-y-4">
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">新邮箱</label>
+            <input v-model="newEmail" type="email" class="input w-full" placeholder="输入新邮箱" />
+          </div>
+          <div>
+            <label class="block text-sm text-stone-300 mb-1">验证码</label>
+            <div class="flex gap-2">
+              <input v-model="emailVerifyCode" type="text" class="input flex-1" placeholder="输入验证码" />
+              <button class="btn-secondary text-sm whitespace-nowrap" :disabled="emailCooldown > 0" @click="sendEmailVerifyCode">
+                {{ emailCooldown > 0 ? `${emailCooldown}s` : '发送验证码' }}
+              </button>
+            </div>
+          </div>
+          <div v-if="emailMessage" class="rounded-xl p-3 text-sm" :class="emailSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+            {{ emailMessage }}
+          </div>
+        </div>
+        <template #footer>
+          <button class="btn-secondary" @click="showEmailModal = false">取消</button>
+          <button class="btn-primary" :disabled="!newEmail || !emailVerifyCode || emailLoading" @click="updateEmail">
+            {{ emailLoading ? '修改中...' : '确认修改' }}
+          </button>
+        </template>
+      </AppModal>
+
     </div>
   </div>
 </template>
@@ -352,7 +419,9 @@ import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
-import ChatBox from '@/components/ChatBox.vue'
+import AppModal from '@/components/ui/AppModal.vue'
+import AppAvatar from '@/components/ui/AppAvatar.vue'
+import StatCard from '@/components/ui/StatCard.vue'
 
 const notify = inject('notify') as any
 
@@ -384,6 +453,32 @@ const minecraftSuccess = ref(false)
 const changeIdMessage = ref('')
 const changeIdSuccess = ref(false)
 
+// 账号安全(修改密码)
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
+const pwdLoading = ref(false)
+const pwdMessage = ref('')
+const pwdSuccess = ref(false)
+
+const changeMyPassword = async () => {
+  pwdLoading.value = true
+  pwdMessage.value = ''
+  try {
+    const r: any = await api.changePassword({ oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword })
+    if (r.success) {
+      pwdSuccess.value = true
+      pwdMessage.value = r.message || '密码已修改'
+      pwdForm.value = { oldPassword: '', newPassword: '', confirm: '' }
+    } else {
+      pwdSuccess.value = false
+      pwdMessage.value = r.message || r.msg || '修改失败'
+    }
+  } catch (e: any) {
+    pwdSuccess.value = false
+    pwdMessage.value = e.message || '修改失败'
+  }
+  pwdLoading.value = false
+}
+
 // QQ 绑定
 const qqStatus = ref<any>({ bound: false, qq: '', boundAt: 0 })
 const qqCode = ref('')
@@ -400,6 +495,53 @@ const emailLoading = ref(false)
 const emailMessage = ref('')
 const emailSuccess = ref(false)
 
+// BlessingSkin 皮肤站角色
+const bsPlayers = ref<any>({ configured: false, linked: false, bsUrl: '', list: [], loading: true })
+const showBsProvisionModal = ref(false)
+const bsPassword = ref('')
+const bsProvisionLoading = ref(false)
+const bsProvisionMessage = ref('')
+const bsProvisionSuccess = ref(false)
+
+const loadBsPlayers = async () => {
+  try {
+    const r: any = await api.getBsPlayers()
+    if (r.success) {
+      bsPlayers.value = {
+        configured: !!r.data.configured,
+        linked: !!r.data.linked,
+        bsUrl: r.data.bsUrl || '',
+        list: r.data.players || [],
+        loading: false
+      }
+      return
+    }
+  } catch (e) { console.error(e) }
+  bsPlayers.value.loading = false
+}
+
+const provisionBs = async () => {
+  bsProvisionLoading.value = true
+  bsProvisionMessage.value = ''
+  try {
+    const r: any = await api.provisionBs(bsPassword.value)
+    if (r.success) {
+      bsProvisionSuccess.value = true
+      bsProvisionMessage.value = '开通成功！皮肤站账密与 DreamPort 相同，可直接配置启动器'
+      bsPassword.value = ''
+      await loadBsPlayers()
+    } else {
+      bsProvisionSuccess.value = false
+      bsProvisionMessage.value = r.message || r.msg || '开通失败'
+    }
+  } catch (e: any) {
+    bsProvisionSuccess.value = false
+    bsProvisionMessage.value = e.message || '开通失败'
+  } finally {
+    bsProvisionLoading.value = false
+  }
+}
+
 onMounted(async () => {
   await Promise.all([
     loadServerStatus(),
@@ -408,7 +550,8 @@ onMounted(async () => {
     loadPlayerData(),
     loadBedrockStatus(),
     loadMinecraftStatus(),
-    loadQqStatus()
+    loadQqStatus(),
+    loadBsPlayers()
   ])
 })
 
@@ -503,9 +646,6 @@ const loadPlayerData = async () => {
   }
 }
 
-const getStatusClass = (s: string) => ({ pending: 'badge-warning', approved: 'badge-success', rejected: 'badge-danger', banned: 'badge-danger' }[s] || 'badge-info')
-const getStatusText = (s: string) => ({ pending: '待答题', approved: '已通过', rejected: '未通过', banned: '已封禁' }[s] || s)
-
 const formatPlaytime = (ms: number) => {
   if (!ms) return '0h'
   const hours = Math.floor(ms / 3600000)
@@ -558,7 +698,10 @@ const setMinecraftId = async () => {
   try {
     const r: any = await api.setMinecraftId(newMinecraftName.value)
     if (r.success) {
-      changeIdMessage.value = r.data.message || 'Minecraft ID 已更新，请登录服务器验证'
+      let msg = r.data.message || 'Minecraft ID 已更新，请登录服务器验证'
+      if (r.skinStationSynced === false) msg += '；皮肤站角色同步失败，可稍后重试'
+      else if (r.skinStationSynced === true) msg += '；皮肤站角色已同步改名'
+      changeIdMessage.value = msg
       changeIdSuccess.value = true
       showChangeIdModal.value = false
       newMinecraftName.value = ''

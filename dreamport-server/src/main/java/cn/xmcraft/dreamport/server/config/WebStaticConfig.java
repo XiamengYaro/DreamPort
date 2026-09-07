@@ -21,6 +21,7 @@ public class WebStaticConfig implements WebMvcConfigurer {
             "/", "/docs", "/whitelist", "/login", "/register", "/forgot-password", "/reset-password",
             "/verify", "/questionnaire", "/questionnaire-result", "/dashboard", "/leaderboard", "/setup",
             "/village", "/players", "/machines", "/map", "/admin",
+            "/oauth2/authorize",
             "/docs/*", "/player/*", "/questionnaire/*");
 
     @Override

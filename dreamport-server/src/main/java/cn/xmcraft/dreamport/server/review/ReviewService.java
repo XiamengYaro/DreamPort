@@ -2,12 +2,14 @@ package cn.xmcraft.dreamport.server.review;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.infra.MailService;
+import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.websocket.ReviewPushService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -28,16 +30,26 @@ public class ReviewService {
     private final SettingService settingService;
     private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
 
+    private final cn.xmcraft.dreamport.server.notification.NotificationRepository notificationRepository;
+
     public ReviewService(UserRepository userRepository, AuditService auditService,
                          MailService mailService, ReviewPushService pushService,
                          SettingService settingService,
-                         cn.xmcraft.dreamport.server.security.PasswordService passwordService) {
+                         cn.xmcraft.dreamport.server.security.PasswordService passwordService,
+                         NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.auditService = auditService;
         this.mailService = mailService;
         this.pushService = pushService;
         this.settingService = settingService;
         this.passwordService = passwordService;
+        this.notificationRepository = notificationRepository;
+    }
+
+    /** 站内通知写入(审核/封禁等系统事件,铃铛中心展示) */
+    private void notifyUser(String username, String type, String title, String message) {
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, username, type, title, message, null, null, null));
     }
 
     public record Result(boolean success, String message) {
@@ -65,6 +77,7 @@ public class ReviewService {
         }
         UserRecord user = userRepository.save(withStatus(userOpt.get(), "approved"));
         auditService.log("approve", operator, username, null);
+        notifyUser(username, "whitelist_approved", "白名单申请已通过", "你的白名单申请已通过,欢迎加入夏日小镇!");
         if (user.email() != null && !user.email().isBlank()) {
             mailService.sendReviewApproved(username, user.email(), lang);
         }
@@ -80,6 +93,7 @@ public class ReviewService {
         }
         userRepository.save(withStatus(userOpt.get(), "rejected"));
         auditService.log("reject", operator, username, reason);
+        notifyUser(username, "whitelist_rejected", "白名单申请未通过", "你的白名单申请未通过" + (reason == null || reason.isBlank() ? "" : ":" + reason));
         String email = userOpt.get().email();
         if (email != null && !email.isBlank()) {
             mailService.sendReviewRejected(username, reason == null ? "未通过审核" : reason, email, lang);
@@ -89,6 +103,11 @@ public class ReviewService {
     }
 
     public Result ban(String username, String operator, String reason) {
+        return ban(username, operator, reason, null);
+    }
+
+    /** days 非空 = 临时封禁(到期自动解封) */
+    public Result ban(String username, String operator, String reason, Integer days) {
         var userOpt = target(username);
         if (userOpt.isEmpty()) {
             return Result.fail("用户不存在");
@@ -101,11 +120,35 @@ public class ReviewService {
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
                 user.bedrockVerified(), user.bedrockVerifiedAt(),
-                reason == null ? "违规操作" : reason, System.currentTimeMillis(), user.avatar());
+                reason == null ? "违规操作" : reason, System.currentTimeMillis(),
+                days != null && days > 0 ? System.currentTimeMillis() + days * 86_400_000L : null,
+                user.avatar());
         userRepository.save(updated);
-        auditService.log("ban", operator, username, reason);
+        String durationText = days != null && days > 0 ? "临时封禁 " + days + " 天" : "永久封禁";
+        if (user.email() != null && !user.email().isBlank()) {
+            mailService.sendAccountBanned(username, user.email(), reason == null ? "违规操作" : reason, durationText, "zh");
+        }
+        auditService.log("ban", operator, username,
+                (reason == null ? "违规操作" : reason) + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)"));
+        notifyUser(username, "account_banned", "账号已被封禁",
+                "你的账号已被封禁" + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)") + ":" + (reason == null ? "违规操作" : reason));
         notify("user_banned", username);
         return Result.ok("已封禁玩家 " + username);
+    }
+
+    /** 到期临时封禁自动解封(每小时扫描;登录校验侧以状态为准,解封后即刻放行) */
+    @org.springframework.scheduling.annotation.Scheduled(fixedRate = 3_600_000, initialDelay = 90_000)
+    public void unbanExpired() {
+        var expired = userRepository.listAll().stream()
+                .filter(u -> "banned".equals(u.status()) && u.banUntil() != null
+                        && u.banUntil() <= System.currentTimeMillis())
+                .toList();
+        for (UserRecord u : expired) {
+            unban(u.username(), "system(临时封禁到期)");
+        }
+        if (!expired.isEmpty()) {
+            auditService.log("unban_expired", "system", "", expired.size() + " 个到期临时封禁已自动解除");
+        }
     }
 
     public Result unban(String username, String operator) {
@@ -120,9 +163,14 @@ public class ReviewService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), null, 0L, user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), null, 0L, null, user.avatar());
         userRepository.save(updated);
         auditService.log("unban", operator, username, null);
+        notifyUser(username, "account_unbanned", "封禁已解除", "你的账号封禁已解除,欢迎回来!");
+        String email = user.email() != null && !user.email().isBlank() ? user.email() : null;
+        if (email != null) {
+            mailService.sendAccountUnbanned(username, email, "zh");
+        }
         notify("user_unbanned", username);
         return Result.ok("已解封玩家 " + username);
     }
@@ -163,7 +211,7 @@ public class ReviewService {
                 "bcrypt", passwordService.hash(java.util.UUID.randomUUID().toString()), null,
                 null, null, null, null, null, null, null, null, null,
                 null, null, null, null, null, null, null, null, null, null,
-                null, null, null);
+                null, null, null, null);
         userRepository.save(user);
         auditService.log("add_user", operator, username, "email=" + email);
         return Result.ok("已添加用户 " + username);
@@ -176,6 +224,6 @@ public class ReviewService {
                 user.questionnaireReviewSummary(), user.questionnaireScoredAt(), user.questionnaireReasons(),
                 user.questionnaireAnswers(), user.minecraftUuid(), user.minecraftName(), user.microsoftVerified(),
                 user.verifiedAt(), user.verifyType(), user.invitedBy(), user.bedrockUuid(), user.bedrockName(),
-                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.avatar());
+                user.bedrockVerified(), user.bedrockVerifiedAt(), user.banReason(), user.banTime(), user.banUntil(), user.avatar());
     }
 }

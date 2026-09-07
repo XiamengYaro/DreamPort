@@ -1,12 +1,13 @@
 <template>
-  <section class="py-16 px-4 overflow-hidden">
+  <section class="py-16 px-4">
     <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl font-bold text-white text-center mb-4">历史时刻 · Timeline</h2>
-      
+      <h2 class="text-3xl font-bold text-white text-center mb-3">时光照片墙 · Moments</h2>
+      <p class="text-center text-stone-400 mb-6">记录服务器的点点滴滴 · 点击照片可放大查看与留言</p>
+
       <!-- 分类筛选 -->
       <div class="flex gap-2 justify-center mb-8 flex-wrap">
-        <button 
-          v-for="type in timelineTypes" 
+        <button
+          v-for="type in timelineTypes"
           :key="type.value"
           @click="currentType = type.value"
           :class="currentType === type.value ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'border-stone-700 text-stone-400 hover:border-stone-600'"
@@ -16,180 +17,197 @@
           <span v-if="getCount(type.value) > 0" class="ml-1 px-1.5 py-0.5 bg-orange-500/10 rounded text-xs">{{ getCount(type.value) }}</span>
         </button>
       </div>
-      
-      <!-- 垂直时间轴 -->
-      <div class="relative">
-        <!-- 中心竖线 -->
-        <div class="absolute left-1/2 transform -translate-x-1/2 h-full w-0.5 bg-gradient-to-b from-orange-500 via-amber-500 to-transparent"></div>
-        
-        <!-- 事件列表 -->
-        <div class="space-y-12">
-          <div v-for="(event, index) in filteredTimeline" :key="index" class="relative">
-            <!-- 时间节点 -->
-            <div class="absolute left-1/2 transform -translate-x-1/2 z-10 timeline-marker">
-              <div class="w-4 h-4 bg-orange-500 rounded-full ring-4 ring-stone-900 relative">
-                <div class="absolute -top-1 -left-1 w-6 h-6 bg-orange-500/30 rounded-full animate-ping"></div>
-              </div>
-            </div>
-            
-            <!-- 左侧内容 (奇数项) -->
-            <div v-if="index % 2 === 0" class="flex items-center gap-8">
-              <div class="flex-1 card p-6 card-hover group card-container">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400 inline-flex items-center gap-1"><AppIcon :name="getTypeIcon(event.type)" class="w-3.5 h-3.5" />{{ getTypeTag(event.type) }}</span>
-                  <span class="text-stone-500 text-sm">{{ event.date }}</span>
-                </div>
-                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
-                <p class="text-stone-400 text-sm leading-relaxed mb-4">{{ event.description }}</p>
-                <img v-if="event.image" :src="event.image" :alt="event.title" class="w-full max-h-64 object-cover rounded-lg shadow-lg" @error="handleImageError($event)" />
-              </div>
-            </div>
-            
-            <!-- 右侧内容 (偶数项) -->
-            <div v-else class="flex items-center gap-8 flex-row-reverse">
-              <div class="flex-1 card p-6 card-hover group card-container">
-                <div class="flex items-center gap-2 mb-3">
-                  <span class="px-2 py-1 rounded text-xs bg-orange-500/15 text-orange-400 inline-flex items-center gap-1"><AppIcon :name="getTypeIcon(event.type)" class="w-3.5 h-3.5" />{{ getTypeTag(event.type) }}</span>
-                  <span class="text-stone-500 text-sm">{{ event.date }}</span>
-                </div>
-                <h3 class="text-xl font-semibold text-white mb-2 group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
-                <p class="text-stone-400 text-sm leading-relaxed mb-4">{{ event.description }}</p>
-                <img v-if="event.image" :src="event.image" :alt="event.title" class="w-full max-h-64 object-cover rounded-lg shadow-lg" @error="handleImageError($event)" />
-              </div>
+
+      <!-- 照片墙 -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <button v-for="event in filteredTimeline" :key="photoKey(event)" @click="openPhoto(event)"
+          class="card card-hover overflow-hidden text-left group">
+          <div class="aspect-[4/3] bg-stone-800/60 overflow-hidden">
+            <img v-if="event.image" :src="event.image" :alt="event.title"
+              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              loading="lazy" decoding="async" @error="handleImageError($event)" />
+            <div v-else class="w-full h-full flex items-center justify-center">
+              <AppIcon name="document-text" class="w-10 h-10 text-stone-600" />
             </div>
           </div>
-        </div>
-        
-        <!-- 空状态 -->
-        <div v-if="filteredTimeline.length === 0" class="text-center py-12">
-          <AppIcon name="document-text" class="w-10 h-10 mx-auto mb-3 text-stone-500" />
-          <div class="text-stone-500">暂无相关内容</div>
-        </div>
-      </div>
-      
-      <!-- 加载更多按钮 -->
-      <div v-if="timeline.length > 10 && !showAll" class="text-center mt-8">
-        <button @click="showAll = true" class="px-6 py-3 rounded-xl bg-orange-500/15 border border-orange-500/30 text-orange-400 hover:bg-orange-500/25 transition-all">
-          加载更多
+          <div class="p-4">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="px-2 py-0.5 rounded text-xs bg-orange-500/15 text-orange-400">{{ getTypeName(event.type) }}</span>
+              <span class="text-stone-500 text-xs">{{ event.date }}</span>
+              <span class="ml-auto text-xs text-stone-500 flex items-center gap-1">
+                <AppIcon name="chat-bubble" class="w-3.5 h-3.5" />{{ commentCounts[photoKey(event)] || 0 }}
+              </span>
+            </div>
+            <h3 class="font-semibold text-white group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
+            <p class="text-stone-400 text-sm mt-1 line-clamp-2">{{ event.description }}</p>
+          </div>
         </button>
       </div>
+      <EmptyState v-if="filteredTimeline.length === 0" icon="document-text" text="暂无照片 —— 请在管理后台 → 门户管理 → 时光照片墙 中添加" />
     </div>
+
+    <!-- 灯箱:大图 + 详情 + 留言 -->
+    <AppModal :open="!!selected" size="xl" :title="(selected?.title ?? '') + (selected?.date ? ' · ' + selected.date : '')" @close="selected = null">
+      <template v-if="selected">
+        <img v-if="selected.image" :src="selected.image" :alt="selected.title"
+          class="w-full max-h-[55vh] object-contain rounded-xl bg-stone-900/60" @error="handleImageError($event)" />
+        <div class="flex items-center gap-2 mt-4 mb-2">
+          <span class="px-2 py-0.5 rounded text-xs bg-orange-500/15 text-orange-400">{{ getTypeName(selected.type) }}</span>
+          <span class="text-stone-500 text-sm">{{ selected.date }}</span>
+        </div>
+        <p class="text-stone-300 text-sm leading-relaxed">{{ selected.description }}</p>
+
+        <!-- 留言区 -->
+        <div class="mt-6 pt-4 border-t border-white/10">
+          <h4 class="font-medium text-white mb-3">留言 ({{ comments.length }})</h4>
+          <div v-if="comments.length === 0" class="text-stone-500 text-sm mb-3">还没有留言,来抢沙发~</div>
+          <div v-else class="space-y-3 max-h-60 overflow-y-auto mb-3 pr-1">
+            <div v-for="c in comments" :key="c.id" class="flex gap-3">
+              <AppAvatar :name="c.username" size-class="w-8 h-8" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm text-white font-medium">
+                  {{ c.username }}
+                  <span class="text-stone-500 text-xs ml-2">{{ formatTime(c.created_at) }}</span>
+                </div>
+                <p class="text-stone-300 text-sm break-words">{{ c.content }}</p>
+              </div>
+              <button v-if="isAdmin" class="text-stone-500 hover:text-rose-400 text-xs shrink-0" @click="removeComment(c.id)">删除</button>
+            </div>
+          </div>
+          <div v-if="loggedIn" class="flex gap-2">
+            <input v-model="commentDraft" class="input flex-1" maxlength="500" placeholder="写下你的留言..." @keyup.enter="submitComment" />
+            <button class="btn-primary" :disabled="!commentDraft.trim() || posting" @click="submitComment">
+              {{ posting ? '发送中...' : '发送' }}
+            </button>
+          </div>
+          <p v-else class="text-stone-500 text-sm">
+            <router-link to="/login" class="text-orange-400 hover:text-orange-300">登录</router-link> 后可以留言
+          </p>
+        </div>
+      </template>
+    </AppModal>
   </section>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
+import api from '@/services/api'
+import EmptyState from './ui/EmptyState.vue'
+import AppAvatar from './ui/AppAvatar.vue'
+import AppModal from './ui/AppModal.vue'
+import AppIcon from './AppIcon.vue'
 
-const props = defineProps<{
-  timeline: Array<{ date: string; title: string; description: string; image?: string; type?: string }>
-}>()
+interface TimelineEntry {
+  id?: string
+  date: string
+  title: string
+  description: string
+  image?: string
+  type?: string
+}
+
+const props = withDefaults(defineProps<{
+  timeline: TimelineEntry[]
+  /** 照片分类(后台「时光照片墙」可添加),缺省用内置三类 */
+  types?: string[]
+}>(), { types: () => [] })
 
 const currentType = ref('all')
-const showAll = ref(false)
+const selected = ref<TimelineEntry | null>(null)
+const comments = ref<any[]>([])
+const commentCounts = ref<Record<string, number>>({})
+const commentDraft = ref('')
+const posting = ref(false)
+const loggedIn = ref(!!localStorage.getItem('token'))
+const isAdmin = ref(localStorage.getItem('isAdmin') === 'true')
 
-// 时间类型定义
-const timelineTypes = [
+const KNOWN_TYPES = ['announcement', 'event', 'milestone']
+const typeNames: Record<string, string> = {
+  announcement: '公告更新',
+  event: '活动赛事',
+  milestone: '成就纪念'
+}
+
+const timelineTypes = computed(() => [
   { label: '全部', value: 'all' },
-  { label: '公告更新', value: 'announcement' },
-  { label: '活动赛事', value: 'event' },
-  { label: '成就纪念', value: 'milestone' }
-]
+  ...(props.types?.length ? props.types : KNOWN_TYPES).map(t => ({
+    label: typeNames[t] || t,
+    value: t
+  }))
+])
 
-// 类型标签映射
-const typeLabels: Record<string, string> = {
-  announcement: 'megaphone',
-  event: 'trophy',
-  milestone: 'sparkles'
-}
+const getTypeName = (type?: string) => (type && typeNames[type]) || '其他'
 
-// 获取类型标签
-const getTypeTag = (type?: string) => {
-  if (!type) return '其他'
-  const icon = typeIcons[type] || 'document-text'
-  return `${label} ${formatType(type)}`
-}
+/** 稳定键:条目 id 优先,缺省回退 日期|标题 哈希替代(与后台编辑器自动补 id 配套) */
+const photoKey = (event: TimelineEntry) =>
+  event.id || encodeURIComponent(`${event.date}|${event.title}`)
 
-// 格式化类型名
-const formatType = (type: string) => {
-  const map: Record<string, string> = {
-    announcement: '公告更新',
-    event: '活动赛事',
-    milestone: '成就纪念'
-  }
-  return map[type] || '其他'
-}
-
-// 按类型过滤
 const filteredTimeline = computed(() => {
-  if (currentType.value === 'all') {
-    return showAll.value ? props.timeline : props.timeline.slice(0, 10)
-  }
-  const filtered = props.timeline.filter(item => item.type === currentType.value)
-  return showAll.value ? filtered : filtered.slice(0, 10)
+  if (currentType.value === 'all') return props.timeline
+  return props.timeline.filter(item => item.type === currentType.value)
 })
 
-// 统计每种类型的数量
 const getCount = (type: string) => {
   if (type === 'all') return props.timeline.length
   return props.timeline.filter(item => item.type === type).length
 }
 
-// 处理图片加载失败
+const loadCounts = async () => {
+  try {
+    const r: any = await api.getPhotoCommentCounts()
+    if (r.success) commentCounts.value = r.data.counts || {}
+  } catch (e) { console.error(e) }
+}
+
+const openPhoto = async (event: TimelineEntry) => {
+  selected.value = event
+  comments.value = []
+  try {
+    const r: any = await api.getPhotoComments(photoKey(event))
+    if (r.success) comments.value = r.data.comments || []
+  } catch (e) { console.error(e) }
+}
+
+const submitComment = async () => {
+  if (!selected.value || !commentDraft.value.trim()) return
+  posting.value = true
+  try {
+    const key = photoKey(selected.value)
+    const r: any = await api.postPhotoComment(key, commentDraft.value.trim())
+    if (r.success) {
+      comments.value.unshift(r.data.comment ?? { username: localStorage.getItem('username') || '', content: commentDraft.value.trim(), created_at: Date.now() })
+      commentCounts.value[key] = (commentCounts.value[key] || 0) + 1
+      commentDraft.value = ''
+    } else {
+      alert(r.message || '留言失败')
+    }
+  } catch (e: any) {
+    alert(e.message || '留言失败')
+  }
+  posting.value = false
+}
+
+const removeComment = async (id: number) => {
+  try {
+    const r: any = await api.deletePhotoComment(id)
+    if (r.success) {
+      comments.value = comments.value.filter(c => c.id !== id)
+      const key = selected.value ? photoKey(selected.value) : ''
+      if (key) commentCounts.value[key] = Math.max(0, (commentCounts.value[key] || 1) - 1)
+    }
+  } catch (e: any) { alert(e.message || '删除失败') }
+}
+
+const formatTime = (ts: number) => {
+  if (!ts) return ''
+  const d = new Date(ts)
+  return `${d.getMonth() + 1}-${d.getDate()} ${d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}`
+}
+
 const handleImageError = (event: Event) => {
   const img = event.target as HTMLImageElement
   img.style.display = 'none'
 }
+
+onMounted(loadCounts)
 </script>
-
-<style scoped>
-/* 响应式布局 */
-@media (max-width: 768px) {
-  .flex-row-reverse {
-    flex-direction: column !important;
-  }
-  
-  .timeline-marker {
-    display: none !important;
-  }
-  
-  .card-container {
-    padding-left: 2rem !important;
-  }
-  
-  .card-container::before {
-    content: '';
-    position: absolute;
-    left: 0.75rem;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(to bottom, #f97316, #f59e0b);
-  }
-}
-
-/* 悬停动画 */
-.card-hover {
-  @apply transition-all duration-300;
-}
-
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-}
-
-/* 淡入动画 */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.group {
-  animation: fadeInUp 0.6s ease-out forwards;
-}
-</style>
