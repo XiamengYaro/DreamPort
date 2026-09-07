@@ -3,7 +3,7 @@
 > DreamPort 作 **OAuth2 Provider**（身份权威），BlessingSkin 皮肤站通过本仓库交付的
 > `dreamport-oauth` 插件接入：非正版玩家注册 DreamPort 时一键开通皮肤站账号与同名角色，
 > 账号密码与 DreamPort 保持同步；玩家用 DreamPort 账号授权登录皮肤站网页（纯 SSO），
-> DreamPort 反向获取玩家在皮肤站的角色（皮肤/披风）。插件当前版本 v1.1.0。
+> DreamPort 反向获取玩家在皮肤站的角色（皮肤/披风）。插件当前版本 v1.1.1。
 
 ---
 
@@ -78,7 +78,7 @@ Java 类玩家均可勾选「同时注册基岩版」。
 
 ### 4.1 安装 dreamport-oauth 插件
 
-1. 从构建产物中取 `bs-plugin-dreamport/dreamport-oauth-1.1.0.zip`（`scripts/build.sh` 自动打包；zip 内含一层 `dreamport-oauth/` 插件目录）
+1. 从构建产物中取 `bs-plugin-dreamport/dreamport-oauth-1.1.1.zip`（`scripts/build.sh` 自动打包；zip 内含一层 `dreamport-oauth/` 插件目录）
 2. 皮肤站管理后台 → Plugins → Upload Archive 上传 → 启用
 3. 点插件「配置」页，填写：
    - **DreamPort 站点地址**：如 `https://xmcraft.cn`
@@ -106,7 +106,7 @@ Java 类玩家均可勾选「同时注册基岩版」。
 
 | 现象 | 可能原因 |
 |---|---|
-| 上传插件提示成功但插件列表不显示 | zip 是平铺结构（旧版 1.0.0 打包缺陷）。清理 plugins/ 下误散落的文件后，用 1.1.0+ 的 zip 重新上传 |
+| 上传插件提示成功但插件列表不显示 | zip 是平铺结构（旧版 1.0.0 打包缺陷）。清理 plugins/ 下误散落的文件后，用 1.1.1+ 的 zip 重新上传 |
 | 配置页打不开/500 | enchants.config 写了完整类名（1.0.1 已修正）；或插件未启用 |
 | 登录页看不到「使用 DreamPort 账号登录」 | 插件未启用（<1.0.2 在 BS6 无 `<form>` 登录页不渲染）；或页面被浏览器缓存 |
 | 授权页提示「redirect_uri 不受支持」 | 两端地址协议/域名不一致（DreamPort 后台的皮肤站地址必须与皮肤站 `APP_URL` 同源） |

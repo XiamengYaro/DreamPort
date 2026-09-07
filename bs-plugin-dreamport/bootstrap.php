@@ -27,8 +27,9 @@ return function (Dispatcher $events) {
             $route->get('callback', 'DreamportOAuthController@callback');
         });
 
+        // 服务端接口(DreamPort 后端调用):共享密钥鉴权,无会话 ——
+        // 不能挂 web 组,否则 Laravel 的 VerifyCsrfToken 会以 419 拒绝所有 POST
         $routes->group([
-            'middleware' => ['web'],
             'prefix' => 'dreamport/api',
             'namespace' => 'Dreamport\\OAuth',
         ], function ($route) {
