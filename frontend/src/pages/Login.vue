@@ -2,9 +2,9 @@
   <div class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <img :src="logoUrl" alt="XMCraft" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
-        <h1 class="text-3xl font-bold tracking-tight text-white">连接至 XMCraft</h1>
-        <p class="mt-1 text-stone-400">XMCraft 用户账户系统</p>
+        <img :src="logoUrl" :alt="brand.short" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
+        <h1 class="text-3xl font-bold tracking-tight text-white">连接至 {{ brand.short }}</h1>
+        <p class="mt-1 text-stone-400">{{ brand.tagline }}</p>
       </div>
 
       <div v-if="!pendingAction" class="card p-8
@@ -35,7 +35,7 @@
           <router-link to="/forgot-password" class="text-sm text-stone-400 hover:text-orange-400 transition-colors">忘记密码？</router-link>
         </div>
         <div class="mt-4 text-center">
-          <router-link to="/register" class="text-sm text-orange-500 hover:text-orange-400 transition-colors">没有 XMCraft 账号？立即注册</router-link>
+          <router-link to="/register" class="text-sm text-orange-500 hover:text-orange-400 transition-colors">没有 {{ brand.short }} 账号？立即注册</router-link>
         </div>
       </div>
 
@@ -91,6 +91,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, inject, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import api from '@/services/api'

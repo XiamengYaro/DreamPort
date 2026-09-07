@@ -2,8 +2,8 @@
   <div class="min-h-screen p-4 pt-24 pb-8">
     <div class="w-full max-w-2xl mx-auto">
       <div class="text-center mb-8">
-        <img :src="logoUrl" alt="XMCraft" class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
-        <h1 class="text-3xl font-bold tracking-tight text-white">XMCraft 入服审核问卷</h1>
+        <img :src="logoUrl" :alt="brand.short" class="w-16 h-16 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
+        <h1 class="text-3xl font-bold tracking-tight text-white">{{ brand.short }} 入服审核问卷</h1>
         <p class="mt-1 text-stone-400">
           共 {{ questions.length }} 题 · 满分 {{ totalMaxScore }} 分 · 通过分数 {{ passScore }} 分
         </p>
@@ -166,6 +166,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, onMounted, inject, computed } from 'vue'
 import { useRouter } from 'vue-router'
 

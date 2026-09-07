@@ -77,7 +77,7 @@ public class ReviewService {
         }
         UserRecord user = userRepository.save(withStatus(userOpt.get(), "approved"));
         auditService.log("approve", operator, username, null);
-        notifyUser(username, "whitelist_approved", "白名单申请已通过", "你的白名单申请已通过,欢迎加入夏日小镇!");
+        notifyUser(username, "whitelist_approved", "白名单申请已通过", "你的白名单申请已通过,欢迎加入!期待在服务器里见到你。");
         if (user.email() != null && !user.email().isBlank()) {
             mailService.sendReviewApproved(username, user.email(), lang);
         }

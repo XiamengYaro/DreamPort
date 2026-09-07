@@ -2,9 +2,9 @@
   <div class="min-h-screen flex items-center justify-center p-4 overflow-y-auto pb-24">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <img :src="logoUrl" alt="XMCraft" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
-        <h1 class="text-3xl font-bold tracking-tight text-white">注册 XMCraft 账户</h1>
-        <p class="mt-1 text-stone-400">XMCraft 用户账户系统</p>
+        <img :src="logoUrl" :alt="brand.short" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
+        <h1 class="text-3xl font-bold tracking-tight text-white">注册 {{ brand.short }} 账户</h1>
+        <p class="mt-1 text-stone-400">{{ brand.tagline }}</p>
       </div>
 
       <div class="card p-8">
@@ -113,7 +113,7 @@
           <button type="submit" class="btn-primary w-full" :disabled="loading">{{ loading ? '注册中...' : '提交注册' }}</button>
         </form>
         <div class="mt-6 text-center">
-          <router-link to="/login" class="text-sm text-orange-500 hover:text-orange-400 transition-colors">已有 XMCraft 账号？立即登录</router-link>
+          <router-link to="/login" class="text-sm text-orange-500 hover:text-orange-400 transition-colors">已有 {{ brand.short }} 账号？立即登录</router-link>
         </div>
       </div>
     </div>
@@ -121,6 +121,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'

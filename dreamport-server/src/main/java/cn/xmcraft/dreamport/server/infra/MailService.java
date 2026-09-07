@@ -130,7 +130,7 @@ public class MailService {
 
     public void sendVerifyCode(String to, String code, String lang) {
         String l = lang(lang);
-        String subject = "zh".equals(l) ? "夏日小镇验证码" : "DreamPort verification code";
+        String subject = "zh".equals(l) ? brandServerName() + "验证码" : "DreamPort verification code";
         send(to, subject, render("verify_code", l, "code", code));
     }
 
@@ -148,7 +148,7 @@ public class MailService {
 
     public void sendPasswordReset(String username, String to, String resetUrl, String lang) {
         String l = lang(lang);
-        send(to, "zh".equals(l) ? "夏日小镇密码重置" : "DreamPort password reset",
+        send(to, "zh".equals(l) ? brandServerName() + "密码重置" : "DreamPort password reset",
                 render("password_reset", l, "username", username, "reset_url", resetUrl));
     }
 

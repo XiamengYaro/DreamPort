@@ -2,7 +2,7 @@
   <div class="min-h-screen p-6 pt-24 pb-20">
     <div class="max-w-4xl mx-auto">
       <div class="text-center mb-8">
-        <img :src="logoUrl" alt="XMCraft" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
+        <img :src="logoUrl" :alt="brand.short" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
         <h1 class="text-3xl font-bold tracking-tight text-white">ID 验证</h1>
         <p class="mt-1 text-stone-400">验证你的 Minecraft 账户</p>
       </div>
@@ -261,6 +261,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'

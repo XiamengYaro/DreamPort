@@ -30,10 +30,15 @@ public class ConfigController {
     public Map<String, Object> config() {
         Map<String, Object> portal = settingService.getMap(SettingService.KEY_PORTAL);
         if (portal.isEmpty()) {
-            portal.put("server_name", "夏日小镇");
+            portal.put("server_name", "夏日小镇XMCraft");
             portal.put("subtitle", "Minecraft 服务器");
             portal.put("description", "一个有趣、友好的 Minecraft 生存服务器，欢迎每一位玩家加入！");
         }
+        // 品牌字段(缺失时补默认值,前端据此渲染名称/主题色/favicon)
+        portal.putIfAbsent("brand_short", "XMCraft");
+        portal.putIfAbsent("brand_tagline", "玩家账户系统");
+        portal.putIfAbsent("favicon", "");
+        portal.putIfAbsent("accent", "#f97316");
         Object announcement = settingService.get(SettingService.KEY_ANNOUNCEMENT, String.class);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("portal", portal);

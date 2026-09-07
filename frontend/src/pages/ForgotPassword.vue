@@ -2,7 +2,7 @@
   <div class="min-h-screen flex items-center justify-center p-4">
     <div class="w-full max-w-md">
       <div class="text-center mb-8">
-        <img :src="logoUrl" alt="XMCraft" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
+        <img :src="logoUrl" :alt="brand.short" class="w-20 h-20 rounded-2xl mx-auto mb-4 shadow-lg shadow-orange-900/20 object-cover" />
         <h1 class="text-3xl font-bold tracking-tight text-white">忘记密码</h1>
         <p class="mt-1 text-stone-400">输入你的邮箱地址，我们将发送重置链接</p>
       </div>
@@ -38,6 +38,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, inject, onMounted } from 'vue'
 import api from '@/services/api'
 

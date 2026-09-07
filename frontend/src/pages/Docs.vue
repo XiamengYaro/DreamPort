@@ -109,7 +109,7 @@
               </svg>
             </div>
             <h2 class="text-2xl font-bold text-white mb-2">服务器文档中心</h2>
-            <p class="text-stone-400">欢迎查阅 XMCraft 服务器文档，请从左侧选择一个文档开始阅读</p>
+            <p class="text-stone-400">欢迎查阅 {{ brand.full }} 服务器文档，请从左侧选择一个文档开始阅读</p>
           </div>
 
           <!-- 分类卡片 -->
@@ -135,6 +135,8 @@
 </template>
 
 <script setup lang="ts">
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 import { ref, computed, onMounted } from 'vue'
 import { renderMarkdown } from '@/lib/markdown'
 

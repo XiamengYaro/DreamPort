@@ -49,6 +49,25 @@
               <label class="block text-sm text-stone-300 mb-1">副标题</label>
               <input v-model="portalData.subtitle" type="text" class="input" />
             </div>
+            <div>
+              <label class="block text-sm text-stone-300 mb-1">品牌短名(登录/注册页、页脚)</label>
+              <input v-model="portalData.brand_short" type="text" class="input" placeholder="XMCraft" />
+            </div>
+            <div>
+              <label class="block text-sm text-stone-300 mb-1">账户系统副标语(登录/注册页)</label>
+              <input v-model="portalData.brand_tagline" type="text" class="input" placeholder="玩家账户系统" />
+            </div>
+            <div>
+              <label class="block text-sm text-stone-300 mb-1">品牌主色(全站按钮/链接/图标跟随)</label>
+              <div class="flex gap-2 items-center">
+                <input v-model="portalData.accent" type="color" class="input w-14 h-9 p-1 cursor-pointer" />
+                <input v-model="portalData.accent" type="text" class="input flex-1 font-mono" placeholder="#f97316" />
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-stone-300 mb-1">Favicon 路径</label>
+              <input v-model="portalData.favicon" type="text" class="input font-mono" placeholder="/favicon.png" />
+            </div>
             <div class="md:col-span-2">
               <label class="block text-sm text-stone-300 mb-1">服务器描述</label>
               <textarea v-model="portalData.description" class="input min-h-[80px]" rows="3"></textarea>
@@ -1147,6 +1166,10 @@ const portalData = ref({
   photoTypes: ['announcement', 'event', 'milestone'] as string[],
   server_name: '夏日小镇',
   subtitle: 'XMCraft Minecraft 服务器',
+  brand_short: 'XMCraft',
+  brand_tagline: '玩家账户系统',
+  favicon: '',
+  accent: '#f97316',
   description: '',
   version: '1.20.4',
   server_ip: 'play.xmcraft.cn',
@@ -1435,6 +1458,10 @@ const loadPortalConfig = async () => {
       const p = r.data.portal
       portalData.value = {
         server_name: p.server_name || '夏日小镇',
+        brand_short: p.brand_short || 'XMCraft',
+        brand_tagline: p.brand_tagline || '玩家账户系统',
+        favicon: p.favicon || '',
+        accent: p.accent || '#f97316',
         subtitle: p.subtitle || '',
         description: p.description || '',
         version: p.version || '1.20.4',

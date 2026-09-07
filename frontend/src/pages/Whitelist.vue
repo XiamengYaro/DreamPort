@@ -223,7 +223,7 @@
 
       <!-- 状态8：未登录 - 显示注册/登录 -->
       <div v-else class="flex gap-4 justify-center">
-        <router-link to="/register" class="btn-primary">注册 XMCraft 账号</router-link>
+        <router-link to="/register" class="btn-primary">注册 {{ brand.short }} 账号</router-link>
         <router-link to="/login" class="btn-secondary">已有账号？登录</router-link>
       </div>
     </div>
@@ -235,6 +235,8 @@ import { ref, computed, onMounted, inject } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
+import { useBrand } from '@/lib/brand'
+const brand = useBrand()
 
 const router = useRouter()
 const config = inject('config') as any

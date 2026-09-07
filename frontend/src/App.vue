@@ -55,6 +55,7 @@ import { useRoute, useRouter } from 'vue-router'
 import TopNavigation from './components/TopNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
 import { api } from './services/api'
+import { initBrand, applyBrandFromConfig } from './lib/brand'
 
 const route = useRoute()
 const router = useRouter()
@@ -105,6 +106,8 @@ onMounted(async () => {
       if (data.data.portal?.icp) {
         icp.value = data.data.portal.icp
       }
+      // 全局品牌:名称/主题色/favicon/页面标题
+      applyBrandFromConfig(data.data.portal || {})
     }
   } catch (error) {
     console.error('Failed to load config:', error)
