@@ -124,6 +124,10 @@ public class ReviewService {
                 days != null && days > 0 ? System.currentTimeMillis() + days * 86_400_000L : null,
                 user.avatar());
         userRepository.save(updated);
+        String durationText = days != null && days > 0 ? "临时封禁 " + days + " 天" : "永久封禁";
+        if (user.email() != null && !user.email().isBlank()) {
+            mailService.sendAccountBanned(username, user.email(), reason == null ? "违规操作" : reason, durationText, "zh");
+        }
         auditService.log("ban", operator, username,
                 (reason == null ? "违规操作" : reason) + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)"));
         notifyUser(username, "account_banned", "账号已被封禁",

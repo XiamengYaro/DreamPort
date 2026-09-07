@@ -140,6 +140,10 @@ public class CommunityController {
         villageRepository.save(new VillageTradeRecord(t.id(), t.playerName(), t.world(), t.x(), t.y(),
                 t.z(), t.itemInput(), t.itemOutput(), t.price(), "approve".equals(action) ? "approved" : "rejected",
                 t.createdAt(), AuthUtil.currentUser(request), System.currentTimeMillis()));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, t.playerName(), "village_" + action,
+                "村民族谱投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
+                "你的村民族谱投稿已" + ("approve".equals(action) ? "通过审核,已展示在村谱页" : "被拒绝"), null, null, null));
         return ResponseEntity.ok(ApiResponse.success("已" + ("approve".equals(action) ? "通过" : "拒绝")));
     }
 
@@ -243,6 +247,11 @@ public class CommunityController {
                 m.z(), m.builder(), m.usageText(), m.screenshotUrl(),
                 "approve".equals(action) ? "approved" : "rejected", m.submitter(), m.createdAt(),
                 AuthUtil.currentUser(request), System.currentTimeMillis()));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, m.builder(), "machine_" + action,
+                "公共机器投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
+                "你提交的公共机器「" + m.name() + "」已" + ("approve".equals(action) ? "通过审核,已展示在公共机器页" : "被拒绝"),
+                null, null, null));
         return ResponseEntity.ok(ApiResponse.success("已处理"));
     }
 
