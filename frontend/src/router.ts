@@ -111,6 +111,12 @@ const routes = [
     component: () => import('./pages/Chat.vue')
   },
   {
+    path: '/oauth2/authorize',
+    name: 'OAuth2Authorize',
+    component: () => import('./pages/OAuth2Authorize.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/machines',
     name: 'PublicMachines',
     component: () => import('./pages/PublicMachines.vue')

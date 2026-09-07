@@ -296,6 +296,39 @@
       </div>
       </div>
 
+      <!-- 皮肤站角色（BlessingSkin 互通，管理员开启后才显示） -->
+      <div v-if="bsPlayers.configured" class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <AppIcon name="user" class="w-5 h-5 text-amber-400" />
+          皮肤站角色
+        </h2>
+        <div v-if="bsPlayers.loading" class="text-stone-500 text-sm py-4 text-center">加载中...</div>
+        <div v-else-if="!bsPlayers.linked" class="text-stone-500 text-sm py-4 text-center">
+          尚未关联皮肤站账号 —— 前往皮肤站点击「使用 DreamPort 账号登录」完成一次登录即可同步
+        </div>
+        <div v-else-if="bsPlayers.list.length === 0" class="text-stone-500 text-sm py-4 text-center">
+          皮肤站账号下还没有角色，请先在皮肤站添加角色
+        </div>
+        <div v-else class="grid gap-3 sm:grid-cols-2">
+          <div v-for="p in bsPlayers.list" :key="p.pid"
+            class="flex items-center gap-4 p-3 rounded-xl bg-stone-900/40 border border-stone-800">
+            <img :src="`${bsPlayers.bsUrl}/avatar/player/${encodeURIComponent(p.name)}?3d=true&png=true&size=96`"
+              :alt="p.name" class="w-16 h-16 rounded-lg bg-stone-800 shrink-0"
+              @error="(e: Event) => ((e.target as HTMLImageElement).style.visibility = 'hidden')" />
+            <div class="flex-1 min-w-0">
+              <div class="text-white font-medium truncate">{{ p.name }}</div>
+              <div class="text-xs text-stone-500">{{ p.model === 'slim' ? 'Alex 模型' : 'Steve 模型' }}</div>
+              <div class="flex gap-3 mt-1 text-xs">
+                <a v-if="p.skinUrl" :href="p.skinUrl" target="_blank" rel="noopener"
+                  class="text-orange-400 hover:text-orange-300">查看皮肤</a>
+                <a v-if="p.capeUrl" :href="p.capeUrl" target="_blank" rel="noopener"
+                  class="text-orange-400 hover:text-orange-300">查看披风</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- 邀请管理 -->
       <div class="mb-6">
         <InviteManager @notify="(type: string, msg: string) => notify?.[type](msg)" />
@@ -438,6 +471,26 @@ const emailLoading = ref(false)
 const emailMessage = ref('')
 const emailSuccess = ref(false)
 
+// BlessingSkin 皮肤站角色
+const bsPlayers = ref<any>({ configured: false, linked: false, bsUrl: '', list: [], loading: true })
+
+const loadBsPlayers = async () => {
+  try {
+    const r: any = await api.getBsPlayers()
+    if (r.success) {
+      bsPlayers.value = {
+        configured: !!r.data.configured,
+        linked: !!r.data.linked,
+        bsUrl: r.data.bsUrl || '',
+        list: r.data.players || [],
+        loading: false
+      }
+      return
+    }
+  } catch (e) { console.error(e) }
+  bsPlayers.value.loading = false
+}
+
 onMounted(async () => {
   await Promise.all([
     loadServerStatus(),
@@ -446,7 +499,8 @@ onMounted(async () => {
     loadPlayerData(),
     loadBedrockStatus(),
     loadMinecraftStatus(),
-    loadQqStatus()
+    loadQqStatus(),
+    loadBsPlayers()
   ])
 })
 

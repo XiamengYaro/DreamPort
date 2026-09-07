@@ -54,6 +54,13 @@
 - 启用开关与通过线：外观设置 → 问卷设置
 - AI 评分：外观设置 → AI 评分设置（OpenAI 兼容接口；低置信度自动转人工复核）
 
+### 皮肤站互通（BlessingSkin）
+- 前置：皮肤站安装 `dreamport-oauth` 插件（构建产物 `bs-plugin-dreamport/dreamport-oauth-*.zip`，要求 BS ^5.0.0）
+- 皮肤站端：`php artisan passport:client` 创建客户端（回调 `皮肤站地址/auth/login/dreamport/callback`），插件配置页填 DreamPort 地址/client_id/secret/共享密钥
+- DreamPort 端：管理后台 → 系统设置 → BlessingSkin 互通（启用/皮肤站地址/ClientId/Secret/API 共享密钥）
+- 验证：皮肤站登录页出现「使用 DreamPort 账号登录」→ 授权后登录；DreamPort 控制台出现「皮肤站角色」卡
+- 完整步骤与故障排查：docs/BLESSINGSKIN.md
+
 ### 数据迁移（旧版 XMWhitelist → DreamPort）
 - 全新部署：`/setup` 向导选「导入旧库」上传 `.sql`
 - 已运行：管理后台 → 数据迁移标签上传

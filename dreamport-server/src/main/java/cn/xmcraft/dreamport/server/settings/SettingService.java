@@ -34,6 +34,11 @@ public class SettingService {
     public static final String KEY_CHANGELOG = "changelog.list";
     public static final String KEY_ASTRBOT_ENABLED = "astrbot.enabled";
     public static final String KEY_ASTRBOT_TOKEN = "astrbot.api_token";
+    public static final String KEY_BLESSINGSKIN_ENABLED = "blessingskin.enabled";
+    public static final String KEY_BLESSINGSKIN_URL = "blessingskin.url";
+    public static final String KEY_BLESSINGSKIN_CLIENT_ID = "blessingskin.client_id";
+    public static final String KEY_BLESSINGSKIN_CLIENT_SECRET = "blessingskin.client_secret";
+    public static final String KEY_BLESSINGSKIN_API_SECRET = "blessingskin.api_secret";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

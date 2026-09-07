@@ -351,6 +351,35 @@
         </div>
 
         <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> BlessingSkin 互通</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="bsCfg.enabled" class="accent-orange-500" /> 启用皮肤站互通（OAuth2 登录 + 角色数据）
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs text-stone-500 mb-1">皮肤站地址（末尾不带 /）</label>
+              <input v-model="bsCfg.url" class="input w-full font-mono" placeholder="https://skin.example.com" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">Client ID</label>
+              <input v-model="bsCfg.clientId" class="input w-full font-mono" placeholder="在皮肤站 Passport 客户端获取" /></div>
+          </div>
+          <div><label class="block text-xs text-stone-500 mb-1">Client Secret</label>
+            <input v-model="bsCfg.clientSecret" type="text" class="input w-full font-mono"
+              :placeholder="bsCfg.hasClientSecret ? '已配置（输入新值可覆盖）' : ''" /></div>
+          <div><label class="block text-xs text-stone-500 mb-1">API 共享密钥（皮肤站插件向本站提供角色数据时校验）</label>
+            <div class="flex gap-2">
+              <input v-model="bsCfg.apiSecret" type="text" class="input flex-1 font-mono"
+                :placeholder="bsCfg.hasApiSecret ? '已配置（输入新值可覆盖）' : ''" />
+              <button @click="genBsSecret" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+            </div>
+            <div class="text-xs text-stone-600 mt-1">需与皮肤站插件配置页的「角色数据接口密钥」一致</div>
+          </div>
+          <div class="text-xs text-stone-500">
+            皮肤站回调地址固定为 <code class="text-orange-400">皮肤站地址/auth/login/dreamport/callback</code>；
+            两端配置步骤见 docs/BLESSINGSKIN.md。
+          </div>
+          <button @click="saveBsSettings" class="btn-primary text-sm">保存 BlessingSkin 设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 游戏设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label class="block text-xs text-stone-500 mb-1">注册页地址</label>
@@ -951,16 +980,18 @@ const llmCfg = ref<any>({ enabled: false, apiBase: '', apiKey: '', model: '', sy
 const inviteCfg = ref<any>({ enabled: true, codeExpiryDays: 7, maxInvitesPerUser: 3 })
 const gameCfg = ref<any>({ webRegisterUrl: '', bedrockEnabled: false, bedrockPrefix: '.' })
 const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false, groupBindingsStr: '[]' })
+const bsCfg = ref<any>({ enabled: false, url: '', clientId: '', clientSecret: '', hasClientSecret: false, apiSecret: '', hasApiSecret: false })
 const downloadsJson = ref('{}')
 
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, bs] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
-      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig()
+      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
+      api.getBlessingskinConfig()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -975,6 +1006,7 @@ const loadSystemSettings = async () => {
       try { astrbotCfg.value.groupBindingsStr = JSON.stringify(JSON.parse(astr.data.groupBindings || '[]'), null, 2) }
       catch { astrbotCfg.value.groupBindingsStr = '[]' }
     }
+    if (bs.success) Object.assign(bsCfg.value, bs.data)
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -1025,6 +1057,22 @@ const genAstrbotToken = () => {
   let t = ''
   for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
   astrbotCfg.value.apiToken = t
+}
+const saveBsSettings = async () => {
+  try {
+    const r: any = await api.saveBlessingskinConfig(bsCfg.value)
+    if (r.success) {
+      notify?.success('BlessingSkin 设置已保存')
+      const fresh: any = await api.getBlessingskinConfig()
+      if (fresh.success) Object.assign(bsCfg.value, fresh.data)
+    }
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+const genBsSecret = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+  let t = ''
+  for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
+  bsCfg.value.apiSecret = t
 }
 const saveDownloads = async () => {
   try {
