@@ -16,6 +16,10 @@ echo "[3/4] 打包后端与插件..."
 mvn clean package -DskipTests
 
 echo "[4/4] 打包 BlessingSkin 插件..."
+# 防静默失败:关键注入代码必须存在,否则插件"安装成功但功能缺失"
+grep -q "RenderingHeader" bs-plugin-dreamport/bootstrap.php || { echo "✗ bootstrap.php 缺少 RenderingHeader 注入"; exit 1; }
+grep -q "dp-theme-css" bs-plugin-dreamport/views/theme-sync.blade.php || { echo "✗ theme-sync 视图缺失"; exit 1; }
+grep -q "dp_theme_sync" bs-plugin-dreamport/src/Configuration.php || { echo "✗ 配置页缺少主题同步开关"; exit 1; }
 # BS 上传安装是原样解压到 plugins/,zip 内必须含一层插件目录(PluginManager 只扫描一级子目录)
 ZIP_NAME="dreamport-oauth-$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bs-plugin-dreamport/package.json | head -1).zip"
 STAGE="$(mktemp -d)"

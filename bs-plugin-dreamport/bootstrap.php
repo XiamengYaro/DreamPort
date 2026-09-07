@@ -7,7 +7,7 @@
  * 1. /auth/login/dreamport          重定向到 DreamPort 的 OAuth2 授权页（SPA 路由 /oauth2/authorize）
  * 2. /auth/login/dreamport/callback 授权码回调：code 换 token → 拉取用户信息 → 按 email 关联/注册 → 登录
  * 3. /dreamport/api/players         DreamPort 服务端按 email 拉取角色（X-Dreamport-Secret 共享密钥）
- * 4. RenderingFooter 注入登录页「使用 DreamPort 账号登录」按钮
+ * 4. RenderingFooter 注入登录页按钮;RenderingHeader 注入主站同款主题(UI 同步)
  *
  * 配置见插件管理 → 本插件「配置」页。
  */
@@ -43,10 +43,19 @@ return function (Dispatcher $events) {
         });
     });
 
-    // 登录页注入按钮（.login-box 仅存在于登录/注册页，注册页不注入则脚本自然不渲染按钮）
+    // 登录页注入按钮（.login-box 仅存在于登录页）
     $events->listen(RenderingFooter::class, function (RenderingFooter $event) {
         $event->addContent(
             view('Dreamport\OAuth::login-button', ['url' => url('/auth/login/dreamport')])->render()
         );
     });
+
+    // 主题同步：全页注入「主站同款」深色玻璃风格，品牌色/背景图实时跟随主站配置
+    if (option('dp_theme_sync', true)) {
+        $events->listen(RenderingHeader::class, function (RenderingHeader $event) {
+            $event->addContent(
+                view('Dreamport\OAuth::theme-sync', ['dpUrl' => rtrim((string) option('dp_url', ''), '/')])->render()
+            );
+        });
+    }
 };
