@@ -250,6 +250,29 @@ public class SiteAdminController {
         return csvFile(csv, "users.csv");
     }
 
+    @GetMapping("/admin/export/questionnaires")
+    public ResponseEntity<Object> exportQuestionnaires(@RequestParam(defaultValue = "csv") String format,
+                                                       HttpServletRequest request) {
+        if (!admin(request)) {
+            return forbidden();
+        }
+        var users = userRepository.listAll().stream()
+                .filter(u -> u.questionnaireScoredAt() != null)
+                .sorted((a, b) -> Long.compare(b.questionnaireScoredAt(), a.questionnaireScoredAt()))
+                .toList();
+        if ("json".equalsIgnoreCase(format)) {
+            return ResponseEntity.ok()
+                    .header("Content-Disposition", "attachment; filename=questionnaires.json")
+                    .body(users);
+        }
+        StringBuilder csv = new StringBuilder("\uFEFFUsername,Score,Passed,ScoredAt,Reasons,Answers\n");
+        users.forEach(u -> csv.append(csvRow(List.of(
+                orEmpty(u.username()), String.valueOf(u.questionnaireScore()),
+                String.valueOf(u.questionnairePassed()), String.valueOf(u.questionnaireScoredAt()),
+                orEmpty(u.questionnaireReasons()), orEmpty(u.questionnaireAnswers())))));
+        return csvFile(csv, "questionnaires.csv");
+    }
+
     @GetMapping("/admin/export/audits")
     public ResponseEntity<Object> exportAudits(@RequestParam(defaultValue = "csv") String format,
                                                HttpServletRequest request) {

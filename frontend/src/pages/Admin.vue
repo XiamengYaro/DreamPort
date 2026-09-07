@@ -678,6 +678,13 @@
         <AppPagination :page="appealPage" :pages="totalAppealPages" @change="appealPage = $event" />
       </div>
 
+      <!-- 问卷导出按钮 -->
+      <div v-if="activeTab === 'questionnaires' && !loading" class="card p-4 mb-6 flex gap-2">
+        <span class="text-sm text-stone-400 flex items-center">问卷数据:</span>
+        <a href="/api/admin/export/questionnaires?format=csv" class="btn-secondary text-sm">导出 CSV</a>
+        <a href="/api/admin/export/questionnaires?format=json" class="btn-secondary text-sm">导出 JSON</a>
+      </div>
+
       <!-- 问卷管理 Tab -->
       <div v-if="activeTab === 'questionnaires' && !loading" class="space-y-6">
       <QuestionnaireEditor @changed="loadQuestionnaires" />
