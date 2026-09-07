@@ -82,6 +82,27 @@
       </div>
 
 
+      <!-- 账号安全 -->
+      <div class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <AppIcon name="shield-check" class="w-5 h-5 text-emerald-400" />
+          账号安全
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+          <input v-model="pwdForm.oldPassword" type="password" class="input" placeholder="当前密码" autocomplete="current-password" />
+          <input v-model="pwdForm.newPassword" type="password" class="input" placeholder="新密码(至少 8 位)" autocomplete="new-password" />
+          <input v-model="pwdForm.confirm" type="password" class="input" placeholder="确认新密码" autocomplete="new-password" />
+        </div>
+        <div v-if="pwdMessage" class="p-3 rounded-xl mb-3 text-sm"
+          :class="pwdSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
+          {{ pwdMessage }}
+        </div>
+        <button @click="changeMyPassword" class="btn-primary text-sm"
+          :disabled="!pwdForm.oldPassword || pwdForm.newPassword.length < 8 || pwdForm.newPassword !== pwdForm.confirm || pwdLoading">
+          {{ pwdLoading ? '修改中...' : '修改密码' }}
+        </button>
+      </div>
+
       <!-- 账户绑定区（桌面双栏） -->
       <div class="mb-6 grid gap-6 lg:grid-cols-2">
         <!-- 基岩版 ID 管理 -->
@@ -374,6 +395,32 @@ const minecraftMessage = ref('')
 const minecraftSuccess = ref(false)
 const changeIdMessage = ref('')
 const changeIdSuccess = ref(false)
+
+// 账号安全(修改密码)
+const pwdForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
+const pwdLoading = ref(false)
+const pwdMessage = ref('')
+const pwdSuccess = ref(false)
+
+const changeMyPassword = async () => {
+  pwdLoading.value = true
+  pwdMessage.value = ''
+  try {
+    const r: any = await api.changePassword({ oldPassword: pwdForm.value.oldPassword, newPassword: pwdForm.value.newPassword })
+    if (r.success) {
+      pwdSuccess.value = true
+      pwdMessage.value = '密码已修改'
+      pwdForm.value = { oldPassword: '', newPassword: '', confirm: '' }
+    } else {
+      pwdSuccess.value = false
+      pwdMessage.value = r.message || r.msg || '修改失败'
+    }
+  } catch (e: any) {
+    pwdSuccess.value = false
+    pwdMessage.value = e.message || '修改失败'
+  }
+  pwdLoading.value = false
+}
 
 // QQ 绑定
 const qqStatus = ref<any>({ bound: false, qq: '', boundAt: 0 })

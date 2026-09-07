@@ -1,6 +1,7 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.appeal.AppealRepository;
+import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.machine.PublicMachineRepository;
 import cn.xmcraft.dreamport.server.review.ReviewService;
@@ -38,6 +39,7 @@ public class ReviewAdminController {
     private final ReviewService reviewService;
     private final AuditService auditService;
     private final AppealRepository appealRepository;
+    private final NotificationRepository notificationRepository;
     private final VillageTradeRepository villageTradeRepository;
     private final PublicMachineRepository machineRepository;
     private final SettingService settingService;
@@ -46,7 +48,8 @@ public class ReviewAdminController {
                                  AuditService auditService, AppealRepository appealRepository,
                                  VillageTradeRepository villageTradeRepository,
                                  PublicMachineRepository machineRepository,
-                                 SettingService settingService) {
+                                 SettingService settingService,
+                                 NotificationRepository notificationRepository) {
         this.userRepository = userRepository;
         this.reviewService = reviewService;
         this.auditService = auditService;
@@ -54,6 +57,7 @@ public class ReviewAdminController {
         this.villageTradeRepository = villageTradeRepository;
         this.machineRepository = machineRepository;
         this.settingService = settingService;
+        this.notificationRepository = notificationRepository;
     }
 
     // ---------- 请求体 ----------
@@ -277,11 +281,35 @@ public class ReviewAdminController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("申诉不存在或已处理"));
         }
         var appeal = appealOpt.get();
+        appealRepository.save(new cn.xmcraft.dreamport.server.appeal.AppealRecord(
+                appeal.id(), appeal.username(), appeal.reason(), "approved",
+                body.reply(), appeal.createdAt(), System.currentTimeMillis(), operator(request)));
         var userOpt = userRepository.findByUsernameIgnoreCase(appeal.username());
         userOpt.filter(u -> "rejected".equals(u.status()))
                 .ifPresent(u -> reviewService.forceStatus(u.username(), operator(request), "pending_review"));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, appeal.username(), "appeal_approved", "申诉已通过",
+                "你的申诉已通过,账号将进入人工复核队列", null, null, operator(request)));
         auditService.log("appeal_approved", operator(request), appeal.username(), body.reply());
         return ResponseEntity.ok(ApiResponse.success("申诉已通过"));
+    }
+
+    /** 玩家查询自己的申诉(最新一条) */
+    @GetMapping("/questionnaire/appeal/mine")
+    public ResponseEntity<Object> myAppeal(HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.failure("未登录"));
+        }
+        var list = appealRepository.findByUsernameIgnoreCaseOrderByCreatedAtDesc(me);
+        if (list.isEmpty()) {
+            return ResponseEntity.ok(Map.of("success", true, "data", Map.of("found", false)));
+        }
+        var a = list.get(0);
+        return ResponseEntity.ok(Map.of("success", true, "data", Map.of(
+                "found", true, "status", a.status(), "adminReply",
+                a.adminReply() == null ? "" : a.adminReply(),
+                "createdAt", a.createdAt() == null ? 0L : a.createdAt())));
     }
 
     @PostMapping("/appeals/reject")
@@ -294,7 +322,15 @@ public class ReviewAdminController {
         if (appealOpt.isEmpty()) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("申诉不存在"));
         }
-        auditService.log("appeal_rejected", operator(request), appealOpt.get().username(), body.reply());
+        var appeal = appealOpt.get();
+        appealRepository.save(new cn.xmcraft.dreamport.server.appeal.AppealRecord(
+                appeal.id(), appeal.username(), appeal.reason(), "rejected",
+                body.reply(), appeal.createdAt(), System.currentTimeMillis(), operator(request)));
+        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                null, appeal.username(), "appeal_rejected", "申诉未通过",
+                "你的申诉未通过" + (body.reply() == null || body.reply().isBlank() ? "" : ":" + body.reply()),
+                null, null, operator(request)));
+        auditService.log("appeal_rejected", operator(request), appeal.username(), body.reply());
         return ResponseEntity.ok(ApiResponse.success("申诉已拒绝"));
     }
 

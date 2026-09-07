@@ -245,6 +245,15 @@
       <!-- 系统设置（注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
       <div v-if="activeTab === 'system' && !loading" class="space-y-6">
         <div class="card p-6 space-y-4">
+          <div class="card p-6 space-y-4 mb-6">
+            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="users" class="w-5 h-5" /> 管理员名单</h3>
+            <p class="text-xs text-stone-500">名单内的用户登录后即拥有管理权限。每行一个用户名;<span class="text-amber-400">注意不要移除你自己</span>。</p>
+            <textarea v-model="adminsStr" rows="3" class="input w-full font-mono text-sm" placeholder="管理员用户名,每行一个"></textarea>
+            <button @click="saveAdmins" class="btn-primary text-sm" :disabled="savingAdmins">
+              {{ savingAdmins ? '保存中...' : '保存管理员名单' }}
+            </button>
+          </div>
+
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
@@ -933,10 +942,10 @@ const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
-      api.getAstrbotSettings(), api.getAnnouncementsAdmin()
+      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -945,6 +954,7 @@ const loadSystemSettings = async () => {
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
     if (quest.success) Object.assign(questCfg.value, quest.data)
+    if (syscfg.success) adminsStr.value = (syscfg.data.admins || []).join('\n')
     if (astr.success) {
       Object.assign(astrbotCfg.value, astr.data)
       try { astrbotCfg.value.groupBindingsStr = JSON.stringify(JSON.parse(astr.data.groupBindings || '[]'), null, 2) }
@@ -1021,6 +1031,7 @@ const toggleMaintenance = async () => {
     notify?.error(e.message || '操作失败')
   }
 }
+loadAdmins()
 loadMaintenance()
 loadSystemSettings()
 const migrationFileInput = ref<HTMLInputElement | null>(null)
@@ -1447,6 +1458,25 @@ const deleteDocCurrent = async () => {
       await loadDocs()
     } else { notify?.error(r.message || '删除失败') }
   } catch (e: any) { notify?.error(e.message || '删除失败') }
+}
+
+// ===== 管理员名单 =====
+const adminsStr = ref('')
+const savingAdmins = ref(false)
+const loadAdmins = async () => {
+  try {
+    const r: any = await api.getSystemConfig()
+    if (r.success) adminsStr.value = (r.data.admins || []).join('\n')
+  } catch (e) { console.error(e) }
+}
+const saveAdmins = async () => {
+  savingAdmins.value = true
+  try {
+    const admins = adminsStr.value.split('\n').map((x: string) => x.trim()).filter(Boolean)
+    const r: any = await api.updateSystemConfig({ admins })
+    if (r.success) notify?.success('管理员名单已保存')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  savingAdmins.value = false
 }
 
 // ===== 公告管理(资讯中心 + 更新日志) =====

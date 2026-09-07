@@ -412,6 +412,10 @@ class ApiService {
   }
 
   // Appeals
+  async getMyAppeal() {
+    return this.request('/questionnaire/appeal/mine')
+  }
+
   async submitAppeal(reason: string) {
     return this.request('/questionnaire/appeal', {
       method: 'POST',
