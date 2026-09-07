@@ -383,11 +383,19 @@
           <div v-if="newsList.length === 0" class="text-sm text-stone-500">暂无资讯,点右上角添加</div>
           <div class="space-y-4">
             <div v-for="(n, i) in newsList" :key="n.id" class="p-4 bg-stone-800/50 rounded-xl border border-stone-700">
-              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                 <input v-model="n.title" class="input text-sm" placeholder="标题" />
                 <input v-model="n.date" type="date" class="input text-sm" />
-                <label class="flex items-center justify-center gap-2 text-xs text-stone-400">
-                  <input type="checkbox" v-model="n.pinned" class="accent-orange-500" /> 置顶展示
+              </div>
+              <div class="flex items-center gap-4 mb-2 text-xs text-stone-400">
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" v-model="n.pinned" class="accent-orange-500" /> 置顶
+                </label>
+                <label class="flex items-center gap-1.5 cursor-pointer">
+                  <input type="checkbox" v-model="n.isDraft" class="accent-orange-500" /> 草稿(不展示)
+                </label>
+                <label class="flex items-center gap-1.5">
+                  定时发布 <input v-model="n.publishAt" type="datetime-local" class="input text-xs py-1 w-48" />
                 </label>
               </div>
               <textarea v-model="n.content" class="input text-sm" rows="5" placeholder="内容(支持 Markdown)"></textarea>
@@ -1491,12 +1499,16 @@ const newsList = ref<any[]>([])
 const changelogList = ref<any[]>([])
 const savingAnnouncements = ref(false)
 const newItemId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-const addNews = () => newsList.value.unshift({ id: newItemId(), title: '', date: new Date().toISOString().slice(0, 10), content: '', pinned: false })
+const addNews = () => newsList.value.unshift({ id: newItemId(), title: '', date: new Date().toISOString().slice(0, 10), content: '', pinned: false, isDraft: false, publishAt: '', status: 'published' })
 const addChangelog = () => changelogList.value.unshift({ id: newItemId(), version: '', date: new Date().toISOString().slice(0, 10), content: '' })
 const saveAnnouncements = async () => {
   savingAnnouncements.value = true
   try {
-    for (const n of newsList.value) if (!n.id) n.id = newItemId()
+    for (const n of newsList.value) {
+      if (!n.id) n.id = newItemId()
+      if (!n.publishAt) n.publishAt = ''
+      n.status = n.isDraft ? 'draft' : 'published'
+    }
     for (const c of changelogList.value) if (!c.id) c.id = newItemId()
     const r: any = await api.saveAnnouncementsAdmin({ news: newsList.value, changelog: changelogList.value })
     if (r.success) notify?.success('公告内容已保存')

@@ -56,11 +56,21 @@ public class ConfigController {
         return body;
     }
 
-    /** 公告页公开数据(资讯中心 + 更新日志) */
+    /** 公告页公开数据(资讯中心 + 更新日志;仅已发布且到时的) */
     @GetMapping("/announcements")
     public Map<String, Object> announcements() {
+        long now = System.currentTimeMillis();
+        var newsRaw = settingService.get(SettingService.KEY_NEWS, List.class);
+        var visible = (newsRaw == null ? List.<Object>of() : newsRaw).stream()
+                .filter(o -> o instanceof Map<?, ?> m
+                        && !"draft".equals(m.get("status") == null ? "published" : String.valueOf(m.get("status"))))
+                        && (m.get("publishAt") == null
+                            || (m.get("publishAt") instanceof Number pn && pn.longValue() <= now)
+                            || (m.get("publishAt") instanceof java.time.LocalDateTime pd
+                                && pd.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() <= now)))
+                .toList();
         Map<String, Object> data = new LinkedHashMap<>();
-        data.put("news", settingService.get(SettingService.KEY_NEWS, List.class));
+        data.put("news", visible);
         data.put("changelog", settingService.get(SettingService.KEY_CHANGELOG, List.class));
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("success", true);
