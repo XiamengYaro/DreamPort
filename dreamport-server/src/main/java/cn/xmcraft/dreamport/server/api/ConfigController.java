@@ -62,12 +62,21 @@ public class ConfigController {
         long now = System.currentTimeMillis();
         var newsRaw = settingService.get(SettingService.KEY_NEWS, List.class);
         var visible = (newsRaw == null ? List.<Object>of() : newsRaw).stream()
-                .filter(o -> o instanceof Map<?, ?> m
-                        && !"draft".equals(m.get("status") == null ? "published" : String.valueOf(m.get("status"))))
-                        && (m.get("publishAt") == null
-                            || (m.get("publishAt") instanceof Number pn && pn.longValue() <= now)
-                            || (m.get("publishAt") instanceof java.time.LocalDateTime pd
-                                && pd.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli() <= now)))
+                .filter(o -> {
+                    if (!(o instanceof Map<?, ?> m)) return false;
+                    String status = m.get("status") == null ? "published" : String.valueOf(m.get("status"));
+                    if ("draft".equals(status)) return false;
+                    Object pa = m.get("publishAt");
+                    if (pa != null) {
+                        long t = -1;
+                        if (pa instanceof Number n) t = n.longValue();
+                        else if (pa instanceof java.time.LocalDateTime pd)
+                            t = pd.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                        else try { t = Long.parseLong(String.valueOf(pa)); } catch (NumberFormatException ignored) {}
+                        if (t > now) return false;
+                    }
+                    return true;
+                })
                 .toList();
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("news", visible);
