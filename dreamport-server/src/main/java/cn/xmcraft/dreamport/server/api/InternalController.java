@@ -6,6 +6,7 @@ import cn.xmcraft.dreamport.common.LoginCheckRequest;
 import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
+import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.qq.BindCodeService;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.qq.QqBindingService;
