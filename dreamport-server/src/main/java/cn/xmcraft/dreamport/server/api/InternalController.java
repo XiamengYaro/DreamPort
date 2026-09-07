@@ -48,6 +48,7 @@ public class InternalController {
     private String economyAcceptFrom;
 
     private final SettingService settingService;
+    private final NotificationRepository notificationRepository;
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
     private final QqBridgeService qqBridge;
@@ -61,6 +62,7 @@ public class InternalController {
                               cn.xmcraft.dreamport.server.review.ReviewService reviewService,
                               UserRepository userRepository,
                               SettingService settingService,
+                              NotificationRepository notificationRepository,
                               BindCodeService bindCodeService,
                               QqBindingService qqBindingService,
                               QqBridgeService qqBridge) {
@@ -74,6 +76,7 @@ public class InternalController {
         this.reviewService = reviewService;
         this.userRepository = userRepository;
         this.settingService = settingService;
+        this.notificationRepository = notificationRepository;
         this.bindCodeService = bindCodeService;
         this.qqBindingService = qqBindingService;
         this.qqBridge = qqBridge;
