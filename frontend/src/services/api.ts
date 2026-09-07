@@ -488,6 +488,10 @@ class ApiService {
     return this.request('/user/bs/players')
   }
 
+  async provisionBs(password: string) {
+    return this.request('/user/bs/provision', { method: 'POST', body: JSON.stringify({ password }) })
+  }
+
   async getBlessingskinConfig() {
     return this.request('/admin/settings/blessingskin')
   }

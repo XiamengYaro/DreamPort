@@ -55,11 +55,12 @@
 - AI 评分：外观设置 → AI 评分设置（OpenAI 兼容接口；低置信度自动转人工复核）
 
 ### 皮肤站互通（BlessingSkin）
-- 前置：皮肤站安装 `dreamport-oauth` 插件（构建产物 `bs-plugin-dreamport/dreamport-oauth-*.zip`，要求 BS ^5.0.0）
+- 前置：皮肤站安装 `dreamport-oauth` 插件（构建产物 `bs-plugin-dreamport/dreamport-oauth-*.zip`，要求 BS >=5.0.0）
 - 皮肤站端：插件配置页填 DreamPort 地址 / Client ID / Secret / 共享密钥（Client ID 与 Secret 为两端约定的自定义值，无需 Passport/artisan 命令）
 - DreamPort 端：管理后台 → 系统设置 → BlessingSkin 互通（启用/皮肤站地址/ClientId/Secret/API 共享密钥）
-- 验证：皮肤站登录页出现「使用 DreamPort 账号登录」→ 授权后登录；DreamPort 控制台出现「皮肤站角色」卡
-- 完整步骤与故障排查：docs/BLESSINGSKIN.md
+- 注册联动：注册页「玩家类型」选非正版 → 自动开通皮肤站账号+1000 积分+同名角色（密码=DP 密码）；改密/改 MC ID 自动同步；改邮箱先同步皮肤站
+- 存量账号：控制台「皮肤站角色」卡「一键开通」（需当前密码）；或 SSO 首登兜底（改一次 DP 密码同步）
+- 验证：非正版注册新号 → 皮肤站出现账号与角色 → 启动器进服 → DP 验证；完整步骤与故障排查：docs/BLESSINGSKIN.md
 
 ### 数据迁移（旧版 XMWhitelist → DreamPort）
 - 全新部署：`/setup` 向导选「导入旧库」上传 `.sql`

@@ -43,6 +43,7 @@ public class VerificationController {
     private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
     private final cn.xmcraft.dreamport.server.config.WlProps props;
     private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
+    private final cn.xmcraft.dreamport.server.blessingskin.BlessingSkinService blessingSkinService;
 
     public VerificationController(CaptchaService captchaService, VerifyCodeService verifyCodeService,
                                   MinecraftVerifyService minecraftVerifyService,
@@ -51,7 +52,8 @@ public class VerificationController {
                                   RateLimiter rateLimiter, SettingService settingService,
                                   cn.xmcraft.dreamport.server.security.PasswordService passwordService,
                                   cn.xmcraft.dreamport.server.config.WlProps props,
-                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
+                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings,
+                                  cn.xmcraft.dreamport.server.blessingskin.BlessingSkinService blessingSkinService) {
         this.captchaService = captchaService;
         this.verifyCodeService = verifyCodeService;
         this.minecraftVerifyService = minecraftVerifyService;
@@ -63,6 +65,7 @@ public class VerificationController {
         this.passwordService = passwordService;
         this.props = props;
         this.systemSettings = systemSettings;
+        this.blessingSkinService = blessingSkinService;
     }
 
     public record EmailBody(String email, String language) {
@@ -182,8 +185,19 @@ public class VerificationController {
         if (me == null) {
             return unauthorized();
         }
+        var userOpt = userRepository.findByUsernameIgnoreCase(me);
+        String oldName = userOpt.map(UserRecord::minecraftName).orElse(null);
         var result = minecraftVerifyService.setMinecraftId(me, body.minecraftName());
-        return wrap(result);
+        ResponseEntity<Map<String, Object>> resp = wrap(result);
+        // 皮肤站角色改名同步(成功时 best-effort;互通未启用/未关联为无操作)
+        if (result.success() && userOpt.isPresent()) {
+            var bsSync = blessingSkinService.updatePlayerName(userOpt.get().email(), oldName, body.minecraftName());
+            resp.getBody().put("skinStationSynced", bsSync.ok());
+            if (!bsSync.ok()) {
+                resp.getBody().put("skinStationMessage", bsSync.message());
+            }
+        }
+        return resp;
     }
 
     @PostMapping("/user/minecraft/verify")
@@ -324,7 +338,12 @@ public class VerificationController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("新密码至少 8 位"));
         }
         userRepository.save(withPassword(user, "bcrypt", passwordService.hash(body.newPassword())));
-        return ResponseEntity.ok(ApiResponse.success("密码已修改"));
+        // 皮肤站改密同步(互通未启用/未关联为无操作;失败不阻断本站改密,仅提示)
+        var bsSync = blessingSkinService.updatePassword(user.email(), body.newPassword());
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("skinStationSynced", bsSync.ok());
+        String message = bsSync.ok() ? "密码已修改" : "密码已修改，但皮肤站同步失败（稍后修改密码会再次同步）";
+        return ResponseEntity.ok(ApiResponse.success(message, data));
     }
 
     @PostMapping("/user/email/update")
@@ -342,6 +361,15 @@ public class VerificationController {
             return unauthorized();
         }
         UserRecord user = userOpt.get();
+        // 邮箱是皮肤站账号关联键:先改皮肤站,成功才改本站;皮肤站无此账号(未关联)则直接放行
+        if (user.email() != null && !user.email().isBlank()
+                && !user.email().equalsIgnoreCase(body.email())) {
+            var bsSync = blessingSkinService.updateEmail(user.email(), body.email());
+            if (!bsSync.ok()) {
+                return ResponseEntity.badRequest().body(ApiResponse.failure(
+                        "皮肤站邮箱同步失败（" + bsSync.message() + "），本站邮箱未修改"));
+            }
+        }
         userRepository.save(new UserRecord(user.id(), user.username(), body.email(), user.status(),
                 user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
                 user.qqNumber(), user.qqBoundAt(), user.questionnaireScore(), user.questionnairePassed(),

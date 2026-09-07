@@ -44,6 +44,7 @@ public class OAuth2Controller {
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final BlessingSkinService blessingSkinService;
+    private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
     private final long tokenTtlSeconds;
     private final SecureRandom random = new SecureRandom();
 
@@ -53,11 +54,13 @@ public class OAuth2Controller {
 
     public OAuth2Controller(SystemSettingsService settingsService, TokenService tokenService,
                             UserRepository userRepository, BlessingSkinService blessingSkinService,
+                            cn.xmcraft.dreamport.server.security.PasswordService passwordService,
                             WlProps props) {
         this.settingsService = settingsService;
         this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.blessingSkinService = blessingSkinService;
+        this.passwordService = passwordService;
         this.tokenTtlSeconds = props.security().jwtTtlDays() * 86_400L;
     }
 
@@ -165,6 +168,41 @@ public class OAuth2Controller {
     }
 
     // ---------- 用户侧：查看自己在皮肤站的角色 ----------
+
+    /** 一键开通/重试开通(幂等):校验当前密码后按 email 在皮肤站建账号+同名角色 */
+    @PostMapping("/api/user/bs/provision")
+    public ResponseEntity<Object> provisionBs(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        String username = AuthUtil.currentUser(request);
+        if (username == null) {
+            return ResponseEntity.status(401).body(ApiResponse.failure("未登录"));
+        }
+        UserRecord user = userRepository.findByUsernameIgnoreCase(username).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401).body(ApiResponse.failure("用户不存在"));
+        }
+        String password = str(body.get("password"));
+        if (password.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("请输入当前 DreamPort 密码"));
+        }
+        var verify = passwordService.verify(password, user.passwordAlgo(), user.passwordHash());
+        if (verify == cn.xmcraft.dreamport.server.security.PasswordService.VerifyResult.FAIL) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("密码不正确"));
+        }
+        var cfg = settingsService.blessingskinConfig();
+        if (!Boolean.TRUE.equals(cfg.get("enabled")) || str(cfg.get("url")).isBlank() || str(cfg.get("apiSecret")).isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("BlessingSkin 互通未启用或配置不完整"));
+        }
+        if (user.email() == null || user.email().isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("账号未绑定邮箱，无法开通皮肤站"));
+        }
+        var sync = blessingSkinService.provision(user.email(), user.username(), user.username(), password, null);
+        if (!sync.ok()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(
+                    "开通失败：" + (sync.message() == null ? "皮肤站接口暂不可用" : sync.message())));
+        }
+        blessingSkinService.clearCache();
+        return ResponseEntity.ok(ApiResponse.success("皮肤站账号已开通", Map.of("playerName", user.username())));
+    }
 
     @GetMapping("/api/user/bs/players")
     public ResponseEntity<Object> myBsPlayers(HttpServletRequest request) {
