@@ -1094,9 +1094,6 @@ const toggleMaintenance = async () => {
     notify?.error(e.message || '操作失败')
   }
 }
-loadAdmins()
-loadMaintenance()
-loadSystemSettings()
 const migrationFileInput = ref<HTMLInputElement | null>(null)
 const migrationFile = ref<File | null>(null)
 const migrationLoading = ref(false)
@@ -1237,7 +1234,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings()])
   loading.value = false
 })
 
