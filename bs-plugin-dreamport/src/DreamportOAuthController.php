@@ -135,6 +135,32 @@ class DreamportOAuthController
     }
 
     /**
+     * DreamPort 头像渲染服务按名字取皮肤材质(原始 64x64 PNG,302 → /textures/{hash})。
+     * 未找到角色或未设皮肤 → 404(DreamPort 侧回退默认脸)。
+     */
+    public function skin(Request $request)
+    {
+        $secret = (string) option('dp_api_secret', '');
+        $given = (string) $request->header('X-Dreamport-Secret', '');
+        if ($secret === '' || !hash_equals($secret, $given)) {
+            return response()->json(['success' => false, 'message' => 'invalid secret'], 403);
+        }
+        $name = trim((string) $request->query('name', ''));
+        if ($name === '') {
+            return response()->json(['success' => false, 'message' => 'name required'], 400);
+        }
+        $player = \App\Models\Player::where('name', $name)->first();
+        if ($player === null || !$player->tid_skin) {
+            return response()->json(['success' => false, 'message' => 'no skin'], 404);
+        }
+        $texture = \App\Models\Texture::find($player->tid_skin);
+        if ($texture === null) {
+            return response()->json(['success' => false, 'message' => 'texture missing'], 404);
+        }
+        return redirect(rtrim(url('/'), '/').'/textures/'.$texture->hash, 302);
+    }
+
+    /**
      * DreamPort 服务端拉取某用户角色。
      * 契约:200 = 已关联(players 可为空数组),404 = 该邮箱在皮肤站无账号。
      */

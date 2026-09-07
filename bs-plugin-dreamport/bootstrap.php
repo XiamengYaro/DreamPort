@@ -34,6 +34,7 @@ return function (Dispatcher $events) {
             'namespace' => 'Dreamport\\OAuth',
         ], function ($route) {
             $route->get('players', 'DreamportOAuthController@players');
+            $route->get('skin', 'DreamportOAuthController@skin');
             $route->post('provision', 'DreamportOAuthController@provision');
             $route->post('update-password', 'DreamportOAuthController@updatePassword');
             $route->post('update-player-name', 'DreamportOAuthController@updatePlayerName');

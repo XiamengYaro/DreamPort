@@ -10,9 +10,8 @@
 /**
  * 统一头像组件:
  * - avatarUrl(用户上传)优先
- * - 其余按 Minecraft 头像渲染(crafthead):uuid 优先,其次 minecraftName/name
- *   —— 未绑定 MC 的账号 crafthead 返回默认 Steve 皮肤(刚注册 = 史蒂夫头像),
- *      验证 ID 后 name/uuid 更新即自动变为真实头像
+ * - 其余走后端本地渲染端点 /api/avatar/{name}(双层皮肤,正版 Mojang/非正版皮肤站,两级缓存)
+ *   —— 未绑定 MC 的账号返回程序绘制的默认脸(Steve/Alex 按名字 hash),验证 ID 后即变真实头像
  * - 图片加载失败回退首字母圆徽
  */
 import { computed, ref } from 'vue'
@@ -27,11 +26,11 @@ const props = withDefaults(defineProps<{
 
 const broken = ref(false)
 
-const head = computed(() => props.uuid || props.name || 'Steve')
+const head = computed(() => props.name || props.uuid || 'Steve')
 const src = computed(() => {
   if (broken.value) return ''
   if (props.avatarUrl) return props.avatarUrl
-  return `https://crafthead.net/avatar/${encodeURIComponent(head.value)}/${sizePx.value}`
+  return `/api/avatar/${encodeURIComponent(head.value)}?size=${sizePx.value}`
 })
 
 const sizePx = computed(() => {

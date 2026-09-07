@@ -22,7 +22,7 @@
         <!-- 头部信息 -->
         <div class="card p-6 mb-6">
           <div class="flex items-start gap-6">
-            <img :src="`https://crafthead.net/avatar/${profile.uuid || profile.username}/128`" 
+            <img :src="`/api/avatar/${encodeURIComponent(profile.username || profile.uuid)}?size=128`" 
               :alt="profile.username"
               class="w-32 h-32 rounded-2xl border-4 border-orange-500/30 shadow-xl"
               @error="handleAvatarError" />

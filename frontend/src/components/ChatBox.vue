@@ -27,7 +27,7 @@
       </div>
       <EmptyState v-if="messages.length === 0" icon="chat-bubble" text="暂无消息" />
       <div v-for="(msg, index) in messages" :key="msg.id ?? index" class="flex gap-3 mb-4">
-        <img v-if="originOf(msg) === 'game'" :src="`https://crafthead.net/avatar/${displayName(msg)}/64`"
+        <img v-if="originOf(msg) === 'game'" :src="`/api/avatar/${encodeURIComponent(displayName(msg))}?size=64`"
           :alt="displayName(msg)" class="w-9 h-9 rounded-full shrink-0" loading="lazy" />
         <AppAvatar v-else :name="displayName(msg)" :class="avatarBg(originOf(msg))" size-class="w-9 h-9" />
         <div class="min-w-0 flex-1">

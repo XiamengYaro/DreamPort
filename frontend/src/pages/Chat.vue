@@ -21,7 +21,7 @@
           <div v-else class="space-y-1 max-h-[55vh] overflow-y-auto">
             <router-link v-for="p in onlinePlayers" :key="p.name + p.server" :to="`/player/${p.name}`"
               class="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors">
-              <img :src="`https://crafthead.net/avatar/${p.name}/48`" :alt="p.name"
+              <img :src="`/api/avatar/${encodeURIComponent(p.name)}?size=48`" :alt="p.name"
                 class="w-8 h-8 rounded-full border border-orange-500/30" loading="lazy" />
               <div class="min-w-0">
                 <div class="text-sm text-white truncate">{{ p.name }}</div>

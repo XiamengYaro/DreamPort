@@ -1,5 +1,9 @@
 # 皮肤站插件 · 更新日志
 
+## 1.1.2(2026-09-07)
+
+- 新增 `GET /dreamport/api/skin?name=`(共享密钥):按角色名返回皮肤材质(302 → `/textures/{hash}`),供 DreamPort 头像渲染服务取原始 64x64 皮肤;未找到角色/未设皮肤返回 404
+
 ## 1.1.1(2026-09-07)
 
 - **修复:服务端接口全部 419 "CSRF token mismatch"** —— `/dreamport/api/**` 原挂在 Laravel `web` 中间件组(含 CSRF 校验),服务端 POST 无 CSRF token 被拒;现移出 web 组(接口本身以共享密钥鉴权,无会话依赖)。SSO 网页流程不受影响

@@ -665,10 +665,10 @@ const formatTime = (timestamp: number) => {
 // MC 头像
 const avatarUrl = computed(() => {
   if (playerData.value?.minecraftUuid) {
-    return `https://crafthead.net/avatar/${playerData.value.minecraftUuid}/100`
+    return `/api/avatar/${encodeURIComponent(playerData.value.name || username.value)}?size=100`
   }
   if (username.value) {
-    return `https://crafthead.net/avatar/${username.value}/100`
+    return `/api/avatar/${encodeURIComponent(username.value)}?size=100`
   }
   return '/Logo111.png'
 })

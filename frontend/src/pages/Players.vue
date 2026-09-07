@@ -37,7 +37,7 @@
         <router-link v-for="player in filteredPlayers" :key="player.username"
           :to="`/player/${player.username}`"
           class="card p-4 text-center hover:bg-white/10 transition-all duration-200 cursor-pointer group">
-          <img :src="`https://crafthead.net/avatar/${player.uuid || player.username}/100`" 
+          <img :src="`/api/avatar/${encodeURIComponent(player.username || player.uuid)}?size=100`" 
             :alt="player.username"
             class="w-16 h-16 rounded-xl mx-auto mb-3 border-2 border-stone-700 group-hover:border-orange-500/50 transition-all"
             @error="handleAvatarError" />

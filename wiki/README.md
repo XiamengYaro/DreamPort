@@ -44,6 +44,7 @@
 | [管理后台](admin/backend/admin-panel.md) | 13 个功能页逐页说明 |
 | [API 参考](admin/backend/api-reference.md) | REST API 分组与契约 |
 | [数据库与定时任务](admin/backend/database-and-tasks.md) | 数据表、Flyway、7 个定时任务、邮件模板 |
+| [头像渲染服务](admin/backend/avatar-service.md) | 双层皮肤大头照、皮肤来源分流、两级缓存 |
 
 **插件**
 
