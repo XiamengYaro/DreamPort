@@ -3,7 +3,7 @@
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统。
 > 本文档库覆盖 DreamPort 全家桶:后端服务、Paper 主插件、Velocity 代理插件、AstrBot QQ 插件、BlessingSkin 皮肤站插件。
 
-当前版本:**后端与 Paper 插件 1.1.0** · Velocity 插件 1.0.1 · AstrBot 插件 1.0.1 · 皮肤站插件 1.1.0
+当前版本:**后端与 Paper 插件 1.2.0** · Velocity 插件 1.2.0 · AstrBot 插件 1.0.1 · 皮肤站插件 1.1.0
 
 ---
 
