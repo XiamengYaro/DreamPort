@@ -13,6 +13,7 @@
  */
 
 use App\Events\RenderingFooter;
+use App\Events\RenderingHeader;
 use App\Services\Hook;
 use Illuminate\Contracts\Events\Dispatcher;
 

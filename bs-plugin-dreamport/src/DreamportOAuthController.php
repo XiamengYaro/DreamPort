@@ -336,6 +336,32 @@ class DreamportOAuthController
         return response()->json(['success' => true]);
     }
 
+    /**
+     * 配置保存(配置页表单提交;role:admin 中间件保护)。
+     * 密钥字段留空 = 保持原值(避免回显泄露)。
+     */
+    public function configSave(Request $request)
+    {
+        $put = function ($key, $value) {
+            if ($value !== null) {
+                \Option::set($key, $value);
+            }
+        };
+        $put('dp_url', rtrim(trim((string) $request->input('dp_url', '')), '/'));
+        $put('dp_client_id', trim((string) $request->input('dp_client_id', '')));
+        if (trim((string) $request->input('dp_client_secret', '')) !== '') {
+            $put('dp_client_secret', trim((string) $request->input('dp_client_secret')));
+        }
+        if (trim((string) $request->input('dp_api_secret', '')) !== '') {
+            $put('dp_api_secret', trim((string) $request->input('dp_api_secret')));
+        }
+        \Option::set('dp_auto_register', $request->boolean('dp_auto_register'));
+        \Option::set('dp_hide_password_login', $request->boolean('dp_hide_password_login'));
+        \Option::set('dp_theme_sync', $request->boolean('dp_theme_sync'));
+
+        return redirect('/admin/plugins/config/dreamport-oauth')->with('dp_saved', true);
+    }
+
     // ---------- 内部工具 ----------
 
     private function guardSecret(Request $request)

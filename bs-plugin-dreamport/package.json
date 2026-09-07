@@ -1,7 +1,7 @@
 {
     "name": "dreamport-oauth",
     "title": "DreamPort 登录互通",
-    "version": "1.1.2",
+    "version": "1.2.0",
     "description": "使用 DreamPort（夏日小镇·梦港）账号授权登录皮肤站，并为 DreamPort 提供角色数据查询接口。",
     "author": "XiaMeng",
     "url": "https://github.com/XiamengYaro/DreamPort",
