@@ -5,11 +5,11 @@
     <TopNavigation v-if="showNav" />
     <!-- 页面内容 -->
     <main :class="showNav ? 'pb-12' : ''">
-      <router-view v-slot="{ Component }">
-        <transition name="page" mode="out-in">
-          <component :is="Component" />
-        </transition>
-      </router-view>
+      <!-- 路由切换不加 transition:过渡机制在特定时序下会永久卡住视图
+           (leave-active 不释放,后续导航全部无渲染 —— 偶发白屏根因)。
+           页面间视觉衔接由各页自身的入场动画(card/cardIn)承担。 -->
+      <router-view />
+      <!-- 历史:曾用 <transition name="page" mode="out-in"> 包装,因偶发卡死已移除(见 git) -->
     </main>
     <!-- 底部页脚 -->
     <AppFooter :icp="icp" />
