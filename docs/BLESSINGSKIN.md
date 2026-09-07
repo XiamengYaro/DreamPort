@@ -47,8 +47,8 @@
 | 配置项 | 说明 |
 |---|---|
 | 启用 | 总开关；关闭时授权接口返回错误、控制台角色卡隐藏 |
-| 皮肤站地址 | 以 `https://` 开头的完整地址，末尾不带 `/` |
-| Client ID / Client Secret | 皮肤站端 Passport 客户端凭据（见 §3 步骤 2） |
+| 皮肤站地址 | 皮肤站公网地址，末尾不带 `/`（与皮肤站 `APP_URL` 同源，如 `http://skin.xmcraft.cn`） |
+| Client ID / Client Secret | **自定义值**，与皮肤站插件配置保持一致即可（无需 Passport） |
 | API 共享密钥 | 服务端间接口密钥，与皮肤站插件配置保持一致；可用「生成」按钮 |
 
 保存后即可。相关端点（供排查）：
@@ -65,20 +65,23 @@
 
 ## 3. BlessingSkin 端配置
 
-### 3.1 创建 Passport 客户端
+### 3.1 配置插件（无需 Passport、无需 PHP 命令）
 
-在皮肤站服务器上执行（BlessingSkin 内置 Laravel Passport）：
+> 本方案中 client_id / client_secret **不是从任何地方"获取"的**，而是两端约定的自定义字符串：
+> DreamPort 后台填一份、皮肤站插件配置里填一份，保持一致即可。BS 内置的 Passport 在此流程中不参与，
+> 「OAuth Client Core」插件也与本互通无关（那是皮肤站用微软/LittleSkin 账号登录用的）。
 
-```bash
-php artisan passport:client --name="DreamPort"
-# 按提示选择 authorization_code 类客户端,粘贴回调地址:
-#   {皮肤站地址}/auth/login/dreamport/callback
-```
+皮肤站管理后台 → Plugins → DreamPort 登录互通 → 配置：
 
-记录输出的 **Client ID** 与 **Client Secret**（也可用皮肤站用户中心若有「OAuth2 应用」管理界面）。
+| 配置项 | 填什么 |
+|---|---|
+| DreamPort 站点地址 | DreamPort 的公网地址（如 `https://xmcraft.cn`，末尾不带 `/`） |
+| Client ID | 自定义标识（如 `dreamport-oauth`），与 DreamPort 后台一致 |
+| Client Secret | 自定义密钥（40 位随机串），与 DreamPort 后台一致 |
+| 自动注册 | 建议开启：皮肤站无同邮箱账号时自动建号 |
+| 角色数据接口密钥 | 与 DreamPort 后台「API 共享密钥」完全一致 |
 
-> 若皮肤站运行于反代之后，请确保 `url()` 生成的是外网 HTTPS 地址（`.env` 的 `APP_URL`），
-> 否则回调地址会不匹配。
+保存后，皮肤站登录页底部会出现「使用 DreamPort 账号登录」按钮（未出现 = 插件未启用）。
 
 ### 3.2 安装 dreamport-oauth 插件
 
@@ -95,6 +98,9 @@ php artisan passport:client --name="DreamPort"
 1. 登出皮肤站，登录页应出现「使用 DreamPort 账号登录」按钮（或直接访问 `/auth/login/dreamport`）
 2. 跳转 DreamPort 授权页 → 允许 → 回到皮肤站完成登录
 3. 回到 DreamPort 控制台，「皮肤站角色」卡应显示角色与皮肤/披风链接
+
+> 注意两端地址的**协议与域名必须完全一致**：DreamPort 后台的「皮肤站地址」必须与皮肤站 `APP_URL`
+> 同源（本站为 `http://skin.xmcraft.cn`），插件配置的「DreamPort 站点地址」同理，否则 redirect_uri 校验会拒绝。
 
 ---
 

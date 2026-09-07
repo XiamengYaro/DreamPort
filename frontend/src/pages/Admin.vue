@@ -357,18 +357,22 @@
           </label>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div><label class="block text-xs text-stone-500 mb-1">皮肤站地址（末尾不带 /）</label>
-              <input v-model="bsCfg.url" class="input w-full font-mono" placeholder="https://skin.example.com" /></div>
-            <div><label class="block text-xs text-stone-500 mb-1">Client ID</label>
-              <input v-model="bsCfg.clientId" class="input w-full font-mono" placeholder="在皮肤站 Passport 客户端获取" /></div>
+              <input v-model="bsCfg.url" class="input w-full font-mono" placeholder="http://skin.example.com" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">Client ID（自定义,两端一致即可）</label>
+              <input v-model="bsCfg.clientId" class="input w-full font-mono" placeholder="如 dreamport-oauth" /></div>
           </div>
-          <div><label class="block text-xs text-stone-500 mb-1">Client Secret</label>
-            <input v-model="bsCfg.clientSecret" type="text" class="input w-full font-mono"
-              :placeholder="bsCfg.hasClientSecret ? '已配置（输入新值可覆盖）' : ''" /></div>
+          <div><label class="block text-xs text-stone-500 mb-1">Client Secret（自定义,两端一致即可）</label>
+            <div class="flex gap-2">
+              <input v-model="bsCfg.clientSecret" type="text" class="input flex-1 font-mono"
+                :placeholder="bsCfg.hasClientSecret ? '已配置（输入新值可覆盖）' : '40 位随机串'" />
+              <button @click="genBsSecret('clientSecret')" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+            </div>
+          </div>
           <div><label class="block text-xs text-stone-500 mb-1">API 共享密钥（皮肤站插件向本站提供角色数据时校验）</label>
             <div class="flex gap-2">
               <input v-model="bsCfg.apiSecret" type="text" class="input flex-1 font-mono"
                 :placeholder="bsCfg.hasApiSecret ? '已配置（输入新值可覆盖）' : ''" />
-              <button @click="genBsSecret" class="btn-secondary text-sm whitespace-nowrap">生成</button>
+              <button @click="genBsSecret('apiSecret')" class="btn-secondary text-sm whitespace-nowrap">生成</button>
             </div>
             <div class="text-xs text-stone-600 mt-1">需与皮肤站插件配置页的「角色数据接口密钥」一致</div>
           </div>
@@ -1068,11 +1072,11 @@ const saveBsSettings = async () => {
     }
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
-const genBsSecret = () => {
+const genBsSecret = (field: string) => {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
   let t = ''
   for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
-  bsCfg.value.apiSecret = t
+  bsCfg.value[field] = t
 }
 const saveDownloads = async () => {
   try {
