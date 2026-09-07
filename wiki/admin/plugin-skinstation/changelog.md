@@ -1,5 +1,15 @@
 # 皮肤站插件 · 更新日志
 
+## 1.2.1(2026-09-07)
+
+- 修复:UI 同步主站不生效 —— 1.2.0 打包时 bootstrap.php 主题注入块静默丢失(编辑脚本替换锚点未命中且无断言);补回 RenderingHeader 注册块,build.sh 新增关键代码断言
+
+## 1.2.0(2026-09-07)
+
+- 配置页完全重设计:玻璃风界面 + 对接指南双栏卡 + 连接测试徽章(弃用 Option::form 默认渲染,保存走 `POST /dreamport/config/save`,role:admin)
+- **UI 同步主站**(dp_theme_sync,默认开):全页注入深色玻璃主题(卡片/导航/表单/滚动条),JS 拉取主站 `/api/config` 同步 accent 50-950 色阶与背景图——主站改品牌皮肤站自动跟随
+- 发行 zip 入库仓库(支持 Gitea raw 远程安装)
+
 ## 1.1.2(2026-09-07)
 
 - 新增 `GET /dreamport/api/skin?name=`(共享密钥):按角色名返回皮肤材质(302 → `/textures/{hash}`),供 DreamPort 头像渲染服务取原始 64x64 皮肤;未找到角色/未设皮肤返回 404

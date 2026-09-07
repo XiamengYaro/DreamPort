@@ -50,6 +50,9 @@ BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/Xiameng
 
 ## 更新日志
 
+### 1.2.1
+- 修复:UI 同步主站不生效 —— 1.2.0 打包时 bootstrap.php 的主题注入块因编辑脚本替换锚点未命中而静默丢失(zip 内无 RenderingHeader 注册);构建脚本新增关键代码断言防复发
+
 ### 1.2.0
 - 配置页完全重设计:玻璃风界面 + 对接指南双栏卡 + 连接测试徽章;弃用 Option::form 默认渲染,保存走 `POST /dreamport/config/save`(role:admin)
 - **UI 同步主站**(dp_theme_sync,默认开):全页注入深色玻璃主题(卡片/导航/表单/滚动条),JS 拉取主站 `/api/config` 同步品牌主色 50-950 色阶与背景图——主站换品牌皮肤站自动跟随
