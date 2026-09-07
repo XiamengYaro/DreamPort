@@ -82,7 +82,7 @@ php artisan passport:client --name="DreamPort"
 
 ### 3.2 安装 dreamport-oauth 插件
 
-1. 从构建产物中取 `bs-plugin-dreamport/dreamport-oauth-1.0.0.zip`（`scripts/build.sh` 自动打包）
+1. 从构建产物中取 `bs-plugin-dreamport/dreamport-oauth-*.zip`（`scripts/build.sh` 自动打包；zip 内含一层 `dreamport-oauth/` 插件目录）
 2. 皮肤站管理后台 → 插件管理 → 上传并安装 → 启用
 3. 点插件「配置」页，填写：
    - **DreamPort 站点地址**：如 `https://dreamport.example.com`
@@ -102,6 +102,8 @@ php artisan passport:client --name="DreamPort"
 
 | 现象 | 可能原因 |
 |---|---|
+| 上传插件提示成功但插件列表不显示 | zip 是平铺结构（旧版 1.0.0 打包缺陷）：解压后 package.json 散落在 plugins/ 根目录而非插件子目录。清理 plugins/ 下误散落的 bootstrap.php、package.json、src/、views/ 后，改用 1.0.1+ 的 zip（内含 dreamport-oauth/ 目录）重新上传 |
+| 配置页打不开/500 | enchants.config 写了完整类名（BS 会自动拼 namespace），1.0.1 已修正 |
 | 授权页提示「redirect_uri 不受支持」 | 皮肤站 `url()` 生成的回调与 Passport 注册的不一致（检查 APP_URL/反代头） |
 | 提示「client_id 不匹配」 | 两端 Client ID 不一致 |
 | 提示「授权状态校验失败」 | state 过期或会话丢失（cookie 未下发,检查跨站场景） |

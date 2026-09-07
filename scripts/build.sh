@@ -16,9 +16,14 @@ echo "[3/4] 打包后端与插件..."
 mvn clean package -DskipTests
 
 echo "[4/4] 打包 BlessingSkin 插件..."
+# BS 上传安装是原样解压到 plugins/,zip 内必须含一层插件目录(PluginManager 只扫描一级子目录)
 ZIP_NAME="dreamport-oauth-$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bs-plugin-dreamport/package.json | head -1).zip"
+STAGE="$(mktemp -d)"
+trap 'rm -rf "$STAGE"' EXIT
+mkdir -p "$STAGE/dreamport-oauth"
+cp -R bs-plugin-dreamport/bootstrap.php bs-plugin-dreamport/package.json bs-plugin-dreamport/src bs-plugin-dreamport/views "$STAGE/dreamport-oauth/"
 rm -f "bs-plugin-dreamport/$ZIP_NAME"
-(cd bs-plugin-dreamport && zip -qr "$ZIP_NAME" bootstrap.php package.json src views)
+(cd "$STAGE" && zip -qr "$OLDPWD/bs-plugin-dreamport/$ZIP_NAME" dreamport-oauth)
 
 echo "完成:"
 ls -lh dreamport-server/target/dreamport-server-*.jar dreamport-plugin/target/dreamport-plugin-*.jar "bs-plugin-dreamport/$ZIP_NAME"
