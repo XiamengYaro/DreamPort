@@ -70,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, inject } from 'vue'
+import { ref, computed, inject } from 'vue'
 import api from '@/services/api'
 
 const notify = inject('notify') as any

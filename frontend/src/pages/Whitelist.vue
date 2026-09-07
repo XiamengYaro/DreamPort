@@ -182,7 +182,6 @@
             <div v-if="appeal && appeal.status === 'pending'" class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl">
               <p class="text-amber-400 text-sm font-medium">申诉处理中</p>
               <p class="text-stone-400 text-xs mt-1">你于 {{ formatAppealDate(appeal.createdAt) }} 提交的申诉正在等待管理员处理</p>
-              <p class="text-stone-300 text-sm mt-2">{{ appeal.reason }}</p>
             </div>
             <div v-else-if="appeal && appeal.status === 'approved'" class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl">
               <p class="text-emerald-400 text-sm font-medium">申诉已通过,账号进入人工复核队列</p>
@@ -191,7 +190,7 @@
               <p class="text-rose-400 text-sm font-medium">申诉未通过</p>
               <p v-if="appeal.adminReply" class="text-stone-300 text-sm mt-1">管理员回复:{{ appeal.adminReply }}</p>
             </div>
-            <div v-else-if="loggedIn" class="space-y-3">
+            <div v-else-if="isLoggedIn" class="space-y-3">
               <p class="text-stone-400 text-sm">对评分结果有异议?可以提交申诉,管理员会人工复核。</p>
               <textarea v-model="appealReason" class="input w-full" rows="3" maxlength="500"
                 placeholder="填写申诉理由(至少 10 字)"></textarea>
@@ -209,7 +208,20 @@
         </div>
       </div>
 
-      <!-- 状态6：未登录 - 显示注册/登录 -->
+      <!-- 状态7：封禁中 -->
+      <div v-else-if="userStatus === 'banned'" class="card p-8">
+        <div class="text-center">
+          <AppIcon name="no-symbol" class="w-14 h-14 mx-auto mb-4 text-rose-400" />
+          <h2 class="text-2xl font-bold text-rose-400 mb-2">账号处于封禁状态</h2>
+          <p class="text-stone-400">临时封禁到期后会自动解封并通知你；具体可在封禁名单页查看。</p>
+          <div class="flex gap-4 justify-center mt-6">
+            <router-link to="/bans" class="btn-secondary">查看封禁名单</router-link>
+            <router-link to="/dashboard" class="btn-primary">返回控制台</router-link>
+          </div>
+        </div>
+      </div>
+
+      <!-- 状态8：未登录 - 显示注册/登录 -->
       <div v-else class="flex gap-4 justify-center">
         <router-link to="/register" class="btn-primary">注册 XMCraft 账号</router-link>
         <router-link to="/login" class="btn-secondary">已有账号？登录</router-link>
@@ -308,4 +320,38 @@ const submitInviteCode = async () => {
 const goToDocs = () => {
   router.push('/docs')
 }
+
+// 申诉(批次 A 补全:模板引用但脚本缺失,曾导致 onMounted 抛错、状态加载中断)
+const appeal = ref<any>(null)
+const appealReason = ref('')
+const appealPosting = ref(false)
+
+const loadMyAppeal = async () => {
+  if (!isLoggedIn.value) return
+  try {
+    const r: any = await api.getMyAppeal()
+    if (r.success && r.data?.found) appeal.value = r.data
+  } catch (e) { console.error('Failed to load appeal:', e) }
+}
+
+const submitMyAppeal = async () => {
+  if (appealReason.value.trim().length < 10 || appealPosting.value) return
+  appealPosting.value = true
+  try {
+    const r: any = await api.submitAppeal(appealReason.value.trim())
+    if (r.success) {
+      notify?.success('申诉已提交，等待管理员处理')
+      appealReason.value = ''
+      await loadMyAppeal()
+    } else {
+      notify?.error(r.message || r.msg || '提交失败')
+    }
+  } catch (e: any) {
+    notify?.error(e.message || '提交失败')
+  } finally {
+    appealPosting.value = false
+  }
+}
+
+const formatAppealDate = (ts: number) => (ts ? new Date(ts).toLocaleString('zh-CN') : '-')
 </script>
