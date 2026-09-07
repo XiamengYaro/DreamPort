@@ -171,6 +171,12 @@ public class MailService {
                 "username", username, "reason", reason, "duration", duration));
     }
 
+    public void sendAccountUnbanned(String username, String to, String lang) {
+        String l = lang(lang);
+        String subject = "zh".equals(l) ? "封禁已解除" : "Ban lifted";
+        send(to, subject, render("account_unbanned", l, "username", username));
+    }
+
     public void sendAdminNotification(String content, String to) {
         if (to == null || to.isBlank()) {
             return;

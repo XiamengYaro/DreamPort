@@ -167,6 +167,10 @@ public class ReviewService {
         userRepository.save(updated);
         auditService.log("unban", operator, username, null);
         notifyUser(username, "account_unbanned", "封禁已解除", "你的账号封禁已解除,欢迎回来!");
+        String email = user.email() != null && !user.email().isBlank() ? user.email() : null;
+        if (email != null) {
+            mailService.sendAccountUnbanned(username, email, "zh");
+        }
         notify("user_unbanned", username);
         return Result.ok("已解封玩家 " + username);
     }
