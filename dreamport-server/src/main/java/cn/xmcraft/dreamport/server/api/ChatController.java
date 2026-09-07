@@ -25,10 +25,13 @@ public class ChatController {
 
     private final ChatService chatService;
     private final QqBridgeService qqBridge;
+    private final cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter;
 
-    public ChatController(ChatService chatService, QqBridgeService qqBridge) {
+    public ChatController(ChatService chatService, QqBridgeService qqBridge,
+                          cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter) {
         this.chatService = chatService;
         this.qqBridge = qqBridge;
+        this.rateLimiter = rateLimiter;
     }
 
     public record SendBody(String message) {
@@ -53,8 +56,12 @@ public class ChatController {
         if (body.message() == null || body.message().isBlank() || body.message().length() > 256) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("消息为空或过长"));
         }
-        chatService.broadcast("web", me, body.message(), null);
-        qqBridge.onWebChat(me, body.message());
+        if (!rateLimiter.allow("chat:" + me, 10, 60_000)) {
+            return ResponseEntity.status(429).body(ApiResponse.failure("发言太快,稍后再试"));
+        }
+        String filtered = chatService.filterSensitive(body.message());
+        chatService.broadcast("web", me, filtered, null);
+        qqBridge.onWebChat(me, filtered);
         return ResponseEntity.ok(ApiResponse.success("已发送"));
     }
 

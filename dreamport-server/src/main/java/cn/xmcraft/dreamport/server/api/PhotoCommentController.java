@@ -2,6 +2,7 @@ package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
+import cn.xmcraft.dreamport.server.web.RateLimiter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,9 +25,32 @@ import java.util.Map;
 public class PhotoCommentController {
 
     private final JdbcTemplate jdbc;
+    private final cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter;
+    private final cn.xmcraft.dreamport.server.settings.SettingService settingService;
 
-    public PhotoCommentController(JdbcTemplate jdbc) {
+    public PhotoCommentController(JdbcTemplate jdbc, cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter,
+                                  cn.xmcraft.dreamport.server.settings.SettingService settingService) {
         this.jdbc = jdbc;
+        this.rateLimiter = rateLimiter;
+        this.settingService = settingService;
+    }
+
+    /** 先审后发开关(dp_setting photo.comment.moderation,默认关=先发后显) */
+    private boolean moderationOn() {
+        return settingService.getBool("photo.comment.moderation", false);
+    }
+
+    /** 敏感词过滤(与聊天同词库,命中替换 ***) */
+    private String filterSensitive(String text) {
+        String words = settingService.getRaw("sensitive.words");
+        if (words == null || words.isBlank()) return text;
+        for (String w : words.split("[,，]")) {
+            String word = w.trim();
+            if (word.length() >= 2 && text.contains(word)) {
+                text = text.replace(word, "*".repeat(word.length()));
+            }
+        }
+        return text;
     }
 
     /** 留言列表（公开,倒序,最多 200 条） */
@@ -34,9 +58,31 @@ public class PhotoCommentController {
     public Map<String, Object> list(@PathVariable String photoKey) {
         List<Map<String, Object>> comments = jdbc.queryForList(
                 "SELECT id, username, content, created_at FROM dp_photo_comment "
-                        + "WHERE photo_key = ? ORDER BY created_at DESC, id DESC LIMIT 200",
+                        + "WHERE photo_key = ? AND approved = TRUE ORDER BY created_at DESC, id DESC LIMIT 200",
                 photoKey);
         return Map.of("success", true, "data", Map.of("comments", comments));
+    }
+
+    /** 待审评论(管理员) */
+    @GetMapping("/admin/portal/comments/pending")
+    public Map<String, Object> pending(jakarta.servlet.http.HttpServletRequest request) {
+        if (!(AuthUtil.currentUser(request) != null && AuthUtil.isAdmin(request))) {
+            return ApiResponse.failure("需要管理员权限");
+        }
+        List<Map<String, Object>> comments = jdbc.queryForList(
+                "SELECT id, photo_key, username, content, created_at FROM dp_photo_comment "
+                        + "WHERE approved = FALSE ORDER BY created_at DESC LIMIT 200");
+        return Map.of("success", true, "data", Map.of("comments", comments));
+    }
+
+    /** 通过待审评论(管理员) */
+    @PostMapping("/admin/portal/comments/{id}/approve")
+    public Map<String, Object> approveComment(@PathVariable long id, jakarta.servlet.http.HttpServletRequest request) {
+        if (!(AuthUtil.currentUser(request) != null && AuthUtil.isAdmin(request))) {
+            return ApiResponse.failure("需要管理员权限");
+        }
+        jdbc.update("UPDATE dp_photo_comment SET approved = TRUE WHERE id = ?", id);
+        return ApiResponse.success("已通过");
     }
 
     /** 各照片留言数(照片墙网格角标用) */
@@ -67,9 +113,17 @@ public class PhotoCommentController {
         if (content.length() > 500) {
             return ApiResponse.failure("留言过长(上限 500 字)");
         }
+        if (!rateLimiter.allow("photo-comment:" + me + ":" + request.getRemoteAddr(), 5, 60_000)) {
+            return ApiResponse.failure("留言太快,稍后再试");
+        }
+        content = filterSensitive(content);
+        boolean approved = !moderationOn();
         long now = System.currentTimeMillis();
-        jdbc.update("INSERT INTO dp_photo_comment (photo_key, username, content, created_at) VALUES (?, ?, ?, ?)",
-                photoKey, me, content, now);
+        jdbc.update("INSERT INTO dp_photo_comment (photo_key, username, content, created_at, approved) VALUES (?, ?, ?, ?, ?)",
+                photoKey, me, content, now, approved);
+        if (!approved) {
+            return ApiResponse.success("留言已提交,审核通过后展示", Map.of("pendingReview", true));
+        }
         Map<String, Object> comment = new LinkedHashMap<>();
         comment.put("username", me);
         comment.put("content", content);
