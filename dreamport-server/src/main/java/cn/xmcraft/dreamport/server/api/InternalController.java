@@ -7,6 +7,7 @@ import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
 import cn.xmcraft.dreamport.server.qq.BindCodeService;
+import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.qq.QqBindingService;
 import cn.xmcraft.dreamport.server.qq.QqBridgeService;
 import cn.xmcraft.dreamport.server.stats.ServerStatsService;
@@ -39,12 +40,14 @@ public class InternalController {
     private final ServerStatsService statsService;
     private final MinecraftVerifyService minecraftVerifyService;
     private final EconomyService economyService;
+    private final cn.xmcraft.dreamport.server.infra.MailService mailService;
     private final cn.xmcraft.dreamport.server.chat.ChatService chatService;
     private final cn.xmcraft.dreamport.server.review.ReviewService reviewService;
     private final UserRepository userRepository;
     @org.springframework.beans.factory.annotation.Value("${wl.economy.accept-from:}")
     private String economyAcceptFrom;
 
+    private final SettingService settingService;
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
     private final QqBridgeService qqBridge;
@@ -53,9 +56,11 @@ public class InternalController {
                               ServerStatsService statsService,
                               MinecraftVerifyService minecraftVerifyService,
                               EconomyService economyService,
+                              cn.xmcraft.dreamport.server.infra.MailService mailService,
                               cn.xmcraft.dreamport.server.chat.ChatService chatService,
                               cn.xmcraft.dreamport.server.review.ReviewService reviewService,
                               UserRepository userRepository,
+                              SettingService settingService,
                               BindCodeService bindCodeService,
                               QqBindingService qqBindingService,
                               QqBridgeService qqBridge) {
@@ -64,9 +69,11 @@ public class InternalController {
         this.statsService = statsService;
         this.minecraftVerifyService = minecraftVerifyService;
         this.economyService = economyService;
+        this.mailService = mailService;
         this.chatService = chatService;
         this.reviewService = reviewService;
         this.userRepository = userRepository;
+        this.settingService = settingService;
         this.bindCodeService = bindCodeService;
         this.qqBindingService = qqBindingService;
         this.qqBridge = qqBridge;
@@ -125,16 +132,41 @@ public class InternalController {
     }
 
     /** 定时检测服务器离线（5 分钟无心跳视为离线） */
+    private final java.util.Set<String> alertedOffline = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     @org.springframework.scheduling.annotation.Scheduled(fixedRate = 60_000)
     public void detectOffline() {
         long now = System.currentTimeMillis();
         LAST_SEEN.entrySet().removeIf(e -> {
             if (now - e.getValue() > 5 * 60_000L) {
                 LOG.warn("[连接] 服务器离线: {}（超过 5 分钟无心跳）", e.getKey());
+                alertServerOffline(e.getKey());
+                alertedOffline.add(e.getKey());
                 return true;
             }
             return false;
         });
+        alertedOffline.removeIf(sid -> LAST_SEEN.containsKey(sid));
+    }
+
+    /** 服务器离线告警:通知 admins.list 各管理员(铃铛)+ 通知邮箱(admin_notify_email) */
+    private void alertServerOffline(String serverId) {
+        try {
+            var admins = settingService.get(cn.xmcraft.dreamport.server.settings.SettingService.KEY_ADMINS, java.util.List.class);
+            if (admins != null) {
+                for (Object a : admins) {
+                    notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
+                            null, String.valueOf(a), "server_offline", "服务器离线告警",
+                            "服务器「" + serverId + "」超过 5 分钟无心跳,已从在线列表移除", null, null, null));
+                }
+            }
+            String notifyEmail = settingService.get(cn.xmcraft.dreamport.server.settings.SettingService.KEY_ADMIN_NOTIFY_EMAIL, String.class);
+            if (notifyEmail != null && !notifyEmail.isBlank()) {
+                mailService.sendAdminNotification("服务器「" + serverId + "」超过 5 分钟无心跳,已离线。请检查服务器状态。", notifyEmail);
+            }
+        } catch (Exception e) {
+            LOG.warn("离线告警发送失败: {}", e.getMessage());
+        }
     }
 
     public record LoginRecordBody(String name, String uuid, String ip) {
