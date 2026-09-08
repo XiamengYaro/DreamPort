@@ -304,7 +304,8 @@ public class CommunityController {
         profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
         profile.put("loginCount", econ.get("loginCount"));
         profile.put("banUntil", u.banUntil());
-        return ResponseEntity.ok(profile);
+        // 统一响应包装:前端按 r.success 判定,裸对象会导致详情页恒显"玩家不存在"
+        return ResponseEntity.ok(Map.of("success", true, "data", profile));
     }
 
     /** 公开封禁名单(状态 banned,按封禁时间倒序) */
