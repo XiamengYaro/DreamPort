@@ -9,7 +9,6 @@
 | 用户 JWT | `Authorization: Bearer` | `/api/**` 大多数端点 |
 | 服务器令牌 | `X-Server-Id` + `X-Server-Token` | `/internal/v1/**`(插件) |
 | AstrBot 令牌 | `X-API-Token` | `/api/astrbot/**` |
-| 皮肤站共享密钥 | `X-Dreamport-Secret` | 皮肤站插件→后端的内部调用 |
 
 ## 公开端点(无鉴权)
 
@@ -33,22 +32,20 @@
 | 组 | 端点 | 说明 |
 |---|---|---|
 | 资料 | `GET/POST /api/user/profile`、`POST /api/user/avatar/upload` | 资料、头像上传(≤2MB) |
-| 密码/邮箱 | `POST /api/user/password`、`POST /api/user/email/update` | 改密(同步皮肤站)、改邮箱(皮肤站先行) |
+| 密码/邮箱 | `POST /api/user/password`、`POST /api/user/email/update` | 改密、改邮箱(需验证码) |
 | ID 验证 | `POST /api/user/minecraft/set|verify`、`GET status`、`POST /api/user/bedrock/set|verify|cancel|status` | Java/基岩验证(3 分钟进服窗口) |
 | 问卷 | `/api/questionnaire/**` | 拉题、提交、结果、申诉 |
 | QQ 绑定 | `GET /api/user/qq/status`、`POST /api/user/qq/bind|unbind` | 网页侧 QQ 绑定 |
-| 皮肤站 | `GET /api/user/bs/players`、`POST /api/user/bs/provision` | 皮肤站角色/一键开通 |
 | 通知 | `GET /api/notifications`、`POST read|read-all`、`DELETE /{id}` | 铃铛中心 |
 | 聊天 | `GET /api/chat/history`、`POST /api/chat/send` | 网页聊天室(限频 10/分,敏感词过滤) |
 | 照片墙 | `POST /api/portal/comments/{key}`、`DELETE /api/portal/comments/{id}` | 留言(限频 5/分)、删自己的 |
-| OAuth2 | `GET /api/oauth2/authorize-info`、`POST /api/oauth2/authorize` | 授权确认页(皮肤站 SSO) |
 | 社区 | `/api/village/**`、`/api/machines/**`、`/api/player/{name}` 等 | 村谱/机器提交与展示、玩家档案(经济/时长合并) |
 
 ## 管理端点(JWT + 管理员)
 
 | 组 | 说明 |
 |---|---|
-| `/api/admin/settings/**` | register/llm/questionnaire/invite/game/astrbot/blessingskin/announcements/downloads(GET/PUT,secret 脱敏回显) |
+| `/api/admin/settings/**` | register/llm/questionnaire/invite/game/astrbot/announcements/downloads(GET/PUT,secret 脱敏回显) |
 | `/api/admin/**`(ReviewAdmin) | 审核/封禁(days)/解封/删除/申诉处理/基岩重置 |
 | `/api/admin/users/**`(SiteAdmin) | 玩家管理、导出(玩家/审计/问卷 CSV/JSON) |
 | `/api/admin/stats/**` | 总览/注册趋势/问卷统计 |
@@ -77,16 +74,6 @@
 ## AstrBot 端点(`/api/astrbot/**`,X-API-Token)
 
 `POST bind/request`(6 位验证码,5 分钟,限频 1/分 5/天)、`POST unbind`、`GET lookup/qq/{qq}`、`GET status`、`GET players`、`POST chat`(群消息上行)、`GET stream`(SSE 下行长连)、`GET messages`(轮询兜底)。集成关闭时全部 403。
-
-## OAuth2 Provider 端点(皮肤站 SSO)
-
-| 端点 | 鉴权 | 说明 |
-|---|---|---|
-| `GET /api/oauth2/authorize-info` | JWT | 授权页校验 client/redirect |
-| `POST /api/oauth2/authorize` | JWT | 签发授权码(5 分钟,单次),返回 redirectUrl |
-| `POST /oauth2/token` | client 凭据 | code 换 access_token(=站内 JWT) |
-| `GET /oauth2/userinfo` | Bearer | username/email/nickname/minecraftName |
-| `GET /api/user/bs/players`、`POST /api/user/bs/provision` | JWT | 皮肤站角色拉取(缓存 5 分钟)/一键开通 |
 
 ## 限频速查
 

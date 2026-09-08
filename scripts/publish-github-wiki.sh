@@ -17,7 +17,6 @@ M = {
  'player/getting-started.md':'玩家-快速上手',
  'player/register-and-review.md':'玩家-注册问卷审核',
  'player/verify-identity.md':'玩家-ID验证',
- 'player/skin-station.md':'玩家-皮肤站',
  'player/qq-and-chat.md':'玩家-QQ与聊天',
  'player/faq.md':'玩家-常见问题',
  'admin/deployment-overview.md':'服主-部署总览',
@@ -37,12 +36,6 @@ M = {
  'admin/plugin-astrbot/introduction.md':'AstrBot-简介安装',
  'admin/plugin-astrbot/configuration.md':'AstrBot-配置对接',
  'admin/plugin-astrbot/commands.md':'AstrBot-指令与群服桥',
- 'admin/plugin-skinstation/introduction.md':'皮肤站-简介',
- 'admin/plugin-skinstation/installation-and-config.md':'皮肤站-安装配置',
- 'admin/plugin-skinstation/dreamport-integration.md':'皮肤站-对接DreamPort',
- 'admin/plugin-skinstation/account-sync.md':'皮肤站-账号同步',
- 'admin/plugin-skinstation/api-reference.md':'皮肤站-接口文档',
- 'admin/plugin-skinstation/changelog.md':'皮肤站-更新日志',
  'admin/troubleshooting.md':'故障排查',
 }
 REPO = f'https://github.com/{os.environ.get("GH_SLUG", "XiamengYaro/DreamPort")}'
@@ -57,7 +50,7 @@ for src, page in M.items():
     text = re.sub(r'\(([^)\s]+\.md[^)]*)\)', link_sub, text)
     open(os.path.join(dst, page + '.md'), 'w', encoding='utf-8').write(text)
 
-sidebar = '**DreamPort 文档库**\n\n**玩家**\n- [[玩家-快速上手]]\n- [[玩家-注册问卷审核]]\n- [[玩家-ID验证]]\n- [[玩家-皮肤站]]\n- [[玩家-QQ与聊天]]\n- [[玩家-常见问题]]\n\n**服主**\n- [[服主-部署总览]]\n- [[后端-架构]] / [[后端-部署]] / [[后端-配置]]\n- [[后端-管理后台]] / [[后端-API]] / [[后端-数据库与任务]]\n- [[Paper插件-简介]] / [[Paper插件-安装配置]] / [[Paper插件-进服校验]] / [[Paper插件-聊天事件]] / [[Paper插件-经济快照]] / [[Paper插件-命令]]\n- [[Velocity插件]]\n- [[AstrBot-简介安装]] / [[AstrBot-配置对接]] / [[AstrBot-指令与群服桥]]\n- [[皮肤站-简介]] / [[皮肤站-安装配置]] / [[皮肤站-对接DreamPort]] / [[皮肤站-账号同步]] / [[皮肤站-接口文档]] / [[皮肤站-更新日志]]\n- [[故障排查]]\n'
+sidebar = '**DreamPort 文档库**\n\n**玩家**\n- [[玩家-快速上手]]\n- [[玩家-注册问卷审核]]\n- [[玩家-ID验证]]\n- [[玩家-QQ与聊天]]\n- [[玩家-常见问题]]\n\n**服主**\n- [[服主-部署总览]]\n- [[后端-架构]] / [[后端-部署]] / [[后端-配置]]\n- [[后端-管理后台]] / [[后端-API]] / [[后端-数据库与任务]]\n- [[Paper插件-简介]] / [[Paper插件-安装配置]] / [[Paper插件-进服校验]] / [[Paper插件-聊天事件]] / [[Paper插件-经济快照]] / [[Paper插件-命令]]\n- [[Velocity插件]]\n- [[AstrBot-简介安装]] / [[AstrBot-配置对接]] / [[AstrBot-指令与群服桥]]\n- [[故障排查]]\n'
 open(os.path.join(dst, '_Sidebar.md'), 'w', encoding='utf-8').write(sidebar)
 print(f'转换完成:{len(os.listdir(dst))} 个页面')
 EOF

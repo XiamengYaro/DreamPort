@@ -14,6 +14,10 @@
 - **头像正版识别改 Mojang 按名查档**:名字在 Mojang 官方库存在即取官方皮肤(官方 UUID 缓存命中 24h/未命中 1h,不可达自动降级且不缓存);移除原 microsoftVerified 判定与皮肤站插件取材层
 - **控制台头像统一玩家皮肤大头照(双层)**:个人资料卡与 Minecraft 卡均按「绑定 MC 名→账号名」解析,下线「更换头像」上传入口(后端 /user/avatar/upload 端点保留)
 
+### Removed
+- **移除 BlessingSkin 皮肤站互通,注册收口纯正版**:OAuth2 Provider 全端点(authorize/token/userinfo)、/api/user/bs/*、BlessingSkinService、blessingskin 设置端点与管理卡、注册玩家分型(premium/offline/bedrock → 仅正版)、控制台皮肤站角色卡、BS 插件目录(bs-plugin-dreamport/)与全部分册文档;改密/改名/改邮箱不再同步皮肤站,改邮箱直接落本站
+- 仓库地图/构建脚本同步:build.sh 收为三步,不再产出皮肤站插件 zip
+
 ## [插件 1.2.2] - 2026-09-08
 
 ### Changed

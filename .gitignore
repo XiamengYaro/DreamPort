@@ -44,7 +44,4 @@ logs/
 # ---- Maven shade ----
 dependency-reduced-pom.xml
 astrbot-plugin/*.zip
-bs-plugin-dreamport/*.zip
-# 发行 zip 需入库(Gitea raw 远程安装用),白名单放行
-!bs-plugin-dreamport/dreamport-oauth-*.zip
 .zcode/

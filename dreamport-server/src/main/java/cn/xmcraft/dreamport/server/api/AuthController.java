@@ -36,17 +36,13 @@ public class AuthController {
     private final cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService;
     private final cn.xmcraft.dreamport.server.invite.InviteService inviteService;
     private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
-    private final cn.xmcraft.dreamport.server.blessingskin.BlessingSkinService blessingSkinService;
-    private final UserRepository userRepository;
 
     public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
                           cn.xmcraft.dreamport.server.settings.SettingService settingService,
                           cn.xmcraft.dreamport.server.verification.CaptchaService captchaService,
                           cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService,
                           cn.xmcraft.dreamport.server.invite.InviteService inviteService,
-                          cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings,
-                          cn.xmcraft.dreamport.server.blessingskin.BlessingSkinService blessingSkinService,
-                          cn.xmcraft.dreamport.server.user.UserRepository userRepository) {
+                          cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.rateLimiter = rateLimiter;
@@ -55,8 +51,6 @@ public class AuthController {
         this.verifyCodeService = verifyCodeService;
         this.inviteService = inviteService;
         this.systemSettings = systemSettings;
-        this.blessingSkinService = blessingSkinService;
-        this.userRepository = userRepository;
     }
 
     /** 是否在管理员名单（dp_setting admins.list，语义对齐旧版 config.admins） */
@@ -72,9 +66,7 @@ public class AuthController {
                                   String verifyCode,
                                   @com.fasterxml.jackson.annotation.JsonAlias("captchaToken") String captchaToken,
                                   String captchaAnswer,
-                                  String inviteCode,
-                                  @com.fasterxml.jackson.annotation.JsonAlias("bedrock_name") String bedrockName,
-                                  @com.fasterxml.jackson.annotation.JsonAlias("player_type") String playerType) {
+                                  String inviteCode) {
     }
 
     public record LoginRequest(String username, String password) {
@@ -91,19 +83,11 @@ public class AuthController {
                 && !captchaService.check(req.captchaToken(), req.captchaAnswer())) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("图形验证码错误或已过期"));
         }
-        // 基岩-only 注册：用户名回退为基岩名（剥离 Geyser 前缀）
+        // Java 游戏名收紧为正版规则(official:字母数字下划线)
         String username = req.username();
-        if ((username == null || username.isBlank()) && req.bedrockName() != null && !req.bedrockName().isBlank()) {
-            username = req.bedrockName().startsWith(".") ? req.bedrockName().substring(1) : req.bedrockName();
-        }
-        // Java 游戏名收紧为正版/皮肤站通用规则(official:字母数字下划线)——
-        // 非正版玩家的游戏名即皮肤站角色名,BS official 规则不允许 '-',否则角色永远建不出
-        boolean fromMcInput = req.username() != null && !req.username().isBlank();
-        if (fromMcInput && !req.username().matches("^[A-Za-z0-9_]{3,16}$")) {
+        if (username != null && !username.isBlank() && !username.matches("^[A-Za-z0-9_]{3,16}$")) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("游戏名不合法（3-16 位字母数字下划线）"));
         }
-        // 非正版玩家:注册即开通皮肤站(账号+同名角色,密码与 DreamPort 相同);仅限游戏名来自输入(非基岩回退)
-        boolean offlineProvision = "offline".equalsIgnoreCase(req.playerType()) && fromMcInput;
         // 邮箱验证码（邀请码注册豁免；开关来自管理面板 dp_setting，热生效）
         boolean hasInvite = req.inviteCode() != null && !req.inviteCode().isBlank();
         var regCfg = systemSettings.registerConfig();
@@ -132,34 +116,11 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(ApiResponse.failure(inviteResult.message()));
             }
         }
-        // 基岩 ID 一并落库（未验证态，玩家后续可走基岩验证）
-        if (req.bedrockName() != null && !req.bedrockName().isBlank()) {
-            String bn = req.bedrockName().startsWith(".") ? req.bedrockName() : "." + req.bedrockName();
-            var userOpt = userRepository.findByUsernameIgnoreCase(result.user().username());
-            userOpt.ifPresent(u -> userRepository.save(new UserRecord(u.id(), u.username(), u.email(), u.status(),
-                    u.passwordAlgo(), u.passwordHash(), u.regTime(), u.discordId(), u.qqNumber(), u.qqBoundAt(),
-                    u.questionnaireScore(), u.questionnairePassed(), u.questionnaireReviewSummary(),
-                    u.questionnaireScoredAt(), u.questionnaireReasons(), u.questionnaireAnswers(),
-                    u.minecraftUuid(), u.minecraftName(), u.microsoftVerified(), u.verifiedAt(), u.verifyType(),
-                    u.invitedBy(), null, bn, false, null, u.banReason(), u.banTime(), u.banUntil(), u.avatar())));
-        }
         String token = tokenService.issue(result.user().username(), TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);
         data.put("username", result.user().username());
         data.put("status", result.user().status());
-        // 皮肤站一键开通(失败不阻断注册,前端引导控制台重试)
-        if (offlineProvision) {
-            var bsCfg = systemSettings.blessingskinConfig();
-            if (Boolean.TRUE.equals(bsCfg.get("enabled"))) {
-                var sync = blessingSkinService.provision(result.user().email(), username, username,
-                        req.password(), clientIp(request));
-                Map<String, Object> skinStation = new LinkedHashMap<>();
-                skinStation.put("provisioned", sync.ok());
-                skinStation.put("reason", sync.message());
-                data.put("skinStation", skinStation);
-            }
-        }
         return ResponseEntity.ok(ApiResponse.success("注册成功", data));
     }
 

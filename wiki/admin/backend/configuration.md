@@ -25,7 +25,7 @@
 | 键 | 默认 | 说明 |
 |---|---|---|
 | `security.jwt-secret` | `dev-only-change-me-…` | **生产必须换**(≥32 位随机串);环境变量 `WL_JWT_SECRET` |
-| `security.jwt-ttl-days` | `7` | 登录态与皮肤站 access_token 的有效期 |
+| `security.jwt-ttl-days` | `7` | 登录态有效期 |
 
 ### 服务器间令牌
 
@@ -75,7 +75,6 @@
 | 系统设置 | `sensitive.words` | 聊天/留言敏感词(替换为 ***) |
 | 系统设置 | `photo.comment.moderation` | 照片墙留言先审后发 |
 | 系统设置 | `astrbot.enabled` / `astrbot.api_token` | QQ 互通开关与令牌(群绑定另存) |
-| 系统设置 | `blessingskin.*` | 皮肤站互通五项(见皮肤站插件文档) |
 | 系统设置 | `news.list` / `changelog.list` | 公告页资讯与更新日志 |
 | 门户管理 | `portal.config` / `background.config` | 门户内容、轮播图、照片墙、背景 |
 

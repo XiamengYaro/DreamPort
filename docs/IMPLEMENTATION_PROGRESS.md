@@ -156,7 +156,7 @@
 
 ## v1.2.0 批次(2026-09-07,37 commits)
 
-- [x] 皮肤站互通全套:OAuth2 Provider(authorize/token/userinfo)+ 自写 BS 插件 dreamport-oauth v1.1.0(SSO/注册一键开通/账号同步/纯 SSO)+ 注册玩家类型分型
+- [x] 皮肤站互通全套:OAuth2 Provider(authorize/token/userinfo)+ 自写 BS 插件 dreamport-oauth v1.1.0(SSO/注册一键开通/账号同步/纯 SSO)+ 注册玩家类型分型（**2026-09-08 已整体移除,产品收口纯正版账号**）
 - [x] 封禁体系:公开名单页 /bans + 临时封禁(ban_until/天数/每小时自动解封)+ 封禁/解封邮件
 - [x] 功能补全七批次:改密码 UI/申诉入口/管理员名单/通知补全/UGC 风控(限频+敏感词+先审后发)/问卷导出/状态时间线/公告草稿定时/离线告警
 - [x] Microsoft 正版绑定链路(待 Azure 联调)

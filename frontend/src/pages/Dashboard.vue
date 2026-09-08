@@ -292,42 +292,6 @@
       </div>
       </div>
 
-      <!-- 皮肤站角色（BlessingSkin 互通，管理员开启后才显示） -->
-      <div v-if="bsPlayers.configured" class="card p-6 mb-6">
-        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <AppIcon name="user" class="w-5 h-5 text-amber-400" />
-          皮肤站角色
-        </h2>
-        <div v-if="bsPlayers.loading" class="text-stone-500 text-sm py-4 text-center">加载中...</div>
-        <div v-else-if="!bsPlayers.linked" class="py-4 text-center space-y-3">
-          <p class="text-stone-500 text-sm">
-            尚未开通皮肤站账号 —— 开通后将自动创建同名角色，启动器账密与 DreamPort 相同
-          </p>
-          <button class="btn-primary text-sm" @click="showBsProvisionModal = true">一键开通</button>
-        </div>
-        <div v-else-if="bsPlayers.list.length === 0" class="text-stone-500 text-sm py-4 text-center">
-          皮肤站账号下还没有角色：修改 DreamPort 密码一次即可自动同步创建，或在皮肤站用户中心添加
-        </div>
-        <div v-else class="grid gap-3 sm:grid-cols-2">
-          <div v-for="p in bsPlayers.list" :key="p.pid"
-            class="flex items-center gap-4 p-3 rounded-xl bg-stone-900/40 border border-stone-800">
-            <img :src="`${bsPlayers.bsUrl}/avatar/player/${encodeURIComponent(p.name)}?3d=true&png=true&size=96`"
-              :alt="p.name" class="w-16 h-16 rounded-lg bg-stone-800 shrink-0"
-              @error="(e: Event) => ((e.target as HTMLImageElement).style.visibility = 'hidden')" />
-            <div class="flex-1 min-w-0">
-              <div class="text-white font-medium truncate">{{ p.name }}</div>
-              <div class="text-xs text-stone-500">{{ p.model === 'slim' ? 'Alex 模型' : 'Steve 模型' }}</div>
-              <div class="flex gap-3 mt-1 text-xs">
-                <a v-if="p.skinUrl" :href="p.skinUrl" target="_blank" rel="noopener"
-                  class="text-orange-400 hover:text-orange-300">查看皮肤</a>
-                <a v-if="p.capeUrl" :href="p.capeUrl" target="_blank" rel="noopener"
-                  class="text-orange-400 hover:text-orange-300">查看披风</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- 邀请管理 -->
       <div class="mb-6">
         <InviteManager @notify="(type: string, msg: string) => notify?.[type](msg)" />
@@ -352,28 +316,6 @@
           <button class="btn-secondary" @click="showChangeIdModal = false">取消</button>
           <button class="btn-primary" :disabled="!newMinecraftName || minecraftLoading" @click="setMinecraftId">
             {{ minecraftLoading ? '设置中...' : '确认修改' }}
-          </button>
-        </template>
-      </AppModal>
-
-      <!-- 开通皮肤站账号弹窗 -->
-      <AppModal :open="showBsProvisionModal" title="开通皮肤站账号" @close="showBsProvisionModal = false">
-        <div class="space-y-4">
-          <p class="text-sm text-stone-400">
-            将在皮肤站创建与你同名的账号和角色，密码使用你当前输入的 DreamPort 密码
-            （两者保持一致，可直接用于启动器登录；之后修改 DreamPort 密码会自动同步）。
-          </p>
-          <input v-model="bsPassword" type="password" class="input w-full" placeholder="当前 DreamPort 密码"
-            autocomplete="current-password" />
-          <div v-if="bsProvisionMessage" class="p-3 rounded-xl text-sm"
-            :class="bsProvisionSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'">
-            {{ bsProvisionMessage }}
-          </div>
-        </div>
-        <template #footer>
-          <button class="btn-secondary" @click="showBsProvisionModal = false">取消</button>
-          <button class="btn-primary" :disabled="!bsPassword || bsProvisionLoading" @click="provisionBs">
-            {{ bsProvisionLoading ? '开通中...' : '开通' }}
           </button>
         </template>
       </AppModal>
@@ -491,53 +433,6 @@ const emailLoading = ref(false)
 const emailMessage = ref('')
 const emailSuccess = ref(false)
 
-// BlessingSkin 皮肤站角色
-const bsPlayers = ref<any>({ configured: false, linked: false, bsUrl: '', list: [], loading: true })
-const showBsProvisionModal = ref(false)
-const bsPassword = ref('')
-const bsProvisionLoading = ref(false)
-const bsProvisionMessage = ref('')
-const bsProvisionSuccess = ref(false)
-
-const loadBsPlayers = async () => {
-  try {
-    const r: any = await api.getBsPlayers()
-    if (r.success) {
-      bsPlayers.value = {
-        configured: !!r.data.configured,
-        linked: !!r.data.linked,
-        bsUrl: r.data.bsUrl || '',
-        list: r.data.players || [],
-        loading: false
-      }
-      return
-    }
-  } catch (e) { console.error(e) }
-  bsPlayers.value.loading = false
-}
-
-const provisionBs = async () => {
-  bsProvisionLoading.value = true
-  bsProvisionMessage.value = ''
-  try {
-    const r: any = await api.provisionBs(bsPassword.value)
-    if (r.success) {
-      bsProvisionSuccess.value = true
-      bsProvisionMessage.value = '开通成功！皮肤站账密与 DreamPort 相同，可直接配置启动器'
-      bsPassword.value = ''
-      await loadBsPlayers()
-    } else {
-      bsProvisionSuccess.value = false
-      bsProvisionMessage.value = r.message || r.msg || '开通失败'
-    }
-  } catch (e: any) {
-    bsProvisionSuccess.value = false
-    bsProvisionMessage.value = e.message || '开通失败'
-  } finally {
-    bsProvisionLoading.value = false
-  }
-}
-
 onMounted(async () => {
   await Promise.all([
     loadServerStatus(),
@@ -546,8 +441,7 @@ onMounted(async () => {
     loadPlayerData(),
     loadBedrockStatus(),
     loadMinecraftStatus(),
-    loadQqStatus(),
-    loadBsPlayers()
+    loadQqStatus()
   ])
 })
 
@@ -694,9 +588,7 @@ const setMinecraftId = async () => {
   try {
     const r: any = await api.setMinecraftId(newMinecraftName.value)
     if (r.success) {
-      let msg = r.data.message || 'Minecraft ID 已更新，请登录服务器验证'
-      if (r.skinStationSynced === false) msg += '；皮肤站角色同步失败，可稍后重试'
-      else if (r.skinStationSynced === true) msg += '；皮肤站角色已同步改名'
+      const msg = r.data.message || 'Minecraft ID 已更新，请登录服务器验证'
       changeIdMessage.value = msg
       changeIdSuccess.value = true
       showChangeIdModal.value = false

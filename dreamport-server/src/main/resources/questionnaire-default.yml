@@ -18,7 +18,7 @@ questions:
 
 - id: 2
   question_en: What is your Minecraft Java edition ID or Little Skin ID (non-premium players only)?
-  question_zh: 您的Minecraft Java 版正版账号ID 或 Little Skin皮肤站（仅限非正版玩家）ID为？
+  question_zh: 您的Minecraft Java 版正版账号ID为？
   type: text
   required: true
   max_score: 3
@@ -28,7 +28,7 @@ questions:
     min_length: 1
     max_length: 50
     placeholder_en: Enter your Minecraft or LittleSkin ID...
-    placeholder_zh: 请输入您的 Minecraft Java 版正版账号ID 或 LittleSkin皮肤站玩家ID...
+    placeholder_zh: 请输入您的 Minecraft Java 版正版账号ID
 
 - id: 3
   question_en: What is your QQ number?

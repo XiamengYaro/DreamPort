@@ -6,7 +6,7 @@
 
 **Minecraft 服务器门户与玩家管理系统**
 
-网页注册 · 问卷审核 · 玩家管理 · QQ 互通 · 皮肤站互通 · 社区门户 · 一体化部署
+网页注册 · 问卷审核 · 玩家管理 · QQ 互通 · 社区门户 · 一体化部署
 
 [快速开始](#-快速开始) · [功能总览](#-功能总览) · [旧版数据迁移](#-旧版数据一键迁移) · [常见问题](#-常见问题)
 
@@ -52,7 +52,7 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 🏘️ **社区内容** | 村民族谱、公共机器展示（提交 → 审核公开展示） |
 | 💬 **网页聊天** | 网页 ↔ 游戏实时互通（SSE），可翻页查看**近 7 天历史消息** |
 | 🔗 **QQ 验证绑定** | QQ 群 `/dp 绑定` → 私聊验证码 → 网页或游戏内确认，单 QQ 单账号强绑定 |
-| 🎨 **皮肤站互通** | 非正版玩家注册即开通皮肤站(账密同款+1000 积分+同名角色)，网页 SSO 登录，改密/改名自动同步 |
+| 🖼️ **头像本地渲染** | 双层皮肤大头照全站本地出图，名字在 Mojang 官方库存在即取官方皮肤 |
 | 📰 **公告中心** | 资讯中心 + 更新日志双栏目，支持草稿/定时发布 |
 | 🔔 **通知中心** | 审核/封禁/公告等重要消息铃铛推送，配合邮件通知 |
 | 🚫 **封禁公示** | 公开封禁名单页，临时封禁到期自动解封 |
@@ -152,17 +152,14 @@ mysqldump -uroot xmc > xmc-backup.sql
 
 > 详见 [USER_GUIDE §10](docs/USER_GUIDE.md) · [设计文档](docs/ASTRBOT_PLAN.md) · [插件部署与联调清单](astrbot-plugin/README.md)
 
-## 🎨 皮肤站互通(BlessingSkin)
+## 🖼️ 头像渲染服务
 
-非正版服把皮肤站当作游戏身份来源？DreamPort 与皮肤站已深度打通：
+全站头像由后端本地渲染双层大头照(基础脸+帽子层),不再依赖任何第三方头像服务:
 
-1. **DreamPort**:管理后台 → 系统设置 → **BlessingSkin 互通** → 填皮肤站地址与两端约定的 Client ID/Secret/共享密钥
-2. **皮肤站**:安装 `dreamport-oauth-1.1.0.zip` 插件，配置 DreamPort 地址与同一组凭据
-3. **验证**：注册页选「非正版」注册新号 → 皮肤站自动出现账号(1000 积分+同名角色)→ 启动器用**同一套账密**进服
+1. **名字正版匹配**:游戏名在 Mojang 官方库存在 → 直接取该正版账号的官方皮肤(官方 UUID 缓存 24h/未命中 1h)
+2. **兜底**:名字不在官方库或 Mojang 不可达 → 程序绘制默认脸(Steve/Alex 按名字 hash)
 
-打通后：皮肤站网页用 DreamPort 账号 SSO 登录(可隐藏账密表单走纯 SSO);玩家改密码/游戏名/邮箱自动同步；控制台直接展示皮肤站角色与 3D 头像。
-
-> 详见 [docs/BLESSINGSKIN.md](docs/BLESSINGSKIN.md) · [皮肤站插件文档](wiki/admin/plugin-skinstation/introduction.md)
+> 详见 [头像渲染服务](wiki/admin/backend/avatar-service.md)
 
 ## ⌨️ 游戏内命令
 
@@ -229,10 +226,10 @@ mysqldump -uroot xmc > xmc-backup.sql
 - [x] 旧版数据迁移（后台上传 + 同库自动）
 - [x] Velocity 代理端统一拦截
 - [x] 双端连接状态实时记录
-- [x] Microsoft 正版 OAuth 绑定（已实现，需 Azure 应用注册配置后联调）
 - [x] `v1.0.0` 正式发布
-- [x] 封禁名单公示页 · 照片墙(评论) · 聊天广场 · 公告资讯 · 文档管理 · 问卷导出 · Microsoft OAuth · 临时封禁/自动解封 · UGC 风控 · 服务器离线告警
-- [x] `v1.2.0` 皮肤站互通(注册一键开通/账号同步/纯 SSO) · 注册玩家类型分型 · 全插件文档库
+- [x] 封禁名单公示页 · 照片墙(评论) · 聊天广场 · 公告资讯 · 文档管理 · 问卷导出 · 临时封禁/自动解封 · UGC 风控 · 服务器离线告警
+- [x] `v1.2.0` 封禁体系 · 全插件文档库
+- [x] `2026-09` 收口纯正版账号:移除 BS 皮肤站互通与微软绑定,头像改 Mojang 按名查档双层渲染
 
 ## 📚 文档
 
@@ -244,8 +241,7 @@ mysqldump -uroot xmc > xmc-backup.sql
 | [插件部署](astrbot-plugin/README.md) | AstrBot 插件安装、配置与联调清单 |
 | [功能进度表](docs/IMPLEMENTATION_PROGRESS.md) | 128 项功能逐项实现状态 |
 | [变更日志](CHANGELOG.md) | 每个版本的详细变更 |
-| **[📖 全插件文档库](wiki/README.md)** | 玩家册 6 篇 + 服主册 24 篇(后端/Paper/Velocity/AstrBot/皮肤站) |
-| [皮肤站互通指南](docs/BLESSINGSKIN.md) | BlessingSkin 两端配置与故障排查 |
+| **[📖 全插件文档库](wiki/README.md)** | 玩家册 + 服主册(后端/Paper/Velocity/AstrBot) |
 | [运维检查清单](docs/OPERATIONS_CHECKLIST.md) | 部署核对、日常运维、日志速查 |
 
 ---

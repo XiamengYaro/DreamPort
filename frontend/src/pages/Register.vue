@@ -9,62 +9,10 @@
 
       <div class="card p-8">
         <form @submit.prevent="handleRegister">
-          <!-- 玩家类型 -->
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-2 text-stone-300">玩家类型</label>
-            <div class="grid grid-cols-1 gap-2">
-              <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl border transition-all"
-                :class="form.playerType === 'premium' ? 'border-orange-500 bg-orange-500/10' : 'border-stone-600 hover:border-stone-500'">
-                <input v-model="form.playerType" type="radio" value="premium" class="accent-orange-500 mt-1" />
-                <div>
-                  <span class="text-stone-300 font-medium">正版 Java</span>
-                  <p class="text-xs text-stone-500">拥有正版 Minecraft 账号，注册后完成 ID 验证</p>
-                </div>
-              </label>
-              <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl border transition-all"
-                :class="form.playerType === 'offline' ? 'border-amber-500 bg-amber-500/10' : 'border-stone-600 hover:border-stone-500'">
-                <input v-model="form.playerType" type="radio" value="offline" class="accent-amber-500 mt-1" />
-                <div>
-                  <span class="text-stone-300 font-medium">非正版 Java（皮肤站）</span>
-                  <p class="text-xs text-stone-500">通过皮肤站外置登录进服；注册即开通皮肤站账号，账密与本站相同</p>
-                </div>
-              </label>
-              <label class="flex items-start gap-3 cursor-pointer p-3 rounded-xl border transition-all"
-                :class="form.playerType === 'bedrock' ? 'border-blue-500 bg-blue-500/10' : 'border-stone-600 hover:border-stone-500'">
-                <input v-model="form.playerType" type="radio" value="bedrock" class="accent-blue-500 mt-1" />
-                <div>
-                  <span class="text-stone-300 font-medium">纯基岩版</span>
-                  <p class="text-xs text-stone-500">适用于手机/主机端 Minecraft</p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          <!-- Minecraft ID（Java 类必填） -->
-          <div v-if="form.playerType !== 'bedrock'" class="mb-4">
             <label class="block text-sm font-medium mb-2 text-stone-300">Minecraft ID</label>
             <input v-model="form.minecraftName" type="text" class="input" placeholder="请输入你的 Minecraft 游戏名" />
-            <p v-if="form.playerType === 'offline'" class="mt-1 text-xs text-amber-400">
-              此 ID 将同时注册为皮肤站角色名（3-16 位字母数字下划线），启动器账密与本站相同
-            </p>
-            <p v-else class="mt-1 text-xs text-stone-500">正版游戏名（3-16 位字母数字下划线），必须与你的 Minecraft 游戏名完全一致</p>
-          </div>
-
-          <!-- 基岩版：纯基岩必填，Java 类可选 -->
-          <div v-if="form.playerType === 'bedrock'" class="mb-4">
-            <label class="block text-sm font-medium mb-2 text-stone-300">基岩版 ID</label>
-            <input v-model="form.bedrockName" type="text" class="input" placeholder="Xbox/Gamertag 用户名" />
-            <p class="mt-1 text-xs text-blue-400">系统会自动添加 "{{ bedrockPrefix }}" 前缀</p>
-          </div>
-          <div v-else class="mb-4">
-            <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
-              <input v-model="addBedrock" type="checkbox" class="accent-blue-500" />
-              同时注册基岩版
-            </label>
-            <div v-if="addBedrock" class="mt-2">
-              <input v-model="form.bedrockName" type="text" class="input" placeholder="Xbox/Gamertag 用户名" />
-              <p class="mt-1 text-xs text-blue-400">系统会自动添加 "{{ bedrockPrefix }}" 前缀</p>
-            </div>
+            <p class="mt-1 text-xs text-stone-500">正版游戏名（3-16 位字母数字下划线），必须与你的 Minecraft 游戏名完全一致</p>
           </div>
 
           <div class="mb-4">
@@ -133,14 +81,9 @@ const loading = ref(false)
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const codeCooldown = ref(0)
-const bedrockEnabled = ref(false)
-const bedrockPrefix = ref('.')
 const logoUrl = ref('/logo.png')
-const addBedrock = ref(false)
 const form = ref({
-  playerType: 'offline',
   minecraftName: '',
-  bedrockName: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -148,29 +91,27 @@ const form = ref({
 })
 
 onMounted(async () => {
-  try { 
-    const res = await fetch('/api/config'); 
-    const data = await res.json(); 
-    if (data.success) { 
-      bedrockEnabled.value = data.data.bedrockEnabled || false; 
-      bedrockPrefix.value = data.data.bedrockPrefix || '.'; 
-      if (data.data.portal?.logo) logoUrl.value = data.data.portal.logo 
-    } 
+  try {
+    const res = await fetch('/api/config');
+    const data = await res.json();
+    if (data.success) {
+      if (data.data.portal?.logo) logoUrl.value = data.data.portal.logo
+    }
   } catch (e) {}
 })
 
 const sendVerifyCode = async () => {
   if (!form.value.email) { notify?.error('请先输入邮箱'); return }
-  try { 
-    await api.sendVerifyCode(form.value.email); 
-    notify?.success('验证码已发送'); 
-    codeCooldown.value = 60; 
-    const timer = setInterval(() => { 
-      codeCooldown.value--; 
-      if (codeCooldown.value <= 0) clearInterval(timer) 
-    }, 1000) 
-  } catch (error: any) { 
-    notify?.error(error.message || '发送失败') 
+  try {
+    await api.sendVerifyCode(form.value.email);
+    notify?.success('验证码已发送');
+    codeCooldown.value = 60;
+    const timer = setInterval(() => {
+      codeCooldown.value--;
+      if (codeCooldown.value <= 0) clearInterval(timer)
+    }, 1000)
+  } catch (error: any) {
+    notify?.error(error.message || '发送失败')
   }
 }
 
@@ -178,36 +119,21 @@ const handleRegister = async () => {
   if (form.value.password !== form.value.confirmPassword) { notify?.error('两次输入的密码不一致'); return }
   if (form.value.password.length < 6) { notify?.error('密码长度至少6位'); return }
 
-  // 验证必填字段
-  const isJava = form.value.playerType !== 'bedrock'
-  if (isJava && !form.value.minecraftName) { notify?.error('请输入 Minecraft ID'); return }
-  if (form.value.playerType === 'bedrock' || (isJava && addBedrock.value)) {
-    if (!form.value.bedrockName) { notify?.error('请输入基岩版 ID'); return }
-  }
-  if (isJava && !/^[A-Za-z0-9_]{3,16}$/.test(form.value.minecraftName)) {
+  if (!form.value.minecraftName) { notify?.error('请输入 Minecraft ID'); return }
+  if (!/^[A-Za-z0-9_]{3,16}$/.test(form.value.minecraftName)) {
     notify?.error('游戏名不合法（3-16 位字母数字下划线）'); return
   }
 
   loading.value = true
   try {
     const response: any = await api.register({
-      playerType: form.value.playerType,
-      minecraftName: isJava ? form.value.minecraftName : undefined,
-      bedrockName: (form.value.playerType === 'bedrock' || (isJava && addBedrock.value)) ? form.value.bedrockName : undefined,
+      minecraftName: form.value.minecraftName,
       email: form.value.email,
       password: form.value.password,
       verifyCode: form.value.verifyCode
     })
     if (response.success) {
-      // 皮肤站开通结果(非正版)
-      const ss = response.data?.skinStation
-      if (ss?.provisioned) {
-        notify?.success('注册成功；皮肤站已开通，账密与 DreamPort 相同')
-      } else if (ss && !ss.provisioned) {
-        notify?.error(`皮肤站开通失败：${ss.reason || '未知原因'}，可稍后在控制台重试`)
-      } else {
-        notify?.success('注册成功，请进行 ID 验证')
-      }
+      notify?.success('注册成功，请进行 ID 验证')
 
       // 自动登录
       if (response.data.token) {
@@ -215,14 +141,7 @@ const handleRegister = async () => {
         localStorage.setItem('username', response.data.username)
       }
 
-      // 根据注册模式跳转到对应的验证页面
-      if (form.value.playerType === 'bedrock') {
-        router.push('/verify?platform=bedrock')
-      } else if (addBedrock.value && isJava) {
-        router.push('/verify?platform=both')
-      } else {
-        router.push('/verify?platform=java')
-      }
+      router.push('/verify?platform=java')
     }
   } catch (error: any) {
     notify?.error(error.message || '注册失败')

@@ -2,7 +2,7 @@
 
 ## 定位
 
-DreamPort 后端是整套系统的**唯一业务中枢**:门户网站(前端 SPA 由后端静态托管)、REST API、WebSocket 推送、管理后台、邮件、定时任务全在这里。各插件(Arch/Velocity/AstrBot/皮肤站)都是它的薄客户端。
+DreamPort 后端是整套系统的**唯一业务中枢**:门户网站(前端 SPA 由后端静态托管)、REST API、WebSocket 推送、管理后台、邮件、定时任务全在这里。各插件(Arch/Velocity/AstrBot)都是它的薄客户端。
 
 ## 技术栈
 
@@ -25,7 +25,6 @@ DreamPort/
 ├── dreamport-plugin-proxy/  # Velocity 代理插件
 ├── frontend/                # Vue 3 前端源码(构建产物进后端 JAR)
 ├── astrbot-plugin/          # AstrBot QQ 插件(Python)
-└── bs-plugin-dreamport/     # BlessingSkin 皮肤站插件(PHP)
 ```
 
 后端主要包(`cn.xmcraft.dreamport.server`):
@@ -39,7 +38,6 @@ DreamPort/
 | `verification` | 邮箱验证码、图形验证码、ID 验证(3 分钟进服记录窗口) |
 | `chat` | 聊天消息(落库,7 天+5 万条上限) |
 | `qq` | QQ 绑定验证码、群服消息桥(双向队列) |
-| `blessingskin` | 皮肤站账号开通与同步 |
 | `stats` | 服务器心跳、在线历史(7 天曲线) |
 | `economy` | 经济快照汇总 |
 | `notification` | 站内通知(铃铛) |
@@ -54,9 +52,7 @@ DreamPort/
 | 用户 JWT | 网页/前端 API | `Authorization: Bearer` | 登录/注册时签发,TTL 默认 7 天 |
 | 服务器令牌 | Paper/Velocity 插件 | `X-Server-Id` + `X-Server-Token` | config.yml `wl.internal.server-token` |
 | AstrBot 令牌 | AstrBot 插件 | `X-API-Token` | 管理后台生成,存 dp_setting |
-| 皮肤站共享密钥 | 皮肤站插件 | `X-Dreamport-Secret` | 管理后台 BlessingSkin 互通 |
 
-另有公开 OAuth2 Provider 端点(`/oauth2/token` 等)用 client_id/secret 参数鉴权,供皮肤站换取用户 JWT。
 
 ## 统一响应包装
 

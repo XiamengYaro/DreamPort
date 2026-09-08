@@ -73,7 +73,6 @@ class ApiService {
   // Registration
   async register(data: {
     minecraftName?: string
-    bedrockName?: string
     email: string
     password?: string
     verifyCode?: string
@@ -473,31 +472,6 @@ class ApiService {
 
   async qqUnbind() {
     return this.request('/user/qq/unbind', { method: 'POST' })
-  }
-
-  // BlessingSkin 互通（docs/BLESSINGSKIN.md）
-  async getOAuth2AuthorizeInfo(clientId: string, redirectUri: string) {
-    return this.request(`/oauth2/authorize-info?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}`)
-  }
-
-  async postOAuth2Authorize(body: { clientId: string; redirectUri: string; state?: string; approved: boolean }) {
-    return this.request('/oauth2/authorize', { method: 'POST', body: JSON.stringify(body) })
-  }
-
-  async getBsPlayers() {
-    return this.request('/user/bs/players')
-  }
-
-  async provisionBs(password: string) {
-    return this.request('/user/bs/provision', { method: 'POST', body: JSON.stringify({ password }) })
-  }
-
-  async getBlessingskinConfig() {
-    return this.request('/admin/settings/blessingskin')
-  }
-
-  async saveBlessingskinConfig(body: any) {
-    return this.request('/admin/settings/blessingskin', { method: 'PUT', body: JSON.stringify(body) })
   }
 
   // 聊天室（docs/CHAT_SERVERINFO_PLAN.md）

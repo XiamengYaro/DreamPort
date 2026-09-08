@@ -39,4 +39,4 @@ Mojang 不可达时自动降级默认脸,不影响页面;查档网络异常不�
 ## 前端接入
 
 `AppAvatar` 组件与所有头像位(玩家档案/控制台/聊天消息/在线列表/封禁页/玩家列表)统一走
-`/api/avatar/{name}?size=`,已移除 crafthead 外链。皮肤站角色卡的 3D 整身预览仍走皮肤站自带渲染。
+`/api/avatar/{name}?size=`,已移除 crafthead 外链。

@@ -1,7 +1,6 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
-import cn.xmcraft.dreamport.server.blessingskin.BlessingSkinService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.notification.NotificationRepository;
@@ -29,16 +28,13 @@ public class SystemSettingsController {
     private final AuditService auditService;
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
-    private final BlessingSkinService blessingSkinService;
 
     public SystemSettingsController(SystemSettingsService settingsService, AuditService auditService,
-                                    UserRepository userRepository, NotificationRepository notificationRepository,
-                                    BlessingSkinService blessingSkinService) {
+                                    UserRepository userRepository, NotificationRepository notificationRepository) {
         this.settingsService = settingsService;
         this.auditService = auditService;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
-        this.blessingSkinService = blessingSkinService;
     }
 
     private String op(HttpServletRequest request) {
@@ -200,30 +196,6 @@ public class SystemSettingsController {
         }
         auditService.log("settings_astrbot", op(request), "", "");
         return ResponseEntity.ok(ApiResponse.success("QQ 互通设置已保存"));
-    }
-
-    @GetMapping("/blessingskin")
-    public ResponseEntity<Object> getBlessingskin(HttpServletRequest request) {
-        var g = guard(request); if (g != null) return g;
-        var config = settingsService.blessingskinConfig();
-        maskSecret(config, "clientSecret", "hasClientSecret");
-        maskSecret(config, "apiSecret", "hasApiSecret");
-        return ResponseEntity.ok(Map.of("success", true, "data", config));
-    }
-
-    @PutMapping("/blessingskin")
-    public ResponseEntity<Object> saveBlessingskin(@RequestBody Map<String, Object> body, HttpServletRequest request) {
-        var g = guard(request); if (g != null) return g;
-        if ("***".equals(body.get("clientSecret"))) {
-            body.put("clientSecret", settingsService.blessingskinConfig().get("clientSecret"));
-        }
-        if ("***".equals(body.get("apiSecret"))) {
-            body.put("apiSecret", settingsService.blessingskinConfig().get("apiSecret"));
-        }
-        settingsService.saveBlessingskinConfig(body);
-        blessingSkinService.clearCache();
-        auditService.log("settings_blessingskin", op(request), "", "");
-        return ResponseEntity.ok(ApiResponse.success("BlessingSkin 互通设置已保存"));
     }
 
     private void maskSecret(Map<String, Object> config, String key, String flag) {
