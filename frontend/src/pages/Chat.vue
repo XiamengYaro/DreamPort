@@ -22,7 +22,7 @@
             <router-link v-for="p in onlinePlayers" :key="p.name + p.server" :to="`/player/${p.name}`"
               class="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 transition-colors">
               <img :src="`/api/avatar/${encodeURIComponent(p.name)}?size=48`" :alt="p.name"
-                class="w-8 h-8 rounded-full border border-orange-500/30" loading="lazy" />
+                class="w-8 h-8 rounded-xl border border-orange-500/30" loading="lazy" />
               <div class="min-w-0">
                 <div class="text-sm text-white truncate">{{ p.name }}</div>
                 <div class="text-xs text-stone-500 truncate">{{ p.server }}</div>

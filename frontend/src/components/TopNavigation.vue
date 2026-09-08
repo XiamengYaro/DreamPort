@@ -55,7 +55,7 @@
             <div class="relative">
               <button @click.stop="userMenuOpen = !userMenuOpen"
                 class="flex items-center gap-2 p-1 rounded-xl hover:bg-white/10 transition-colors">
-                <AppAvatar :name="username" size-class="w-9 h-9 rounded-full" />
+                <AppAvatar :name="username" size-class="w-9 h-9" />
                 <span class="text-white text-sm font-medium drop-shadow hidden lg:block">{{ username }}</span>
                 <svg class="w-3 h-3 text-white/70 transition-transform" :class="{ 'rotate-180': userMenuOpen }"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
@@ -63,7 +63,7 @@
               <transition name="modal">
                 <div v-if="userMenuOpen" class="absolute right-0 top-full mt-2 w-60 glass-panel rounded-xl shadow-xl z-50 overflow-hidden" @click.stop>
                   <div class="p-4 flex items-center gap-3 border-b border-white/10">
-                    <AppAvatar :name="username" size-class="w-11 h-11 rounded-full" />
+                    <AppAvatar :name="username" size-class="w-11 h-11" />
                     <div class="min-w-0">
                       <div class="text-white font-semibold truncate">{{ username }}</div>
                       <span class="text-xs px-2 py-0.5 rounded inline-block mt-0.5"

@@ -269,7 +269,7 @@
         <div class="flex items-start gap-6">
           <!-- 头像 -->
           <div class="flex flex-col items-center gap-2">
-            <div class="w-20 h-20 rounded-full overflow-hidden">
+            <div class="w-20 h-20 rounded-xl overflow-hidden">
               <AppAvatar :name="playerData?.name || username" size-class="w-20 h-20" alt="头像" />
             </div>
           </div>

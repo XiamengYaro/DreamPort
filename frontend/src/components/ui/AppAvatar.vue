@@ -1,7 +1,7 @@
 <template>
-  <img v-if="src" :src="src" :alt="alt" :class="sizeClass" class="object-cover shrink-0" loading="lazy"
+  <img v-if="src" :src="src" :alt="alt" :class="sizeClass" class="object-cover shrink-0 rounded-xl" loading="lazy"
     decoding="async" @error="onError" />
-  <div v-else :class="[sizeClass, 'bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white font-bold shrink-0']">
+  <div v-else :class="[sizeClass, 'bg-gradient-to-br from-orange-400 to-amber-400 flex items-center justify-center text-white font-bold shrink-0 rounded-xl']">
     {{ fallbackText }}
   </div>
 </template>
