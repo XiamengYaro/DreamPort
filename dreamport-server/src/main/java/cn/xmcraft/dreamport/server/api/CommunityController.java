@@ -320,8 +320,10 @@ public class CommunityController {
                     m.put("username", u.username());
                     m.put("minecraftName", u.minecraftName());
                     m.put("uuid", u.minecraftUuid());
-                    m.put("avatarUrl", "https://crafthead.net/avatar/"
-                            + (u.minecraftUuid() != null ? u.minecraftUuid() : u.username()) + "/128");
+                    // 头像走本地渲染端点(替换 crafthead 外网依赖);名字与 /api/avatar 解析一致
+                    String avatarName = u.minecraftName() != null && !u.minecraftName().isBlank()
+                            ? u.minecraftName() : u.username();
+                    m.put("avatarUrl", "/api/avatar/" + avatarName + "?size=128");
                     m.put("banReason", u.banReason());
                     m.put("banTime", u.banTime());
                     m.put("banUntil", u.banUntil());
