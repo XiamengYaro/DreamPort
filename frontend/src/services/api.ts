@@ -161,6 +161,10 @@ class ApiService {
     })
   }
 
+  async syncMinecraftByUuid() {
+    return this.request('/user/minecraft/sync-by-uuid', { method: 'POST' })
+  }
+
   // Admin
   async getUsers() {
     return this.request('/admin/users')

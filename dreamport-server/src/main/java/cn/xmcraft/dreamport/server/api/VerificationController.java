@@ -21,6 +21,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -185,6 +190,84 @@ public class VerificationController {
         var userOpt = userRepository.findByUsernameIgnoreCase(me);
         var result = minecraftVerifyService.setMinecraftId(me, body.minecraftName());
         return wrap(result);
+    }
+
+    /**
+     * 按 UUID 同步新 ID:正版 UUID 恒定,改名后直接向 Mojang 查询该 UUID 当前绑定的名字。
+     * 仅对官方 v4 UUID 生效;离线服按名字派生的 v3 UUID 随改名失效,引导走「修改 ID」+进服验证。
+     */
+    @PostMapping("/user/minecraft/sync-by-uuid")
+    public ResponseEntity<Map<String, Object>> syncMinecraftByUuid(HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return unauthorized();
+        }
+        var userOpt = userRepository.findByUsernameIgnoreCase(me);
+        if (userOpt.isEmpty()) {
+            return unauthorized();
+        }
+        UserRecord user = userOpt.get();
+        if (user.minecraftUuid() == null || user.minecraftUuid().isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("尚未绑定 Minecraft ID"));
+        }
+        if (uuidVersion(user.minecraftUuid()) != 4) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(
+                    "当前绑定的是离线模式 UUID（随改名失效），请走「修改 ID」并登录服务器重新验证"));
+        }
+        String newName;
+        try {
+            newName = officialNameByUuid(user.minecraftUuid());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("Mojang 查询失败：" + e.getMessage()));
+        }
+        if (newName == null || newName.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("Mojang 未查到该 UUID 的档案"));
+        }
+        if (newName.equalsIgnoreCase(user.minecraftName())) {
+            return ResponseEntity.ok(ApiResponse.success("ID 已是最新：" + newName,
+                    Map.of("oldName", str(user.minecraftName()), "newName", newName, "unchanged", true)));
+        }
+        var taken = userRepository.findByMinecraftNameIgnoreCase(newName);
+        if (taken.isPresent() && !taken.get().id().equals(user.id())) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("新 ID " + newName + " 已被其他账号绑定"));
+        }
+        userRepository.save(withMinecraftName(user, newName));
+        return ResponseEntity.ok(ApiResponse.success("已同步新 ID：" + newName,
+                Map.of("oldName", str(user.minecraftName()), "newName", newName, "unchanged", false)));
+    }
+
+    /** dashless UUID 的版本位(第 13 个字符):3=名字派生离线 UUID,4=官方随机 UUID */
+    private static int uuidVersion(String dashlessUuid) {
+        String u = dashlessUuid.replace("-", "");
+        if (u.length() != 32) return 0;
+        char c = u.charAt(12);
+        return Character.isDigit(c) ? c - '0' : 0;
+    }
+
+    /** 按官方 UUID 查 Mojang 当前绑定的名字;查不到返回 null,网络/服务异常抛出 */
+    private String officialNameByUuid(String uuid) throws Exception {
+        HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(8)).build();
+        HttpRequest req = HttpRequest.newBuilder(URI.create(
+                        "https://sessionserver.mojang.com/session/minecraft/profile/" + uuid))
+                .timeout(Duration.ofSeconds(8)).GET().build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() != 200) return null;
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        return mapper.readTree(resp.body()).path("name").asText(null);
+    }
+
+    private String str(String s) {
+        return s == null ? "" : s;
+    }
+
+    private UserRecord withMinecraftName(UserRecord u, String newName) {
+        return new UserRecord(u.id(), u.username(), u.email(), u.status(),
+                u.passwordAlgo(), u.passwordHash(), u.regTime(), u.discordId(),
+                u.qqNumber(), u.qqBoundAt(), u.questionnaireScore(), u.questionnairePassed(),
+                u.questionnaireReviewSummary(), u.questionnaireScoredAt(), u.questionnaireReasons(),
+                u.questionnaireAnswers(), u.minecraftUuid(), newName, u.microsoftVerified(),
+                u.verifiedAt(), u.verifyType(), u.invitedBy(), u.bedrockUuid(), u.bedrockName(),
+                u.bedrockVerified(), u.bedrockVerifiedAt(), u.banReason(), u.banTime(), u.banUntil(), u.avatar());
     }
 
     @PostMapping("/user/minecraft/verify")

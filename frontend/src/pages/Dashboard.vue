@@ -186,10 +186,14 @@
               <p v-if="minecraftStatus.uuid" class="text-stone-500 text-xs font-mono mt-1">{{ minecraftStatus.uuid }}</p>
               <p class="text-stone-500 text-xs mt-1">验证时间: {{ formatTime(minecraftStatus.verifiedAt) }}</p>
             </div>
-            <button @click="showChangeIdModal = true" class="btn-secondary text-sm">
-              修改 ID
-            </button>
+            <div class="flex flex-col gap-2">
+              <button @click="showChangeIdModal = true" class="btn-secondary text-sm">修改 ID</button>
+              <button v-if="minecraftStatus.uuid" @click="syncIdByUuid" class="btn-secondary text-sm" :disabled="syncLoading">
+                {{ syncLoading ? '同步中...' : '按 UUID 同步新名' }}
+              </button>
+            </div>
           </div>
+          <p v-if="syncMessage" class="mt-3 text-sm" :class="syncSuccess ? 'text-emerald-400' : 'text-amber-400'">{{ syncMessage }}</p>
         </div>
 
         <!-- 未设置/待验证状态 -->
@@ -390,6 +394,35 @@ const minecraftMessage = ref('')
 const minecraftSuccess = ref(false)
 const changeIdMessage = ref('')
 const changeIdSuccess = ref(false)
+
+// 按 UUID 同步新名(正版改名:UUID 恒定,向 Mojang 查询当前绑定名)
+const syncLoading = ref(false)
+const syncMessage = ref('')
+const syncSuccess = ref(false)
+const syncIdByUuid = async () => {
+  syncLoading.value = true
+  syncMessage.value = ''
+  try {
+    const r: any = await api.syncMinecraftByUuid()
+    if (r.success) {
+      const d = r.data || {}
+      syncSuccess.value = true
+      syncMessage.value = d.unchanged ? (r.message || 'ID 已是最新') : `已同步：${d.oldName || '旧名'} → ${d.newName}`
+      if (!d.unchanged) {
+        minecraftStatus.value.name = d.newName
+        await loadMinecraftStatus()
+      }
+    } else {
+      syncSuccess.value = false
+      syncMessage.value = r.message || r.msg || '同步失败'
+    }
+  } catch (e: any) {
+    syncSuccess.value = false
+    syncMessage.value = e.message || '同步失败'
+  } finally {
+    syncLoading.value = false
+  }
+}
 
 // 账号安全(修改密码)
 const pwdForm = ref({ oldPassword: '', newPassword: '', confirm: '' })
