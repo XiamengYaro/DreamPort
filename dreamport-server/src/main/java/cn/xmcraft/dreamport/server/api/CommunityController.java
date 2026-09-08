@@ -302,6 +302,7 @@ public class CommunityController {
         profile.put("timePlayed", econ.getOrDefault("timePlayed", 0L));
         profile.put("activeDaysLast30", econ.getOrDefault("activeDaysLast30", 0));
         profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
+        profile.put("loginCount", econ.get("loginCount"));
         profile.put("banUntil", u.banUntil());
         return ResponseEntity.ok(profile);
     }

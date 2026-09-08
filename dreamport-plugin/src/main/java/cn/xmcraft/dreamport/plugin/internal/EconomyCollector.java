@@ -5,6 +5,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Statistic;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,7 +35,9 @@ public final class EconomyCollector {
             for (OfflinePlayer p : Bukkit.getOfflinePlayers()) {
                 try {
                     double balance = invokeBalance(economy, p);
-                    players.add(entry(p, balance, essentialsPlaytime(p.getUniqueId())));
+                    players.add(entry(p, balance,
+                            Math.max(essentialsPlaytime(p.getUniqueId()), bukkitPlaytimeSeconds(p)),
+                            bukkitLoginCount(p)));
                     collected++;
                 } catch (Exception ignored) {
                 }
@@ -52,7 +55,9 @@ public final class EconomyCollector {
                                 String uuid = file.getFileName().toString().replace(".json", "");
                                 OfflinePlayer p = Bukkit.getOfflinePlayer(UUID.fromString(uuid));
                                 players.add(entry(p, obj.get("money").getAsDouble(),
-                                        obj.has("onlinetime") ? obj.get("onlinetime").getAsLong() : 0));
+                                        Math.max(obj.has("onlinetime") ? obj.get("onlinetime").getAsLong() : 0,
+                                                bukkitPlaytimeSeconds(p)),
+                                        bukkitLoginCount(p)));
                                 collected++;
                             }
                         } catch (IOException | IllegalArgumentException ignored) {
@@ -68,13 +73,14 @@ public final class EconomyCollector {
         plugin.getLogger().info("经济快照已上报（" + collected + " 名玩家）");
     }
 
-    private JsonObject entry(OfflinePlayer p, double balance, long playtimeSeconds) {
+    private JsonObject entry(OfflinePlayer p, double balance, long playtimeSeconds, long loginCount) {
         JsonObject o = new JsonObject();
         o.addProperty("name", p.getName() == null ? p.getUniqueId().toString() : p.getName());
         o.addProperty("balance", balance);
         o.addProperty("playtimeSeconds", playtimeSeconds);
         o.addProperty("playtimeDays", playtimeSeconds / 86400);
         o.addProperty("lastLogin", p.getLastPlayed());
+        o.addProperty("loginCount", loginCount);
         return o;
     }
 
@@ -105,6 +111,25 @@ public final class EconomyCollector {
                 }
             }
         } catch (Exception ignored) {
+        }
+        return 0;
+    }
+
+    /** Bukkit 原生统计兜底:总在线时长(TOTAL_WORLD_TIME,20 tick/秒),无需 Essentials */
+    private long bukkitPlaytimeSeconds(OfflinePlayer p) {
+        try {
+            return p.getStatistic(Statistic.TOTAL_WORLD_TIME) / 20L;
+        } catch (IllegalArgumentException ignored) {
+            // 玩家从未进服,无统计数据
+        }
+        return 0;
+    }
+
+    /** Bukkit 原生统计:退出游戏次数≈登录次数 */
+    private long bukkitLoginCount(OfflinePlayer p) {
+        try {
+            return p.getStatistic(Statistic.LEAVE_GAME);
+        } catch (IllegalArgumentException ignored) {
         }
         return 0;
     }

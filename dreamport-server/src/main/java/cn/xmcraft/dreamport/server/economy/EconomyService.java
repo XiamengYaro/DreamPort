@@ -27,7 +27,7 @@ public class EconomyService {
     }
 
     public record PlayerEconomy(String name, double balance, long playtimeSeconds,
-                                long playtimeDays, long lastLogin) {
+                                long playtimeDays, long lastLogin, long loginCount) {
     }
 
     /** 插件上报快照（整体覆盖） */
@@ -69,6 +69,7 @@ public class EconomyService {
                             result.put("timePlayed", p.playtimeSeconds() * 1000L);
                             result.put("activeDaysLast30", p.playtimeDays());
                             result.put("lastLogin", p.lastLogin());
+                            result.put("loginCount", p.loginCount());
                         },
                         () -> result.put("found", false));
         return result;
