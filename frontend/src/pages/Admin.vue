@@ -633,7 +633,76 @@
         </div>
       </div>
 
-      <!-- 审核管理 Tab -->
+            <!-- 称号与成就 Tab -->
+      <div v-if="activeTab === 'titles' && !loading" class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">称号定义</h3>
+            <button @click="addTitleDef" class="btn-secondary text-sm">+ 添加称号</button>
+          </div>
+          <p class="text-xs text-stone-500">code 用于插件变量与奖励关联;颜色为网页显示色(十六进制)。</p>
+          <div v-for="(t, i) in titlesCfg.titles" :key="t.code" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">代码(code)</label><input v-model="t.code" class="input text-sm font-mono" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">名称</label><input v-model="t.name" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">颜色(网页)</label><input v-model="t.color" class="input text-sm font-mono" placeholder="#fbbf24" /></div>
+              <label class="flex items-center gap-2 text-sm text-stone-300 self-end"><input type="checkbox" v-model="t.enabled" class="accent-orange-500" /> 启用</label>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">描述</label><input v-model="t.desc" class="input text-sm" /></div>
+            <button @click="titlesCfg.titles.splice(i, 1)" class="text-xs text-rose-400 hover:text-rose-300">删除该称号</button>
+          </div>
+          <button @click="saveTitles" class="btn-primary text-sm">保存称号定义</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">成就定义</h3>
+            <button @click="addAchievementDef" class="btn-secondary text-sm">+ 添加成就</button>
+          </div>
+          <p class="text-xs text-stone-500">指标:playtime_total=累计在线秒数 / register_days=注册天数 / invite_count=成功邀请数 / points_total=累计获得积分。达标自动授予奖励称号并通知玩家。</p>
+          <div v-for="(a, i) in achCfg.achievements" :key="a.id" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">成就 ID</label><input v-model="a.id" class="input text-sm font-mono" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">名称</label><input v-model="a.name" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">指标</label>
+                <select v-model="a.metric" class="input text-sm">
+                  <option value="playtime_total">累计在线时长(秒)</option>
+                  <option value="register_days">注册天数</option>
+                  <option value="invite_count">成功邀请数</option>
+                  <option value="points_total">累计获得积分</option>
+                </select></div>
+              <div><label class="block text-xs text-stone-500 mb-1">门槛</label><input v-model.number="a.target" type="number" min="1" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">奖励称号</label>
+                <select v-model="a.reward" class="input text-sm">
+                  <option value="">无</option>
+                  <option v-for="t in titlesCfg.titles" :key="t.code" :value="t.code">{{ t.name }}({{ t.code }})</option>
+                </select></div>
+              <label class="flex items-center gap-2 text-sm text-stone-300 self-end"><input type="checkbox" v-model="a.enabled" class="accent-orange-500" /> 启用</label>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">描述</label><input v-model="a.desc" class="input text-sm" /></div>
+            <button @click="achCfg.achievements.splice(i, 1)" class="text-xs text-rose-400 hover:text-rose-300">删除该成就</button>
+          </div>
+          <button @click="saveAchievements" class="btn-primary text-sm">保存成就定义</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white">手动授予 / 撤销</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div><label class="block text-xs text-stone-500 mb-1">玩家用户名</label><input v-model="grantForm.username" class="input text-sm" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">称号</label>
+              <select v-model="grantForm.code" class="input text-sm">
+                <option value="">选择称号…</option>
+                <option v-for="t in titlesCfg.titles" :key="t.code" :value="t.code">{{ t.name }}({{ t.code }})</option>
+              </select></div>
+            <div class="flex gap-2">
+              <button @click="doGrant" class="btn-primary text-sm flex-1">授予</button>
+              <button @click="doRevoke" class="btn-secondary text-sm flex-1">撤销</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
         <EmptyState v-if="pendingUsers.length === 0" icon="check-circle" text="暂无待审核玩家" />
@@ -1097,6 +1166,7 @@ const menuItems = [
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
+  { key: 'titles', icon: 'shield-check', label: '称号与成就' },
   { key: 'audits', icon: 'document-text', label: '审计日志' },
   { key: 'appeals', icon: 'envelope', label: '申诉处理' },
   { key: 'questionnaires', icon: 'pencil-square', label: '问卷管理' },
@@ -1117,11 +1187,12 @@ const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules, tsk, shop] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules, tsk, shop, titlesData] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
       api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
-      api.getRulesConfig(), api.getTasksConfigAdmin(), api.getShopConfigAdmin()
+      api.getRulesConfig(), api.getTasksConfigAdmin(), api.getShopConfigAdmin(),
+      api.getTitlesOverview()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -1138,6 +1209,9 @@ const loadSystemSettings = async () => {
     }
     if (rules.success) rulesCfg.value = { doc: rules.data.doc || '', seconds: Number(rules.data.seconds) || 15 }
     if (tsk.success) tasksCfg.value = tsk.data
+    if (titlesData.success) {
+      // 称号总览数据在 loadTitlesAdmin 中已有专用加载;此处占位
+    }
     if (shop.success) {
       shopCfg.value = {
         rewards: (shop.data.rewards || []).map((r: any) => ({
@@ -1197,11 +1271,105 @@ const genAstrbotToken = () => {
   for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
   astrbotCfg.value.apiToken = t
 }
+const rulesCfg = ref<any>({ doc: '', seconds: 15 })
+const rulesDocOptions = computed(() => {
+  const opts: Array<{ value: string; label: string }> = []
+  for (const cat of docsData.value.categories || []) {
+    for (const f of cat.docs || []) {
+      opts.push({ value: cat.dirName + '/' + f.filename, label: (cat.displayName || cat.name) + ' / ' + f.title })
+    }
+  }
+  for (const f of docsData.value.uncategorized || []) {
+    opts.push({ value: f.filename, label: '未分类 / ' + f.title })
+  }
+  return opts
+})
+const tasksCfg = ref<any>({ tasks: [] })
+const shopCfg = ref<any>({ rewards: [] })
+
 const saveRules = async () => {
   try {
     const r: any = await api.saveRulesConfig(rulesCfg.value)
     if (r.success) notify && notify.success('注册守则设置已保存')
   } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+
+
+const addTask = () => {
+  tasksCfg.value.tasks.push({
+    id: 'task_' + Date.now(), type: 'signin', channel: 'web', period: 'daily',
+    name: '新任务', desc: '', target: 1, points: 5, enabled: true
+  })
+}
+const saveTasks = async () => {
+  try {
+    const r: any = await api.saveTasksConfigAdmin(tasksCfg.value)
+    if (r.success) notify && notify.success('任务配置已保存')
+  } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+const addReward = () => {
+  shopCfg.value.rewards.push({
+    id: 'reward_' + Date.now(), name: '新兑换项', desc: '', cost: 100,
+    commandsText: 'eco give {player} 100', enabled: true
+  })
+}
+const saveShop = async () => {
+  try {
+    const rewards = shopCfg.value.rewards.map((r: any) => ({
+      id: r.id, name: r.name, desc: r.desc || '', cost: Number(r.cost) || 0, enabled: !!r.enabled,
+      commands: String(r.commandsText || '').split('\n').map((x: string) => x.trim()).filter(Boolean)
+        .map((cmd: string) => ({ type: 'command', cmd }))
+    }))
+    const r: any = await api.saveShopConfigAdmin({ rewards })
+    if (r.success) notify && notify.success('兑换商店已保存')
+  } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+const titlesCfg = ref<any>({ titles: [] })
+const achCfg = ref<any>({ achievements: [] })
+
+const grantForm = ref<any>({ username: '', code: '' })
+
+const loadTitlesAdmin = async () => {
+  try {
+    const r: any = await api.getTitlesOverview()
+    if (r.success) {
+      titlesCfg.value = { titles: r.data.titles }
+      achCfg.value = { achievements: r.data.achievements }
+    }
+  } catch (e) { console.error(e) }
+}
+
+const addTitleDef = () => {
+  titlesCfg.value.titles.push({ code: '', name: '新称号', desc: '', color: '#fbbf24', enabled: true })
+}
+const saveTitles = async () => {
+  try {
+    const r: any = await api.saveTitlesConfigAdmin({ titles: titlesCfg.value.titles })
+    if (r.success) notify && notify.success('称号定义已保存')
+  } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+const addAchievementDef = () => {
+  achCfg.value.achievements.push({ id: 'ach_' + Date.now(), name: '新成就', desc: '', metric: 'playtime_total', target: 10, reward: '', enabled: true })
+}
+const saveAchievements = async () => {
+  try {
+    const r: any = await api.saveAchievementsConfigAdmin({ achievements: achCfg.value.achievements })
+    if (r.success) notify && notify.success('成就定义已保存')
+  } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+const doGrant = async () => {
+  if (!grantForm.value.username || !grantForm.value.code) { notify && notify.error('请填写用户名与称号'); return }
+  try {
+    const r: any = await api.grantTitle(grantForm.value.username, grantForm.value.code)
+    if (r.success) notify && notify.success('已授予')
+  } catch (e: any) { notify && notify.error(e.message || '操作失败') }
+}
+const doRevoke = async () => {
+  if (!grantForm.value.username || !grantForm.value.code) { notify && notify.error('请填写用户名与称号'); return }
+  try {
+    const r: any = await api.revokeTitle(grantForm.value.username, grantForm.value.code)
+    if (r.success) notify && notify.success('已撤销')
+  } catch (e: any) { notify && notify.error(e.message || '操作失败') }
 }
 const saveDownloads = async () => {
   try {
@@ -1310,6 +1478,7 @@ const auditActionLabels: Record<string, string> = {
   settings_llm: 'AI 评分设置', settings_invite: '邀请设置',
   settings_game: '游戏设置', settings_downloads: '下载中心设置',
   settings_astrbot: 'QQ 互通设置', settings_announcements: '公告设置',
+  settings_tasks: '任务配置', settings_shop: '兑换商店',
 }
 const auditActionLabel = (a: string) => {
   if (auditActionLabels[a]) return auditActionLabels[a]

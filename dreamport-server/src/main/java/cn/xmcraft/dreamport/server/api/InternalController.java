@@ -55,6 +55,7 @@ public class InternalController {
     private final QqBridgeService qqBridge;
     private final cn.xmcraft.dreamport.server.points.TaskService taskService;
     private final cn.xmcraft.dreamport.server.points.MailService rewardMailService;
+    private final cn.xmcraft.dreamport.server.titles.TitleService titleService;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -70,7 +71,8 @@ public class InternalController {
                               QqBindingService qqBindingService,
                               QqBridgeService qqBridge,
                               cn.xmcraft.dreamport.server.points.TaskService taskService,
-                              cn.xmcraft.dreamport.server.points.MailService rewardMailService) {
+                              cn.xmcraft.dreamport.server.points.MailService rewardMailService,
+                              cn.xmcraft.dreamport.server.titles.TitleService titleService) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -87,6 +89,7 @@ public class InternalController {
         this.qqBridge = qqBridge;
         this.taskService = taskService;
         this.rewardMailService = rewardMailService;
+        this.titleService = titleService;
     }
 
     @PostMapping("/login-check")
@@ -301,6 +304,15 @@ public class InternalController {
     public java.util.Map<String, Object> mailClaimed(@org.springframework.web.bind.annotation.RequestBody ClaimedBody body) {
         boolean ok = rewardMailService.markClaimed(body.id());
         return java.util.Map.of("success", ok);
+    }
+
+    /** 当前佩戴称号(插件 Team 前缀用) */
+    @org.springframework.web.bind.annotation.GetMapping("/title/active")
+    public java.util.Map<String, Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username) {
+        var t = titleService.activeTitle(username);
+        return java.util.Map.of("success", true,
+                "code", t == null ? "" : t.code(),
+                "name", t == null ? "" : t.name());
     }
 
     public record ActivityBody(String username, long sessionSeconds, int loginCount) {

@@ -80,6 +80,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/tasks',
+    name: 'Tasks',
+    component: () => import('./pages/Tasks.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/leaderboard',
     name: 'Leaderboard',
     component: () => import('./pages/Leaderboard.vue'),

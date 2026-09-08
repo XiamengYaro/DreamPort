@@ -17,8 +17,8 @@
           </div>
           <div class="card p-6">
             <h3 class="text-sm font-semibold text-white mb-3">网页签到</h3>
-            <button class="btn-primary w-full text-sm" :disabled="signinWeb || center.signin?.web"
-              @click="doSignin('web')">
+            <button class="btn-primary w-full text-sm" :disabled="center.signin?.web"
+              :class="center.signin?.web ? 'opacity-50' : ''" @click="doSignin('web')">
               {{ center.signin?.web ? '今日已签到' : '立即签到 +5 积分' }}
             </button>
             <p class="text-xs text-stone-500 mt-2">连续签到有额外加成任务</p>
