@@ -110,7 +110,7 @@
                 <option value="resource">资源世界</option>
               </select>
             </div>
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
               <div>
                 <label class="block text-sm text-stone-300 mb-1">X 坐标 <span class="text-red-400">*</span></label>
                 <input v-model.number="submitForm.x" type="number" class="input w-full" placeholder="0" required />

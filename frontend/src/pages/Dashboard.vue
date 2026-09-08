@@ -40,7 +40,7 @@
             <div class="text-2xl font-bold text-white mb-1">{{ username }}</div>
             <div class="h-px bg-gradient-to-r from-orange-500/50 to-transparent mb-4"></div>
             <!-- 数据行 -->
-            <div class="grid grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div class="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-orange-500/10 to-amber-500/10 border border-orange-500/20">
                 <AppIcon name="banknote" class="w-6 h-6" />
                 <div>

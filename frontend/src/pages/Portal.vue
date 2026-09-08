@@ -4,9 +4,9 @@
     <HeroBanner :slides="portalConfig.carousel" :logoUrl="logoUrl" />
 
     <!-- 服务器介绍 -->
-    <section class="py-16 px-4">
+    <section class="py-10 px-4 sm:py-16">
       <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-3xl font-bold text-white mb-6">{{ portalConfig.server_name }}</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-6">{{ portalConfig.server_name }}</h2>
         <p class="text-lg text-stone-400 mb-8">{{ portalConfig.description }}</p>
 
         <!-- 服务器状态 -->
@@ -58,9 +58,9 @@
     <TimelineSection :timeline="portalConfig.timeline" :types="portalConfig.photo_types" />
 
     <!-- 底部 CTA -->
-    <section class="py-16 px-4 bg-stone-800/30">
+    <section class="py-10 px-4 bg-stone-800/30 sm:py-16">
       <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-3xl font-bold text-white mb-4">准备好加入我们了吗？</h2>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">准备好加入我们了吗？</h2>
         <p class="text-stone-400 mb-8">申请白名单，开始你在 {{ portalConfig.server_name }} 的冒险之旅</p>
         <router-link to="/whitelist" class="btn-primary text-lg px-8 py-4">
           立即申请白名单

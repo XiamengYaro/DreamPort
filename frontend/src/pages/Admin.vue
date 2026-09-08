@@ -639,7 +639,7 @@
         <!-- 注册统计 -->
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">注册统计</h3>
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard :value="statsOverview.todayRegistrations || 0" label="今日注册" tone="blue" />
             <StatCard :value="statsOverview.weekRegistrations || 0" label="本周注册" tone="purple" />
             <StatCard :value="statsOverview.monthRegistrations || 0" label="本月注册" tone="cyan" />
@@ -649,7 +649,7 @@
         <!-- 问卷统计 -->
         <div class="card p-6">
           <h3 class="text-lg font-semibold text-white mb-4">问卷统计</h3>
-          <div class="grid grid-cols-3 gap-4">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard :value="(statsOverview.questionnairePassRate?.toFixed(1) || 0) + '%'" label="通过率" tone="emerald" />
             <StatCard :value="statsOverview.averageScore?.toFixed(1) || 0" label="平均分" tone="orange" />
             <StatCard :value="(statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0)" label="总提交数" />
@@ -794,7 +794,7 @@
           <textarea v-model="verifyConfig.instructions" class="input w-full h-24" placeholder="输入自定义说明文字..."></textarea>
         </div>
         
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm text-stone-300 mb-1">Java 版服务器地址</label>
             <input v-model="verifyConfig.javaServerAddress" type="text" class="input w-full" placeholder="mc.xmcraft.cn" />
@@ -805,7 +805,7 @@
           </div>
         </div>
         
-        <div class="grid grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label class="block text-sm text-stone-300 mb-1">基岩版服务器地址</label>
             <input v-model="verifyConfig.bedrockServerAddress" type="text" class="input w-full" placeholder="mc.xmcraft.cn" />

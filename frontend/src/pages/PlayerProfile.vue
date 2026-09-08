@@ -21,7 +21,7 @@
       <template v-else>
         <!-- 头部信息 -->
         <div class="card p-6 mb-6">
-          <div class="flex items-start gap-6">
+          <div class="flex flex-col sm:flex-row items-start sm:items-start gap-4 sm:gap-6">
             <img :src="`/api/avatar/${encodeURIComponent(profile.username || profile.uuid)}?size=128`" 
               :alt="profile.username"
               class="w-32 h-32 rounded-2xl border-4 border-orange-500/30 shadow-xl"
@@ -35,7 +35,7 @@
               </h1>
               <div class="space-y-1 text-sm text-stone-400">
                 <p>游戏 ID: <span class="text-stone-300 font-mono">{{ profile.minecraftName || profile.username }}</span></p>
-                <p>UUID: <span class="text-stone-300 font-mono">{{ profile.uuid || '未绑定' }}</span></p>
+                <p>UUID: <span class="text-stone-300 font-mono break-all">{{ profile.uuid || '未绑定' }}</span></p>
                 <p>首次加入: <span class="text-stone-300">{{ formatDate(profile.regTime) }}</span></p>
                 <p>已陪伴服务器 <span class="text-orange-400 font-bold">{{ profile.daysSinceReg || 0 }}</span> 天</p>
               </div>

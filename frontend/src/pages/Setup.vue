@@ -110,7 +110,7 @@ const submit = async () => {
           <input v-model="username" placeholder="3-16 位字母数字_-"
             class="w-full px-4 py-2.5 rounded-xl bg-stone-800/70 border border-stone-700 text-white text-sm focus:outline-none focus:border-orange-500/50" />
         </div>
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <div class="text-sm font-medium text-stone-300 mb-1">密码</div>
             <input v-model="password" type="password" placeholder="至少 8 位"
@@ -131,7 +131,7 @@ const submit = async () => {
         <!-- 部署模式 -->
         <div>
           <div class="text-sm font-medium text-stone-300 mb-2">部署方式</div>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button @click="mode = 'fresh'"
               class="p-4 rounded-xl border text-left transition-all"
               :class="mode === 'fresh' ? 'border-orange-500/50 bg-orange-500/10' : 'border-stone-700 hover:border-stone-600'">
