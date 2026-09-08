@@ -194,7 +194,7 @@ public class VerificationController {
 
     /**
      * 按 UUID 同步新 ID:正版 UUID 恒定,改名后直接向 Mojang 查询该 UUID 当前绑定的名字。
-     * 仅对官方 v4 UUID 生效;离线服按名字派生的 v3 UUID 随改名失效,引导走「修改 ID」+进服验证。
+     * 仅对官方 v4 UUID 生效;非官方 UUID(历史验证遗留)提示重新进服验证升级。
      */
     @PostMapping("/user/minecraft/sync-by-uuid")
     public ResponseEntity<Map<String, Object>> syncMinecraftByUuid(HttpServletRequest request) {
@@ -212,7 +212,7 @@ public class VerificationController {
         }
         if (uuidVersion(user.minecraftUuid()) != 4) {
             return ResponseEntity.badRequest().body(ApiResponse.failure(
-                    "当前绑定的是离线模式 UUID（随改名失效），请走「修改 ID」并登录服务器重新验证"));
+                    "该 UUID 不是官方正版 UUID（多来自历史验证记录），请在控制台修改 ID 并进服重新验证一次，验证通过即可使用同步"));
         }
         String newName;
         try {
