@@ -5,21 +5,31 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased] - 2026-09-08
+## [1.3.0] - 2026-09-08
+
+**收口纯正版账号**:产品只服务正版玩家——移除 BS 皮肤站互通与微软正版绑定,头像全面本地双层渲染,全局移动端适配。
 
 ### Removed
+- **移除 BlessingSkin 皮肤站互通**:OAuth2 Provider 全端点(authorize/token/userinfo)、/api/user/bs/*、BlessingSkinService、blessingskin 设置端点与管理卡、注册玩家分型(premium/offline/bedrock → 仅正版)、控制台皮肤站角色卡、BS 插件目录(bs-plugin-dreamport/)与全部分册文档;改密/改名/改邮箱不再同步皮肤站,改邮箱直接落本站
 - **移除微软正版验证**:MicrosoftOAuthController(/api/auth/microsoft/start|callback)整体删除——该链路从未持久化绑定结果(microsoftVerified 无任何写 true 路径),属未接线死代码;前端类型同步清理
+- 仓库地图/构建脚本同步:build.sh 收为三步,不再产出皮肤站插件 zip
 
 ### Changed
 - **头像正版识别改 Mojang 按名查档**:名字在 Mojang 官方库存在即取官方皮肤(官方 UUID 缓存命中 24h/未命中 1h,不可达自动降级且不缓存);移除原 microsoftVerified 判定与皮肤站插件取材层
+- **头像服务三级缓存**:浏览器 ETag + 内存 LRU + 磁盘持久化 data/avatar-cache/(重启不丢);冷缓存解析移出锁外并发执行;过期条目后台单线程静默刷新(SWR),显示永不等网络(实测:冷 3.8s→内存 0.004s→重启后 0.099s 零 Mojang 外呼)
+- **全站头像默认方形圆角**(rounded-xl,大尺寸 rounded-2xl)
 - **控制台头像统一玩家皮肤大头照(双层)**:个人资料卡与 Minecraft 卡均按「绑定 MC 名→账号名」解析,下线「更换头像」上传入口(后端 /user/avatar/upload 端点保留)
+- **新增按 UUID 一键同步新 ID**:正版改名后控制台点一下即向 Mojang 查询该 UUID 当前绑定名并更新(官方 v4 UUID 生效;非官方 UUID 引导重新进服验证)
+- **全局移动端适配**:≤640px 根字号 15px 全站等比缩放;无响应式前缀网格补 sm: 堆叠;首页区块收缩;UUID 长串 break-all;375×812 视口实测 17 条路由零横向溢出
+- **深色玻璃小字对比度全站提亮**:stone-500/600/700 与占位符提亮至可读水平(≥5:1)
+- 排行榜四榜单(财富/在线时长/活跃天数/封禁)玩家 ID 前增加 36px 双层皮肤头像
 
 ### Fixed
-- **封禁弹窗补齐理由/时长输入**:确认弹窗从未渲染封禁理由与临时封禁天数的输入框(showBanDaysInput 状态被忽略、理由传 undefined),管理员无法填写——补齐两个输入并端到端提交
-
-### Removed
-- **移除 BlessingSkin 皮肤站互通,注册收口纯正版**:OAuth2 Provider 全端点(authorize/token/userinfo)、/api/user/bs/*、BlessingSkinService、blessingskin 设置端点与管理卡、注册玩家分型(premium/offline/bedrock → 仅正版)、控制台皮肤站角色卡、BS 插件目录(bs-plugin-dreamport/)与全部分册文档;改密/改名/改邮箱不再同步皮肤站,改邮箱直接落本站
-- 仓库地图/构建脚本同步:build.sh 收为三步,不再产出皮肤站插件 zip
+- **玩家详情恒显"玩家不存在"**:/api/players/profile 原返回裸对象(无 success 字段),前端按 r.success 判定恒假——改统一 {success,data} 包装
+- **玩家详情经济/时长数据缺失**:快照按游戏名存储,原按账号名匹配——改游戏名优先(minecraftName→回退 username)
+- **总游戏时长/活跃天数全为 0、登录次数缺失**:插件时长仅从 EssentialsX userdata 采集,生产未装——补 Bukkit 原生统计兜底(TOTAL_WORLD_TIME/20)并新增登录次数(LEAVE_GAME)端到端透出
+- **封禁弹窗无法填写理由/时长**:确认弹窗从未渲染输入框(showBanDaysInput 被忽略、理由恒 undefined)——补齐「封禁理由」「临时封禁天数」输入并端到端提交
+- 管理员名单设置卡去除嵌套双层样式,与其他设置卡统一
 
 ## [插件 1.2.2] - 2026-09-08
 
