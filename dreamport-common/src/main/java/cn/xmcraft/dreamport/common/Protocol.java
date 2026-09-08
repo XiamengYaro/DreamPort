@@ -26,6 +26,10 @@ public final class Protocol {
     public static final String MESSAGES_PENDING = "/internal/v1/messages/pending";
     /** QQ 绑定游戏内确认通道（/xmw qq bind，docs/ASTRBOT_PLAN.md §5.2） */
     public static final String QQ_BIND = "/internal/v1/qq/bind";
+    public static final String ACTIVITY = "/internal/v1/activity";
+    public static final String SIGNIN = "/internal/v1/signin";
+    public static final String MAIL_PENDING = "/internal/v1/mail/pending";
+    public static final String MAIL_CLAIMED = "/internal/v1/mail/claimed";
 
     /** 校验放行 */
     public static final String DECISION_ALLOW = "allow";

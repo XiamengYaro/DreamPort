@@ -169,6 +169,44 @@ class ApiService {
     return this.request('/user/rules/accept', { method: 'POST' })
   }
 
+  // 积分任务中心
+  async getTasksCenter() {
+    return this.request('/points/center')
+  }
+
+  async postPointsSignin() {
+    return this.request('/points/signin', { method: 'POST' })
+  }
+
+  async postPointsClaim(taskId: string) {
+    return this.request('/points/claim', { method: 'POST', body: JSON.stringify({ taskId }) })
+  }
+
+  async getPointsShop() {
+    return this.request('/points/shop')
+  }
+
+  async postPointsRedeem(rewardId: string) {
+    return this.request('/points/redeem', { method: 'POST', body: JSON.stringify({ rewardId }) })
+  }
+
+  // Admin
+  async getTasksConfigAdmin() {
+    return this.request('/admin/settings/tasksconfig')
+  }
+
+  async saveTasksConfigAdmin(body: any) {
+    return this.request('/admin/settings/tasksconfig', { method: 'PUT', body: JSON.stringify(body) })
+  }
+
+  async getShopConfigAdmin() {
+    return this.request('/admin/settings/shopconfig')
+  }
+
+  async saveShopConfigAdmin(body: any) {
+    return this.request('/admin/settings/shopconfig', { method: 'PUT', body: JSON.stringify(body) })
+  }
+
   // Admin
   async getUsers() {
     return this.request('/admin/users')

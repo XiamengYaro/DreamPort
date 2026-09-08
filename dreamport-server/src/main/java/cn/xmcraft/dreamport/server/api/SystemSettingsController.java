@@ -212,6 +212,34 @@ public class SystemSettingsController {
         return ResponseEntity.ok(ApiResponse.success("注册守则设置已保存"));
     }
 
+    @GetMapping("/tasksconfig")
+    public ResponseEntity<Object> getTasksConfig(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        return ResponseEntity.ok(Map.of("success", true, "data", settingsService.tasksConfig()));
+    }
+
+    @PutMapping("/tasksconfig")
+    public ResponseEntity<Object> saveTasksConfig(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        settingsService.saveTasksConfig(body);
+        auditService.log("settings_tasks", op(request), "", "");
+        return ResponseEntity.ok(ApiResponse.success("任务配置已保存"));
+    }
+
+    @GetMapping("/shopconfig")
+    public ResponseEntity<Object> getShopConfig(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        return ResponseEntity.ok(Map.of("success", true, "data", settingsService.shopConfig()));
+    }
+
+    @PutMapping("/shopconfig")
+    public ResponseEntity<Object> saveShopConfig(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        settingsService.saveShopConfig(body);
+        auditService.log("settings_shop", op(request), "", "");
+        return ResponseEntity.ok(ApiResponse.success("兑换商店已保存"));
+    }
+
     private void maskSecret(Map<String, Object> config, String key, String flag) {
         String v = String.valueOf(config.getOrDefault(key, ""));
         if (!v.isBlank()) {

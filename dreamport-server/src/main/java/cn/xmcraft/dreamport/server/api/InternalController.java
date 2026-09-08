@@ -53,6 +53,8 @@ public class InternalController {
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
     private final QqBridgeService qqBridge;
+    private final cn.xmcraft.dreamport.server.points.TaskService taskService;
+    private final cn.xmcraft.dreamport.server.points.MailService rewardMailService;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -66,7 +68,9 @@ public class InternalController {
                               NotificationRepository notificationRepository,
                               BindCodeService bindCodeService,
                               QqBindingService qqBindingService,
-                              QqBridgeService qqBridge) {
+                              QqBridgeService qqBridge,
+                              cn.xmcraft.dreamport.server.points.TaskService taskService,
+                              cn.xmcraft.dreamport.server.points.MailService rewardMailService) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -81,6 +85,8 @@ public class InternalController {
         this.bindCodeService = bindCodeService;
         this.qqBindingService = qqBindingService;
         this.qqBridge = qqBridge;
+        this.taskService = taskService;
+        this.rewardMailService = rewardMailService;
     }
 
     @PostMapping("/login-check")
@@ -263,6 +269,47 @@ public class InternalController {
         economyService.saveSnapshot(body.players() == null ? List.of() : body.players());
         return ResponseEntity.ok(Map.of("ok", true, "count",
                 body.players() == null ? 0 : body.players().size()));
+    }
+
+    // ---------- 积分任务/签到/邮件(插件通道,server-token) ----------
+
+    /** 玩家退出时上报会话时长(驱动每日/每周在线任务) */
+    @org.springframework.web.bind.annotation.PostMapping("/activity")
+    public java.util.Map<String, Object> activity(@org.springframework.web.bind.annotation.RequestBody ActivityBody body) {
+        taskService.onActivity(body.username());
+        return java.util.Map.of("success", true);
+    }
+
+    /** 游戏内签到上报(每日一次) */
+    @org.springframework.web.bind.annotation.PostMapping("/signin")
+    public java.util.Map<String, Object> signin(@org.springframework.web.bind.annotation.RequestBody SigninBody body) {
+        boolean first = taskService.signin(body.username(), "game");
+        if (first) taskService.onSignin(body.username(), "game");
+        return java.util.Map.of("success", true, "first", first,
+                "message", first ? "签到成功" : "今日已签到");
+    }
+
+    /** 待领取奖励邮件 */
+    @org.springframework.web.bind.annotation.GetMapping("/mail/pending")
+    public java.util.Map<String, Object> mailPending(@org.springframework.web.bind.annotation.RequestParam String username) {
+        return java.util.Map.of("success", true,
+                "data", java.util.Map.of("mails", rewardMailService.pending(username)));
+    }
+
+    /** 领取回执 */
+    @org.springframework.web.bind.annotation.PostMapping("/mail/claimed")
+    public java.util.Map<String, Object> mailClaimed(@org.springframework.web.bind.annotation.RequestBody ClaimedBody body) {
+        boolean ok = rewardMailService.markClaimed(body.id());
+        return java.util.Map.of("success", ok);
+    }
+
+    public record ActivityBody(String username, long sessionSeconds, int loginCount) {
+    }
+
+    public record SigninBody(String username) {
+    }
+
+    public record ClaimedBody(long id) {
     }
 
     @GetMapping("/commands/whitelist")

@@ -212,6 +212,28 @@ public final class BackendClient {
         return getInternal("/internal/v1/admin-ops/info/" + username);
     }
 
+    /** 玩家退出时上报会话时长(驱动每日/每周在线任务) */
+    public void reportActivity(String username, long sessionSeconds, int loginCount) {
+        postAsync(Protocol.ACTIVITY, java.util.Map.of("username", username,
+                "sessionSeconds", sessionSeconds, "loginCount", loginCount));
+    }
+
+    /** 游戏内签到;@return 后端原始响应体(含 success/first/message) */
+    public String gameSignin(String player) {
+        return post(Protocol.SIGNIN, java.util.Map.of("username", player));
+    }
+
+    /** 待领取奖励邮件(原始 JSON 响应体) */
+    public String mailPending(String player) {
+        return getInternal(Protocol.MAIL_PENDING + "?username=" + java.net.URLEncoder.encode(player,
+                java.nio.charset.StandardCharsets.UTF_8));
+    }
+
+    /** 邮件领取回执 */
+    public void mailClaimed(long id) {
+        postAsync(Protocol.MAIL_CLAIMED, java.util.Map.of("id", id));
+    }
+
     private void postAsync(String path, Object body) {
         plugin.getServer().getAsyncScheduler().runNow(plugin,
                 task -> post(path, body));

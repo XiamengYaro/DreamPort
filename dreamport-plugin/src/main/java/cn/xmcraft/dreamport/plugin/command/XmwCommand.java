@@ -18,8 +18,8 @@ import java.util.Locale;
  */
 public final class XmwCommand implements CommandExecutor, TabCompleter {
 
-    private static final List<String> SUB = List.of("reload", "status", "approve", "reject", "ban",
-            "unban", "delete", "list", "info", "qq", "version");
+    private static final List<String> SUB = List.of("reload", "status", "signin", "approve", "reject",
+            "ban", "unban", "delete", "list", "info", "qq", "version");
 
     private final DreamPortPlugin plugin;
 
@@ -43,6 +43,7 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
             case "info" -> handleInfo(sender, args);
             case "approve", "reject", "ban", "unban", "delete" -> handleOp(sender, sub, args);
             case "qq" -> handleQq(sender, args);
+            case "signin" -> handleSignin(sender);
             default -> sender.sendMessage("§6[DreamPort] §c未知子命令: " + args[0]);
         }
         return true;
@@ -162,6 +163,33 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
      * QQ 验证绑定游戏内确认（docs/ASTRBOT_PLAN.md §5.2）：
      * /xmw qq bind <验证码> —— 验证码经 QQ 机器人 /dp绑定 获取，网页或游戏内任一通道确认。
      */
+    /** 游戏内签到(积分任务,每日一次) */
+    private void handleSignin(CommandSender sender) {
+        if (!(sender instanceof org.bukkit.entity.Player player)) {
+            sender.sendMessage("§6[DreamPort] §c只有玩家可以签到");
+            return;
+        }
+        async(sender, () -> {
+            String body = plugin.backendClient().gameSignin(player.getName());
+            if (body == null) {
+                sender.sendMessage("§6[DreamPort] §c签到失败: 后端不可达");
+                return;
+            }
+            try {
+                JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
+                boolean first = obj.get("first").getAsBoolean();
+                String message = obj.get("message").getAsString();
+                if (first) {
+                    sender.sendMessage("§6[DreamPort] §a" + message);
+                } else {
+                    sender.sendMessage("§6[DreamPort] §e" + message);
+                }
+            } catch (Exception e) {
+                sender.sendMessage("§6[DreamPort] §c签到响应解析失败");
+            }
+        });
+    }
+
     private void handleQq(CommandSender sender, String[] args) {
         if (!(sender instanceof org.bukkit.entity.Player player)) {
             sender.sendMessage("§6[DreamPort] §c只有玩家可以绑定 QQ");

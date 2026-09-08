@@ -11,6 +11,8 @@ import java.util.Map;
 @Service
 public class SystemSettingsService {
 
+    private final ObjectMapper mapper = new ObjectMapper();
+
     private final SettingService settingService;
 
     public SystemSettingsService(SettingService settingService) {
@@ -173,6 +175,40 @@ public class SystemSettingsService {
         }
         m.put("seconds", sec);
         settingService.set(SettingService.KEY_RULES_CONFIG, m);
+    }
+
+    /** 任务规则(tasks.config:{"tasks":[{id,type,channel,period,name,desc,target,points,enabled}]}) */
+    public Map<String, Object> tasksConfig() {
+        String raw = settingService.get(SettingService.KEY_TASKS_CONFIG, String.class);
+        if (raw == null || raw.isBlank()) {
+            return Map.of("tasks", List.of());
+        }
+        try {
+            return mapper.readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return Map.of("tasks", List.of());
+        }
+    }
+
+    public void saveTasksConfig(Map<String, Object> config) {
+        settingService.set(SettingService.KEY_TASKS_CONFIG, config);
+    }
+
+    /** 兑换商店(shop.config:{"rewards":[{id,name,desc,cost,commands,enabled}]}) */
+    public Map<String, Object> shopConfig() {
+        String raw = settingService.get(SettingService.KEY_SHOP_CONFIG, String.class);
+        if (raw == null || raw.isBlank()) {
+            return Map.of("rewards", List.of());
+        }
+        try {
+            return mapper.readValue(raw, new com.fasterxml.jackson.core.type.TypeReference<Map<String, Object>>() {});
+        } catch (Exception e) {
+            return Map.of("rewards", List.of());
+        }
+    }
+
+    public void saveShopConfig(Map<String, Object> config) {
+        settingService.set(SettingService.KEY_SHOP_CONFIG, config);
     }
 
     public void saveDownloads(Map<String, Object> downloads) {

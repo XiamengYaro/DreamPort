@@ -9,7 +9,11 @@ folia-supported: true
 commands:
   xmw:
     description: DreamPort 管理命令
-    usage: /xmw <status|reload>
+    usage: /xmw <status|reload|signin>
+    permission: dreamport.use
+  mail:
+    description: 打开奖励邮箱 GUI
+    usage: /mail
     permission: dreamport.use
 
 permissions:

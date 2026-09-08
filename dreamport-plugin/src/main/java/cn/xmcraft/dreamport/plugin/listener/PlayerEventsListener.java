@@ -15,6 +15,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
 public class PlayerEventsListener implements Listener {
 
     private final DreamPortPlugin plugin;
+    /** 进服时间戳(会话时长统计,驱动积分任务) */
+    private final java.util.Map<java.util.UUID, Long> joinAt = new java.util.concurrent.ConcurrentHashMap<>();
 
     public PlayerEventsListener(DreamPortPlugin plugin) {
         this.plugin = plugin;
@@ -29,6 +31,7 @@ public class PlayerEventsListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
+        joinAt.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
         if (plugin.pluginConfig().reportJoinQuit()) {
             String name = event.getPlayer().getName();
             plugin.getServer().getAsyncScheduler().runNow(plugin,
@@ -38,10 +41,14 @@ public class PlayerEventsListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onQuit(PlayerQuitEvent event) {
+        var player = event.getPlayer();
+        Long start = joinAt.remove(player.getUniqueId());
+        // 会话时长上报(积分任务数据源,与 join/quit 聊天广播解耦)
+        long seconds = start == null ? 0 : Math.max(0, (System.currentTimeMillis() - start) / 1000L);
+        plugin.backendClient().reportActivity(player.getName(), seconds, 1);
         if (plugin.pluginConfig().reportJoinQuit()) {
-            String name = event.getPlayer().getName();
             plugin.getServer().getAsyncScheduler().runNow(plugin,
-                    task -> plugin.backendClient().sendEvent("quit", name, ""));
+                    task -> plugin.backendClient().sendEvent("quit", player.getName(), ""));
         }
     }
 }

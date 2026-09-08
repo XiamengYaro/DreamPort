@@ -35,6 +35,8 @@ public class SettingService {
     public static final String KEY_ASTRBOT_ENABLED = "astrbot.enabled";
     public static final String KEY_ASTRBOT_TOKEN = "astrbot.api_token";
     public static final String KEY_RULES_CONFIG = "rules.config";
+    public static final String KEY_TASKS_CONFIG = "tasks.config";
+    public static final String KEY_SHOP_CONFIG = "shop.config";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

@@ -577,6 +577,62 @@
         </div>
       </div>
 
+      <!-- 任务与兑换 Tab -->
+      <div v-if="activeTab === 'taskshop' && !loading" class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">任务配置</h3>
+            <button @click="addTask" class="btn-secondary text-sm">+ 添加任务</button>
+          </div>
+          <p class="text-xs text-stone-500">类型:signin(签到,渠道可选)/ playtime(在线时长,秒)/ streak(连续登录天数)/ full_attendance(满勤,target 填 0 自动=当月天数)</p>
+          <div v-for="(t, i) in tasksCfg.tasks" :key="t.id" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">任务 ID</label><input v-model="t.id" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">名称</label><input v-model="t.name" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">类型</label>
+                <select v-model="t.type" class="input text-sm">
+                  <option value="signin">签到</option><option value="playtime">在线时长</option>
+                  <option value="streak">连续登录</option><option value="full_attendance">满勤</option>
+                </select></div>
+              <div><label class="block text-xs text-stone-500 mb-1">周期</label>
+                <select v-model="t.period" class="input text-sm">
+                  <option value="daily">每日</option><option value="weekly">每周</option><option value="monthly">每月</option>
+                </select></div>
+              <div v-if="t.type === 'signin'"><label class="block text-xs text-stone-500 mb-1">签到渠道</label>
+                <select v-model="t.channel" class="input text-sm"><option value="web">网页</option><option value="game">游戏内</option></select></div>
+              <div><label class="block text-xs text-stone-500 mb-1">{{ t.type === 'playtime' ? '目标(秒)' : '目标值' }}</label>
+                <input v-model.number="t.target" type="number" min="1" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">积分奖励</label><input v-model.number="t.points" type="number" min="0" class="input text-sm" /></div>
+              <label class="flex items-center gap-2 text-sm text-stone-300 self-end"><input type="checkbox" v-model="t.enabled" class="accent-orange-500" /> 启用</label>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">描述</label><input v-model="t.desc" class="input text-sm" /></div>
+            <button @click="tasksCfg.tasks.splice(i, 1)" class="text-xs text-rose-400 hover:text-rose-300">删除该任务</button>
+          </div>
+          <button @click="saveTasks" class="btn-primary text-sm">保存任务配置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">兑换商店</h3>
+            <button @click="addReward" class="btn-secondary text-sm">+ 添加兑换项</button>
+          </div>
+          <p class="text-xs text-stone-500">发放指令每行一条,{player} 会替换为领取玩家名;硬币类用经济插件的发放指令(如 eco give {player} 1000)。</p>
+          <div v-for="(r, i) in shopCfg.rewards" :key="r.id" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">兑换 ID</label><input v-model="r.id" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">名称</label><input v-model="r.name" class="input text-sm" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">所需积分</label><input v-model.number="r.cost" type="number" min="0" class="input text-sm" /></div>
+              <label class="flex items-center gap-2 text-sm text-stone-300 self-end"><input type="checkbox" v-model="r.enabled" class="accent-orange-500" /> 上架</label>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">描述</label><input v-model="r.desc" class="input text-sm" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">发放指令(每行一条)</label>
+              <textarea v-model="r.commandsText" rows="2" class="input text-sm font-mono"></textarea></div>
+            <button @click="shopCfg.rewards.splice(i, 1)" class="text-xs text-rose-400 hover:text-rose-300">删除该兑换项</button>
+          </div>
+          <button @click="saveShop" class="btn-primary text-sm">保存兑换商店</button>
+        </div>
+      </div>
+
       <!-- 审核管理 Tab -->
       <div v-if="activeTab === 'review' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">审核管理</h3>
@@ -1040,6 +1096,7 @@ const menuItems = [
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
+  { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
   { key: 'audits', icon: 'document-text', label: '审计日志' },
   { key: 'appeals', icon: 'envelope', label: '申诉处理' },
   { key: 'questionnaires', icon: 'pencil-square', label: '问卷管理' },
@@ -1060,11 +1117,11 @@ const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules, tsk, shop] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
       api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
-      api.getRulesConfig()
+      api.getRulesConfig(), api.getTasksConfigAdmin(), api.getShopConfigAdmin()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -1080,6 +1137,15 @@ const loadSystemSettings = async () => {
       catch { astrbotCfg.value.groupBindingsStr = '[]' }
     }
     if (rules.success) rulesCfg.value = { doc: rules.data.doc || '', seconds: Number(rules.data.seconds) || 15 }
+    if (tsk.success) tasksCfg.value = tsk.data
+    if (shop.success) {
+      shopCfg.value = {
+        rewards: (shop.data.rewards || []).map((r: any) => ({
+          ...r,
+          commandsText: (r.commands || []).map((c: any) => c.cmd || ('deposit:' + (c.amount || 0))).join('\n')
+        }))
+      }
+    }
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 

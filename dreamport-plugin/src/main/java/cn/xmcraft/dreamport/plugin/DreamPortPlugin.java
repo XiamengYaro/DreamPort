@@ -17,6 +17,8 @@ import org.bukkit.plugin.java.JavaPlugin;
  * - proxy：Velocity 端统一拦截由 dreamport-plugin-proxy 承担；Paper 端 role=proxy 等同上报模式
  */
 public final class DreamPortPlugin extends JavaPlugin {
+    private cn.xmcraft.dreamport.plugin.internal.MailService rewardMailService;
+
 
     private static final String[] BANNER_LINES = {
             " _____                           _____           _   ",
@@ -42,6 +44,12 @@ public final class DreamPortPlugin extends JavaPlugin {
         backendClient = new BackendClient(this);
 
         // 监听器与命令
+        // 奖励邮件服务(积分兑换/后台发放 → 游戏内邮箱)
+        cn.xmcraft.dreamport.plugin.internal.MailService mailService =
+                new cn.xmcraft.dreamport.plugin.internal.MailService(this);
+        this.rewardMailService = mailService;
+        getServer().getPluginManager().registerEvents(new cn.xmcraft.dreamport.plugin.listener.MailGuiListener(mailService), this);
+        getServer().getPluginManager().registerEvents(new cn.xmcraft.dreamport.plugin.listener.PlayerJoinMailNotifier(this, mailService), this);
         getServer().getPluginManager().registerEvents(new LoginListener(this, i18n), this);
         getServer().getPluginManager().registerEvents(new PlayerEventsListener(this), this);
         CommandExecutor executor = new XmwCommand(this);
@@ -49,6 +57,10 @@ public final class DreamPortPlugin extends JavaPlugin {
         if (command != null) {
             command.setExecutor(executor);
             command.setTabCompleter(executor instanceof TabCompleter t ? t : null);
+        }
+        var mailCommand = getCommand("mail");
+        if (mailCommand != null) {
+            mailCommand.setExecutor(new cn.xmcraft.dreamport.plugin.command.MailCommand(mailService));
         }
 
         // 周期任务
