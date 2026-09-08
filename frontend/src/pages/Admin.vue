@@ -261,18 +261,18 @@
         </button>
       </div>
 
-      <!-- 系统设置（注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
+      <!-- 系统设置（管理员名单 / 注册 / AI 评分 / 邀请 / 游戏 / 下载中心） -->
       <div v-if="activeTab === 'system' && !loading" class="space-y-6">
         <div class="card p-6 space-y-4">
-          <div class="card p-6 space-y-4 mb-6">
-            <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="users" class="w-5 h-5" /> 管理员名单</h3>
-            <p class="text-xs text-stone-500">名单内的用户登录后即拥有管理权限。每行一个用户名;<span class="text-amber-400">注意不要移除你自己</span>。</p>
-            <textarea v-model="adminsStr" rows="3" class="input w-full font-mono text-sm" placeholder="管理员用户名,每行一个"></textarea>
-            <button @click="saveAdmins" class="btn-primary text-sm" :disabled="savingAdmins">
-              {{ savingAdmins ? '保存中...' : '保存管理员名单' }}
-            </button>
-          </div>
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="users" class="w-5 h-5" /> 管理员名单</h3>
+          <p class="text-xs text-stone-500">名单内的用户登录后即拥有管理权限。每行一个用户名;<span class="text-amber-400">注意不要移除你自己</span>。</p>
+          <textarea v-model="adminsStr" rows="3" class="input w-full font-mono text-sm" placeholder="管理员用户名,每行一个"></textarea>
+          <button @click="saveAdmins" class="btn-primary text-sm" :disabled="savingAdmins">
+            {{ savingAdmins ? '保存中...' : '保存管理员名单' }}
+          </button>
+        </div>
 
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
