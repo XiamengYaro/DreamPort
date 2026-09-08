@@ -70,7 +70,6 @@
         <ol>
           <li>本页填写 DreamPort 地址与**同一组** Client ID / Secret / 共享密钥</li>
           <li>Client ID / Secret 为两端约定的自定义值,<b>无需 Passport</b></li>
-          <li>开启「主题同步」后,本站 UI 自动跟随主站品牌色与背景</li>
         </ol>
       </div>
     </div>
@@ -111,10 +110,6 @@
       <label class="dp-check">
         <input type="checkbox" name="dp_hide_password_login" value="1" @if($hide_login) checked @endif>
         <span><b>纯 DreamPort 登录</b>隐藏登录页账密表单,网页只能用 DreamPort 授权登录(游戏内 Yggdrasil 认证不受影响)</span>
-      </label>
-      <label class="dp-check">
-        <input type="checkbox" name="dp_theme_sync" value="1" @if($theme_sync) checked @endif>
-        <span><b>UI 同步主站</b>皮肤站整体风格跟随主站(深色玻璃 + 品牌主色 + 背景图),主站改品牌即自动同步</span>
       </label>
 
       <button type="submit" class="dp-btn" style="margin-top: 8px;">保存配置</button>

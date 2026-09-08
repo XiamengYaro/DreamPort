@@ -1,5 +1,11 @@
 # 皮肤站插件 · 更新日志
 
+## 1.2.2(2026-09-08)
+
+- **撤回主站主题注入**:「UI 同步主站」功能整体移除(bootstrap.php 的 RenderingHeader 注入块与 theme-sync 视图删除,dp_theme_sync 配置开关下线)——皮肤站恢复 BlessingSkin 原生主题,不再跟随 DreamPort 品牌配置
+- 插件配置页玻璃风界面/对接指南/连接测试/全部配置项保留
+- build.sh 断言改为核对登录按钮注入/配置页/保存端点;发行 zip 更换为 dreamport-oauth-1.2.2.zip
+
 ## 1.2.1(2026-09-07)
 
 - 修复:UI 同步主站不生效 —— 1.2.0 打包时 bootstrap.php 主题注入块静默丢失(编辑脚本替换锚点未命中且无断言);补回 RenderingHeader 注册块,build.sh 新增关键代码断言

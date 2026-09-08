@@ -5,6 +5,12 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [插件 1.2.2] - 2026-09-08
+
+### Changed
+- **撤回皮肤站主站主题注入**:BS 插件「UI 同步主站」(dp_theme_sync)整体移除——bootstrap.php 不再经 RenderingHeader 注入深色玻璃主题,theme-sync 视图删除,配置页开关与保存逻辑同步下线;皮肤站恢复 BlessingSkin 原生主题
+- 插件玻璃风配置页(对接指南/连接测试/全部配置项)保留;build.sh 断言改为核对登录按钮注入/配置页/保存端点;发行 zip 换为 dreamport-oauth-1.2.2.zip
+
 ## [1.2.0] - 2026-09-07
 
 自 1.1.0 以来的 37 个提交:皮肤站互通、封禁体系、注册分型、UI 大版本迭代与全插件文档库。

@@ -17,7 +17,6 @@ class Configuration
             'has_client_secret' => (string) option('dp_client_secret', '') !== '',
             'auto_register' => (bool) option('dp_auto_register', false),
             'hide_login' => (bool) option('dp_hide_password_login', false),
-            'theme_sync' => (bool) option('dp_theme_sync', true),
             'has_api_secret' => (string) option('dp_api_secret', '') !== '',
         ]);
     }

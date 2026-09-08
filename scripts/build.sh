@@ -16,10 +16,11 @@ echo "[3/4] 打包后端与插件..."
 mvn clean package -DskipTests
 
 echo "[4/4] 打包 BlessingSkin 插件..."
-# 防静默失败:关键注入代码必须存在,否则插件"安装成功但功能缺失"
-grep -q "RenderingHeader" bs-plugin-dreamport/bootstrap.php || { echo "✗ bootstrap.php 缺少 RenderingHeader 注入"; exit 1; }
-grep -q "dp-theme-css" bs-plugin-dreamport/views/theme-sync.blade.php || { echo "✗ theme-sync 视图缺失"; exit 1; }
-grep -q "dp_theme_sync" bs-plugin-dreamport/src/Configuration.php || { echo "✗ 配置页缺少主题同步开关"; exit 1; }
+# 防静默失败:关键代码必须存在,否则插件"安装成功但功能缺失"
+# (1.2.2 起不再有主站主题注入,断言改为核对 SSO 登录按钮与配置页/保存端点)
+grep -q "RenderingFooter" bs-plugin-dreamport/bootstrap.php || { echo "✗ bootstrap.php 缺少 RenderingFooter 登录按钮注入"; exit 1; }
+grep -q "dp-test-btn" bs-plugin-dreamport/views/config-page.blade.php || { echo "✗ config-page 配置页缺失(连接测试)"; exit 1; }
+grep -q "dreamport/config/save" bs-plugin-dreamport/views/config-page.blade.php || { echo "✗ config-page 缺少保存端点"; exit 1; }
 # BS 上传安装是原样解压到 plugins/,zip 内必须含一层插件目录(PluginManager 只扫描一级子目录)
 ZIP_NAME="dreamport-oauth-$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' bs-plugin-dreamport/package.json | head -1).zip"
 STAGE="$(mktemp -d)"

@@ -1,6 +1,6 @@
 # DreamPort 皮肤站插件(dreamport-oauth)
 
-BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/XiamengYaro/DreamPort) 账号授权登录皮肤站(SSO),注册一键开通账号与角色,账号信息双向同步,皮肤站 UI 自动跟随主站品牌。
+BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/XiamengYaro/DreamPort) 账号授权登录皮肤站(SSO),注册一键开通账号与角色,账号信息双向同步。
 
 > 本插件安装在你的 **BlessingSkin** 皮肤站上(≥5.0.0,6.0.2 实测);与 DreamPort 后端通过共享密钥通信。
 
@@ -11,7 +11,6 @@ BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/Xiameng
 | 🔐 SSO 登录 | 皮肤站登录页「使用 DreamPort 账号登录」,OAuth2 授权码流程(state 防 CSRF) |
 | 🚀 注册一键开通 | 玩家在 DreamPort 注册(非正版)即自动开通皮肤站账号:同款密码 + 初始积分 + 同名角色 |
 | 🔄 账号双向同步 | DreamPort 改密码/游戏名/邮箱 → 自动同步到皮肤站 |
-| 🎨 UI 同步主站 | 皮肤站整体风格(深色玻璃 + 品牌主色 + 背景图)自动跟随 DreamPort 品牌配置 |
 | 🧊 纯 SSO 模式 | 可隐藏登录页账密表单,网页只能 DreamPort 授权登录(游戏内认证不受影响) |
 | 🖼 角色数据接口 | DreamPort 头像渲染服务按名字拉取皮肤材质 |
 | 🧪 连接测试 | 配置页一键测试与 DreamPort 后端的连通性 |
@@ -33,7 +32,6 @@ BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/Xiameng
 | API 共享密钥 | 服务端间接口鉴权,与 DreamPort 后台一致 |
 | 自动注册 | SSO 登录时皮肤站无同邮箱账号则自动建号(建议开启) |
 | 纯 DreamPort 登录 | 隐藏登录页账密表单(游戏内 Yggdrasil 认证不受影响) |
-| UI 同步主站 | 皮肤站整体风格跟随主站品牌色与背景(默认开) |
 
 ## 提供的接口(DreamPort 后端调用,`X-Dreamport-Secret` 鉴权)
 
@@ -49,6 +47,11 @@ BlessingSkin 皮肤站插件:玩家使用 [DreamPort](https://github.com/Xiameng
 完整契约与两端对接步骤:仓库 `wiki/admin/plugin-skinstation/` 与 `docs/BLESSINGSKIN.md`。
 
 ## 更新日志
+
+### 1.2.2
+- 撤回对皮肤站主站的皮肤修改:**移除「UI 同步主站」主题注入**(bootstrap.php RenderingHeader 钩子与 theme-sync 视图整体删除,dp_theme_sync 开关同步下线),皮肤站恢复 BlessingSkin 原生主题
+- **插件配置页保留**:玻璃风配置界面、对接指南、连接测试、全部配置项与保存逻辑不变
+- 构建断言改为核对登录按钮注入/配置页/保存端点
 
 ### 1.2.1
 - 修复:UI 同步主站不生效 —— 1.2.0 打包时 bootstrap.php 的主题注入块因编辑脚本替换锚点未命中而静默丢失(zip 内无 RenderingHeader 注册);构建脚本新增关键代码断言防复发

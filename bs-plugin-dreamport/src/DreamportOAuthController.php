@@ -357,7 +357,6 @@ class DreamportOAuthController
         }
         \Option::set('dp_auto_register', $request->boolean('dp_auto_register'));
         \Option::set('dp_hide_password_login', $request->boolean('dp_hide_password_login'));
-        \Option::set('dp_theme_sync', $request->boolean('dp_theme_sync'));
 
         return redirect('/admin/plugins/config/dreamport-oauth')->with('dp_saved', true);
     }
