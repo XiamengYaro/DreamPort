@@ -152,6 +152,29 @@ public class SystemSettingsService {
         }
     }
 
+    /** 注册守则:doc=守则文档(分类/文件名.md 或 文件名.md,空=未启用),seconds=强制阅读秒数 */
+    public Map<String, Object> rulesConfig() {
+        Map<String, Object> m = settingService.getMap(SettingService.KEY_RULES_CONFIG);
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("doc", m.getOrDefault("doc", ""));
+        result.put("seconds", m.getOrDefault("seconds", 15));
+        return result;
+    }
+
+    public void saveRulesConfig(Map<String, Object> config) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        Object doc = config.get("doc");
+        m.put("doc", doc == null ? "" : String.valueOf(doc).trim());
+        Object seconds = config.get("seconds");
+        int sec = 15;
+        try {
+            sec = Math.max(0, Integer.parseInt(String.valueOf(seconds)));
+        } catch (NumberFormatException ignored) {
+        }
+        m.put("seconds", sec);
+        settingService.set(SettingService.KEY_RULES_CONFIG, m);
+    }
+
     public void saveDownloads(Map<String, Object> downloads) {
         settingService.set(SettingService.KEY_DOWNLOADS, downloads);
     }

@@ -330,6 +330,22 @@
         </div>
 
         <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 注册守则</h3>
+          <p class="text-xs text-stone-500">玩家注册后、ID 验证前需阅读该文档并同意(强制倒计时)。留空 = 不启用。</p>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">守则文档(来自文档中心)</label>
+            <select v-model="rulesCfg.doc" class="input w-full text-sm">
+              <option value="">未启用</option>
+              <option v-for="o in rulesDocOptions" :key="o.value" :value="o.value">{{ o.label }}</option>
+            </select>
+          </div>
+          <div class="flex items-center gap-2 text-sm text-stone-300">
+            强制阅读 <input v-model.number="rulesCfg.seconds" type="number" min="0" class="input w-20 text-center" /> 秒
+          </div>
+          <button @click="saveRules" class="btn-primary text-sm">保存注册守则设置</button>
+        </div>
+
+        <div class="card p-6 space-y-4">
           <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="user" class="w-5 h-5" /> 注册设置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
@@ -1044,10 +1060,11 @@ const questCfg = ref<any>({ enabled: true, passScore: 60 })
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
-      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig()
+      api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
+      api.getRulesConfig()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -1062,6 +1079,7 @@ const loadSystemSettings = async () => {
       try { astrbotCfg.value.groupBindingsStr = JSON.stringify(JSON.parse(astr.data.groupBindings || '[]'), null, 2) }
       catch { astrbotCfg.value.groupBindingsStr = '[]' }
     }
+    if (rules.success) rulesCfg.value = { doc: rules.data.doc || '', seconds: Number(rules.data.seconds) || 15 }
   } catch (e) { console.error('loadSystemSettings failed', e) }
 }
 
@@ -1112,6 +1130,12 @@ const genAstrbotToken = () => {
   let t = ''
   for (let i = 0; i < 40; i++) t += chars[Math.floor(Math.random() * chars.length)]
   astrbotCfg.value.apiToken = t
+}
+const saveRules = async () => {
+  try {
+    const r: any = await api.saveRulesConfig(rulesCfg.value)
+    if (r.success) notify && notify.success('注册守则设置已保存')
+  } catch (e: any) { notify && notify.error(e.message || '保存失败') }
 }
 const saveDownloads = async () => {
   try {

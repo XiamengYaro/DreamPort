@@ -52,6 +52,8 @@ public class ConfigController {
         data.put("bedrockEnabled", Boolean.TRUE.equals(
                 systemSettings.gameConfig().getOrDefault("bedrockEnabled", false)));
         data.put("verifyPage", settingService.getMap("verify.config"));
+        // 注册守则(doc=守则文档路径,空=未启用;seconds=强制阅读秒数)——Verify 页公开消费
+        data.put("rules", systemSettings.rulesConfig());
         var qnCfg = systemSettings.questionnaireConfig();
         data.put("questionnaireEnabled", qnCfg.getOrDefault("enabled", true));
         data.put("questionnairePassScore", qnCfg.getOrDefault("passScore", 60));

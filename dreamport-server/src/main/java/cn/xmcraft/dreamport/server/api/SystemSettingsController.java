@@ -198,6 +198,20 @@ public class SystemSettingsController {
         return ResponseEntity.ok(ApiResponse.success("QQ 互通设置已保存"));
     }
 
+    @GetMapping("/rules")
+    public ResponseEntity<Object> getRules(HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        return ResponseEntity.ok(Map.of("success", true, "data", settingsService.rulesConfig()));
+    }
+
+    @PutMapping("/rules")
+    public ResponseEntity<Object> saveRules(@RequestBody Map<String, Object> body, HttpServletRequest request) {
+        var g = guard(request); if (g != null) return g;
+        settingsService.saveRulesConfig(body);
+        auditService.log("settings_rules", op(request), "", "");
+        return ResponseEntity.ok(ApiResponse.success("注册守则设置已保存"));
+    }
+
     private void maskSecret(Map<String, Object> config, String key, String flag) {
         String v = String.valueOf(config.getOrDefault(key, ""));
         if (!v.isBlank()) {

@@ -165,6 +165,10 @@ class ApiService {
     return this.request('/user/minecraft/sync-by-uuid', { method: 'POST' })
   }
 
+  async acceptRules() {
+    return this.request('/user/rules/accept', { method: 'POST' })
+  }
+
   // Admin
   async getUsers() {
     return this.request('/admin/users')
@@ -768,6 +772,9 @@ class ApiService {
   async saveAstrbotSettings(body: any) { return this.request('/admin/settings/astrbot', { method: 'PUT', body: JSON.stringify(body) }) }
   async getDownloadsAdmin() { return this.request('/admin/settings/downloads') }
   async saveDownloadsAdmin(body: any) { return this.request('/admin/settings/downloads', { method: 'PUT', body: JSON.stringify(body) }) }
+
+  async getRulesConfig() { return this.request('/admin/settings/rules') }
+  async saveRulesConfig(body: any) { return this.request('/admin/settings/rules', { method: 'PUT', body: JSON.stringify(body) }) }
 
   async getQuestionnaireSettings() { return this.request('/admin/settings/questionnaire') }
   async saveQuestionnaireSettings(body: any) { return this.request('/admin/settings/questionnaire', { method: 'PUT', body: JSON.stringify(body) }) }

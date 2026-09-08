@@ -48,6 +48,7 @@ public class VerificationController {
     private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
     private final cn.xmcraft.dreamport.server.config.WlProps props;
     private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public VerificationController(CaptchaService captchaService, VerifyCodeService verifyCodeService,
                                   MinecraftVerifyService minecraftVerifyService,
@@ -56,7 +57,8 @@ public class VerificationController {
                                   RateLimiter rateLimiter, SettingService settingService,
                                   cn.xmcraft.dreamport.server.security.PasswordService passwordService,
                                   cn.xmcraft.dreamport.server.config.WlProps props,
-                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
+                                  cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings,
+                                  org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.captchaService = captchaService;
         this.verifyCodeService = verifyCodeService;
         this.minecraftVerifyService = minecraftVerifyService;
@@ -68,6 +70,7 @@ public class VerificationController {
         this.passwordService = passwordService;
         this.props = props;
         this.systemSettings = systemSettings;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public record EmailBody(String email, String language) {
@@ -180,12 +183,36 @@ public class VerificationController {
 
     // ---------- ID 绑定与验证 ----------
 
+    /** 服务器守则是否已同意 */
+    private boolean rulesAccepted(String username) {
+        Integer n = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM dp_rules_consent WHERE username = ?", Integer.class, username);
+        return n != null && n > 0;
+    }
+
+    /** 同意服务器守则(注册后 ID 验证前强制;幂等) */
+    @PostMapping("/user/rules/accept")
+    public ResponseEntity<Map<String, Object>> acceptRules(HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return unauthorized();
+        }
+        jdbcTemplate.update(
+                "INSERT INTO dp_rules_consent (username, accepted_at) VALUES (?, ?) "
+                        + "ON DUPLICATE KEY UPDATE accepted_at = VALUES(accepted_at)",
+                me, System.currentTimeMillis());
+        return ResponseEntity.ok(ApiResponse.success("已同意服务器守则"));
+    }
+
     @PostMapping("/user/minecraft/set")
     public ResponseEntity<Map<String, Object>> setMinecraft(@RequestBody MinecraftSetBody body,
                                                             HttpServletRequest request) {
         String me = AuthUtil.currentUser(request);
         if (me == null) {
             return unauthorized();
+        }
+        if (!rulesAccepted(me)) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("请先阅读并同意服务器守则"));
         }
         var userOpt = userRepository.findByUsernameIgnoreCase(me);
         var result = minecraftVerifyService.setMinecraftId(me, body.minecraftName());
@@ -276,12 +303,16 @@ public class VerificationController {
         if (me == null) {
             return unauthorized();
         }
+        if (!rulesAccepted(me)) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("请先阅读并同意服务器守则"));
+        }
         return wrap(minecraftVerifyService.verifyMinecraft(me));
     }
 
     @GetMapping("/user/minecraft/status")
     public ResponseEntity<Map<String, Object>> minecraftStatus(HttpServletRequest request) {
         String me = AuthUtil.currentUser(request);
+        boolean rulesAccepted = me != null && rulesAccepted(me);
         if (me == null) {
             return unauthorized();
         }
@@ -291,6 +322,7 @@ public class VerificationController {
         data.put("minecraftUuid", userOpt.map(UserRecord::minecraftUuid).orElse(null));
         // verified = 身份验证语义（已通过进服记录验证出真实 UUID），与白名单审核状态解耦
         data.put("verified", userOpt.map(u -> u.minecraftUuid() != null).orElse(false));
+        data.put("rulesAccepted", rulesAccepted);
         data.put("status", userOpt.map(UserRecord::status).orElse(null));
         return ResponseEntity.ok(ApiResponse.success(null, data));
     }
