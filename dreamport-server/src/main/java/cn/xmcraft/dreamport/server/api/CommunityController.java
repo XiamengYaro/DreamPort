@@ -293,9 +293,11 @@ public class CommunityController {
         profile.put("daysSinceReg", (System.currentTimeMillis() - u.regTime()) / 86_400_000L);
         profile.put("qqNumber", u.qqNumber());
         profile.put("banReason", u.banReason());
-        profile.put("status", u.status());
-        // 合并服务器内数据(经济快照,按游戏名匹配)
-        var econ = economyService.playerData(u.username());
+        // 合并服务器内数据:经济/时长快照按「游戏名」存储,优先用游戏名匹配
+        // (账号名与游戏名不一致的玩家——改过 ID/迁移账号——按用户名查会漏)
+        String gameName = (u.minecraftName() != null && !u.minecraftName().isBlank())
+                ? u.minecraftName() : u.username();
+        var econ = economyService.playerData(gameName);
         profile.put("balance", econ.getOrDefault("balance", 0));
         profile.put("timePlayed", econ.getOrDefault("timePlayed", 0L));
         profile.put("activeDaysLast30", econ.getOrDefault("activeDaysLast30", 0));
