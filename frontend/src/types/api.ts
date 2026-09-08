@@ -9,7 +9,6 @@ export interface User {
   questionnaireScoredAt?: number
   minecraftUuid?: string
   minecraftName?: string
-  microsoftVerified?: boolean
   verifiedAt?: number
   verifyType?: string
 }

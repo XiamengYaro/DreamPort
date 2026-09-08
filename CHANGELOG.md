@@ -5,6 +5,11 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased] - 2026-09-08
+
+### Removed
+- **移除微软正版验证**:MicrosoftOAuthController(/api/auth/microsoft/start|callback)整体删除——该链路从未持久化绑定结果(microsoftVerified 无任何写 true 路径),属未接线死代码;前端类型同步清理
+
 ## [插件 1.2.2] - 2026-09-08
 
 ### Changed

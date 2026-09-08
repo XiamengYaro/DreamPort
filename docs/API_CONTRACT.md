@@ -33,7 +33,6 @@
 | `/api/village/list` | GET | 村民族谱（仅 approved） | P4 |
 | `/api/machine/list` | GET | 公共机器（仅 approved） | P4 |
 | `/api/players/list`、`/api/players/profile/:name` | GET | 玩家目录/档案 | P4 |
-| `/api/microsoft/verify/start` 🔒、`/api/microsoft/callback` | GET | Microsoft 正版验证链 | P3 |
 
 ## 2. 用户端点 🔒
 
@@ -160,6 +159,5 @@
 - `POST /api/user/password`:响应带 `data.skinStationSynced`
 - `POST /api/user/minecraft/set`:响应带 `skinStationSynced`(角色改名同步)
 - `POST /api/register`:body 增 `playerType(premium/offline)`;offline 注册成功后调皮肤站 provision,响应带 `data.skinStation{provisioned,reason}`
-- `GET /api/auth/microsoft/start|callback`:Microsoft 正版绑定(XBL→XSTS→MC profile;需配置 microsoft.*)
 - `GET /api/admin/export/questionnaires?format=csv|json`:问卷导出
 - `GET /api/review/status`:响应补 regTime/questionnaireScoredAt/verifiedAt 时间戳(时间线)

@@ -42,7 +42,6 @@
 | 聊天 | `GET /api/chat/history`、`POST /api/chat/send` | 网页聊天室(限频 10/分,敏感词过滤) |
 | 照片墙 | `POST /api/portal/comments/{key}`、`DELETE /api/portal/comments/{id}` | 留言(限频 5/分)、删自己的 |
 | OAuth2 | `GET /api/oauth2/authorize-info`、`POST /api/oauth2/authorize` | 授权确认页(皮肤站 SSO) |
-| 微软绑定 | `GET /api/auth/microsoft/start`、`GET /callback` | 正版账号绑定(需配置 Azure) |
 | 社区 | `/api/village/**`、`/api/machines/**`、`/api/player/{name}` 等 | 村谱/机器提交与展示、玩家档案(经济/时长合并) |
 
 ## 管理端点(JWT + 管理员)
