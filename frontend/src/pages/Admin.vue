@@ -35,6 +35,63 @@
         </div>
       </div>
 
+      <!-- 总览 Dashboard(默认首屏) -->
+      <div v-if="activeTab === 'dashboard' && !loading" class="space-y-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <StatCard :value="statsOverview.totalUsers || 0" label="注册用户" tone="orange" />
+          <StatCard :value="statsOverview.todayRegistrations || 0" label="今日注册" tone="blue" />
+          <StatCard :value="statsOverview.pendingUsers || 0" label="待审核" tone="amber" />
+          <StatCard :value="statsOverview.bannedUsers || 0" label="已封禁" tone="rose" />
+          <StatCard :value="serverStatus.players?.online ?? 0" label="在线玩家" tone="emerald" />
+          <StatCard :value="((statsOverview.questionnairePassRate?.toFixed(1)) || 0) + '%'" label="问卷通过率" tone="purple" />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div class="card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><AppIcon name="users" class="w-5 h-5 text-orange-400" /> 最新注册</h3>
+            <div class="space-y-2">
+              <div v-for="u in recentUsers" :key="u.username"
+                class="flex items-center gap-3 p-2.5 rounded-xl bg-stone-900/40 border border-stone-800">
+                <AppAvatar :name="u.minecraftName || u.username" size-class="w-9 h-9" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-white text-sm font-medium truncate">{{ u.username }}</div>
+                  <div class="text-xs text-stone-400">{{ formatTime(u.regTime) }}</div>
+                </div>
+                <span class="text-xs px-2 py-1 rounded-lg" :class="u.status === 'approved' ? 'bg-emerald-500/15 text-emerald-400' : u.status === 'banned' ? 'bg-rose-500/15 text-rose-400' : 'bg-amber-500/15 text-amber-400'">{{ getStatusText(u.status) }}</span>
+              </div>
+              <p v-if="recentUsers.length === 0" class="text-stone-500 text-sm text-center py-4">暂无用户</p>
+            </div>
+            <button @click="activeTab = 'players'" class="btn-secondary text-sm w-full mt-3">进入玩家管理</button>
+          </div>
+
+          <div class="card p-6">
+            <h3 class="text-lg font-semibold text-white mb-4 flex items-center gap-2"><AppIcon name="document-text" class="w-5 h-5 text-sky-400" /> 最近操作</h3>
+            <div class="space-y-2">
+              <div v-for="a in recentAudits" :key="a.id" class="p-2.5 rounded-xl bg-stone-900/40 border border-stone-800">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="badge-info text-xs">{{ a.action }}</span>
+                  <span class="text-xs text-stone-400">{{ formatTime(a.timestamp) }}</span>
+                </div>
+                <div class="text-xs text-stone-400 mt-1 truncate">{{ a.operator }} → {{ a.target }}<span v-if="a.detail"> · {{ a.detail }}</span></div>
+              </div>
+              <p v-if="recentAudits.length === 0" class="text-stone-500 text-sm text-center py-4">暂无操作记录</p>
+            </div>
+            <button @click="activeTab = 'audits'" class="btn-secondary text-sm w-full mt-3">查看全部审计日志</button>
+          </div>
+        </div>
+
+        <div class="card p-6">
+          <h3 class="text-lg font-semibold text-white mb-4">快捷入口</h3>
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <button v-for="m in quickLinks" :key="m.key" @click="activeTab = m.key"
+              class="flex flex-col items-center gap-2 p-4 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/50 hover:bg-white/5 transition-all">
+              <AppIcon :name="m.icon" class="w-5 h-5 text-orange-400" />
+              <span class="text-xs text-stone-300">{{ m.label }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- 网站内容 Tab -->
       <div v-if="activeTab === 'portal' && !loading" class="space-y-6">
         <!-- 基础信息 -->
@@ -955,9 +1012,10 @@ import { renderMarkdown } from '@/lib/markdown'
 
 const notify = inject('notify') as any
 
-const activeTab = ref('portal')
+const activeTab = ref('dashboard')
 const maintenanceEnabled = ref(false)
 const menuItems = [
+  { key: 'dashboard', icon: 'squares-2x2', label: '总览' },
   { key: 'portal', icon: 'home', label: '门户管理' },
   { key: 'settings', icon: 'cog', label: '外观设置' },
   { key: 'system', icon: 'cpu', label: '系统设置' },
@@ -1146,6 +1204,20 @@ const users = ref<any[]>([])
 const selectedUsers = ref<string[]>([])
 const statsOverview = ref<any>({})
 const auditLogs = ref<any[]>([])
+
+// 总览 Dashboard
+const serverStatus = ref<any>({ online: false, players: { online: 0, max: 0 } })
+const loadServerStatus = async () => { try { const r: any = await api.getServerStatus(); if (r.success) serverStatus.value = r.data } catch (e) {} }
+const recentUsers = computed(() => [...users.value].sort((a: any, b: any) => (b.regTime || 0) - (a.regTime || 0)).slice(0, 6))
+const recentAudits = computed(() => (auditLogs.value || []).slice(0, 6))
+const quickLinks = [
+  { key: 'players', icon: 'users', label: '玩家管理' },
+  { key: 'review', icon: 'clipboard-check', label: '审核管理' },
+  { key: 'stats', icon: 'chart-bar', label: '数据统计' },
+  { key: 'announcements', icon: 'chat-bubble', label: '公告管理' },
+  { key: 'docs', icon: 'document-text', label: '文档管理' },
+  { key: 'system', icon: 'cpu', label: '系统设置' },
+]
 const appeals = ref<any[]>([])
 const questionnaires = ref<any[]>([])
 const verifyConfig = ref({
@@ -1220,7 +1292,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus()])
   loading.value = false
 })
 
