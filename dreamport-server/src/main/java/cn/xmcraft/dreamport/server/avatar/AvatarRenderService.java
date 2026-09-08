@@ -16,11 +16,18 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * 大头照渲染服务(双层皮肤:基础脸 8x8 + 帽子层 8x8 叠加,最近邻放大)。
@@ -30,7 +37,12 @@ import java.util.Map;
  *    (官方 UUID 缓存:命中 24h / 未命中 1h;Mojang 不可达自动降级且不缓存)
  * 2. 兜底 → 程序绘制默认脸(Steve/Alex 按名字 hash)
  *
- * 缓存两级:浏览器 Cache-Control+ETag(1h);服务端内存 LRU(皮肤图 TTL 1h、官方 UUID 见上)。
+ * 缓存三级:
+ * - 浏览器 Cache-Control+ETag(1h,304 复验)
+ * - 服务端内存 LRU(皮肤图 TTL 1h、官方 UUID 见上)
+ * - 服务端磁盘持久化 data/avatar-cache/(官方皮肤 PNG,重启不丢):
+ *   命中磁盘立即返回;文件超过 1h 由后台单线程静默刷新(显示永不等网络)
+ * 冷缓存解析在锁外并发执行,批量头像不再逐个串行等待。
  */
 @Service
 public class AvatarRenderService {
@@ -40,6 +52,7 @@ public class AvatarRenderService {
     private static final long UUID_HIT_TTL_MS = 86_400_000L;
     private static final long UUID_MISS_TTL_MS = 3_600_000L;
     private static final int CACHE_CAP = 2000;
+    private static final int UUID_CACHE_CAP = 4096;
     private static final String MOJANG_PROFILE = "https://sessionserver.mojang.com/session/minecraft/profile/";
     private static final String MOJANG_API = "https://api.mojang.com/users/profiles/minecraft/";
 
@@ -60,7 +73,7 @@ public class AvatarRenderService {
     /** 包内可见(单测缓存断言使用);uuid=null 表示"官方库无此名"的未命中缓存 */
     record UuidCacheEntry(String uuid, long at) {}
 
-    /** 皮肤 LRU(访问序,上限 2000,TTL 1h) */
+    /** 皮肤内存 LRU(访问序,上限 2000,TTL 1h)——仅 在 synchronized(skinCache) 内读写 */
     private final Map<String, CacheEntry> skinCache =
             new LinkedHashMap<>(128, 0.75f, true) {
                 @Override
@@ -69,14 +82,19 @@ public class AvatarRenderService {
                 }
             };
 
-    /** 官方 UUID 缓存(访问序,上限 2000;命中 24h / 未命中 1h)——仅在 skinFor 锁内访问 */
-    final Map<String, UuidCacheEntry> uuidCache =
-            new LinkedHashMap<>(128, 0.75f, true) {
-                @Override
-                protected boolean removeEldestEntry(Map.Entry<String, UuidCacheEntry> eldest) {
-                    return size() > CACHE_CAP;
-                }
-            };
+    /** 官方 UUID 缓存(命中 24h / 未命中 1h);并发安全,超量时惰性清理过期项。包内可见(单测断言用) */
+    final Map<String, UuidCacheEntry> uuidCache = new ConcurrentHashMap<>();
+
+    /** 磁盘缓存目录(包内可见,单测可指向临时目录);官方皮肤 PNG 落盘,重启不丢 */
+    Path cacheDir = Path.of("data", "avatar-cache");
+
+    /** 后台刷新线程(单线程串行,避免过期风暴打爆 Mojang);显示层永远即时返回 */
+    private final ExecutorService revalidatePool = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "avatar-revalidate");
+        t.setDaemon(true);
+        return t;
+    });
+    private final Set<String> revalidating = ConcurrentHashMap.newKeySet();
 
     /** 渲染大头照;size 已由控制器钳制 */
     public AvatarImage render(String name, int size) throws Exception {
@@ -91,14 +109,52 @@ public class AvatarRenderService {
 
     // ---------- 皮肤解析 ----------
 
-    private synchronized SkinData skinFor(String name) {
-        CacheEntry hit = skinCache.get(name);
-        if (hit != null && System.currentTimeMillis() - hit.at() < SKIN_TTL_MS) {
-            return hit.skin();
+    private SkinData skinFor(String name) throws Exception {
+        long now = System.currentTimeMillis();
+        synchronized (skinCache) {
+            CacheEntry hit = skinCache.get(name);
+            if (hit != null && now - hit.at() < SKIN_TTL_MS) {
+                return hit.skin();
+            }
         }
+
+        // 磁盘命中:立即返回(永不等网络);文件超过 1h 触发后台静默刷新
+        SkinData disk = loadFromDisk(name);
+        if (disk != null) {
+            synchronized (skinCache) {
+                skinCache.put(name, new CacheEntry(disk, now));
+            }
+            if (Files.getLastModifiedTime(diskFile(name)).toMillis() < now - SKIN_TTL_MS) {
+                revalidateAsync(name);
+            }
+            return disk;
+        }
+
+        // 首次遇到该名字:锁外并发解析(不同名字互不阻塞),成功后写内存+落盘
         SkinData skin = resolveSkin(name);
-        skinCache.put(name, new CacheEntry(skin, System.currentTimeMillis()));
+        synchronized (skinCache) {
+            skinCache.put(name, new CacheEntry(skin, now));
+        }
+        persistToDisk(name, skin);
         return skin;
+    }
+
+    /** 过期皮肤后台静默刷新(单线程串行);期间显示层继续用磁盘/内存旧图 */
+    private void revalidateAsync(String name) {
+        if (!revalidating.add(name)) return;
+        revalidatePool.execute(() -> {
+            try {
+                SkinData fresh = resolveSkin(name);
+                synchronized (skinCache) {
+                    skinCache.put(name, new CacheEntry(fresh, System.currentTimeMillis()));
+                }
+                persistToDisk(name, fresh);
+            } catch (Exception e) {
+                log.debug("[头像] 后台刷新失败 {}: {}", name, e.getMessage());
+            } finally {
+                revalidating.remove(name);
+            }
+        });
     }
 
     /** 包内可见(单测覆盖降级顺序用) */
@@ -131,6 +187,9 @@ public class AvatarRenderService {
         } catch (Exception e) {
             log.warn("[头像] Mojang 按名查档失败 {}: {}", name, e.getMessage());
             return null;
+        }
+        if (uuidCache.size() > UUID_CACHE_CAP) {
+            uuidCache.entrySet().removeIf(e -> now - e.getValue().at() > UUID_MISS_TTL_MS);
         }
         uuidCache.put(name, new UuidCacheEntry(uuid, now));
         return uuid;
@@ -178,9 +237,48 @@ public class AvatarRenderService {
     private SkinData skinFromBytes(byte[] png) throws Exception {
         BufferedImage img = ImageIO.read(new ByteArrayInputStream(png));
         if (img == null || img.getWidth() != 64 || (img.getHeight() != 64 && img.getHeight() != 32)) return null;
-        StringBuilder hex = new StringBuilder();
-        for (byte b : MessageDigest.getInstance("SHA-256").digest(png)) hex.append(String.format("%02x", b));
-        return new SkinData(img, hex.toString());
+        return new SkinData(img, sha256Hex(png));
+    }
+
+    // ---------- 磁盘持久化 ----------
+
+    private Path diskFile(String name) {
+        return cacheDir.resolve(sha256Hex(name.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8)) + ".png");
+    }
+
+    /** 官方皮肤落盘(原子写);默认脸不落盘(程序生成零成本) */
+    void persistToDisk(String name, SkinData skin) {
+        if (skin.image().getWidth() != 64) return;
+        try {
+            Files.createDirectories(cacheDir);
+            Path target = diskFile(name);
+            Path tmp = cacheDir.resolve(target.getFileName() + ".tmp");
+            ImageIO.write(skin.image(), "png", tmp.toFile());
+            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (Exception e) {
+            log.warn("[头像] 皮肤落盘失败 {}: {}", name, e.getMessage());
+        }
+    }
+
+    /** 读盘(损坏/不存在返回 null);ETag 由文件内容重算,跨重启稳定 */
+    SkinData loadFromDisk(String name) {
+        try {
+            Path f = diskFile(name);
+            if (!Files.exists(f)) return null;
+            return skinFromBytes(Files.readAllBytes(f));
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String sha256Hex(byte[] data) {
+        try {
+            StringBuilder hex = new StringBuilder();
+            for (byte b : MessageDigest.getInstance("SHA-256").digest(data)) hex.append(String.format("%02x", b));
+            return hex.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 不可用", e);
+        }
     }
 
     // ---------- 渲染(静态,便于单测) ----------

@@ -1,8 +1,11 @@
 package cn.xmcraft.dreamport.server.avatar;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.awt.image.BufferedImage;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -112,5 +115,28 @@ class AvatarRenderServiceTest {
         var svc = stubService(new java.util.concurrent.atomic.AtomicInteger());
         var skin = svc.resolveSkin("Nobody");
         assertTrue(skin.etag().equals("default-steve") || skin.etag().equals("default-alex"));
+    }
+
+    @Test
+    void 皮肤落盘后读回一致且跨实例稳定(@TempDir Path dir) throws Exception {
+        var svc = new AvatarRenderService();
+        svc.cacheDir = dir;
+        svc.persistToDisk("Notch", new AvatarRenderService.SkinData(skin64(), "test-etag"));
+        var loaded = svc.loadFromDisk("Notch");
+        assertEquals(64, loaded.image().getWidth());
+        assertEquals(64, loaded.image().getHeight());
+        var svc2 = new AvatarRenderService();
+        svc2.cacheDir = dir;
+        assertEquals(svc2.loadFromDisk("Notch").etag(), loaded.etag(), "ETag 由文件内容重算,跨实例稳定");
+    }
+
+    @Test
+    void 默认脸不落盘(@TempDir Path dir) throws Exception {
+        var svc = new AvatarRenderService();
+        svc.cacheDir = dir;
+        svc.persistToDisk("Somebody", AvatarRenderService.defaultFace("Somebody"));
+        try (var list = Files.list(dir)) {
+            assertEquals(0, list.count(), "默认脸程序生成,不应写入磁盘");
+        }
     }
 }
