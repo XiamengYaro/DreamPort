@@ -81,6 +81,8 @@
                 :class="index === 0 ? 'bg-yellow-400 text-yellow-900' : index === 1 ? 'bg-stone-300 text-stone-700' : index === 2 ? 'bg-amber-600 text-amber-100' : 'bg-stone-200 text-stone-600'">
                 {{ index + 1 }}
               </span>
+              <img :src="`/api/avatar/${encodeURIComponent(player.name)}?size=36`" :alt="player.name"
+                class="w-9 h-9 rounded-xl object-cover shrink-0 bg-stone-800" loading="lazy" />
               <span class="text-white font-medium">{{ player.name }}</span>
             </div>
             <span class="text-orange-400 font-semibold text-lg">${{ formatNumber(player.balance) }}</span>
@@ -122,6 +124,8 @@
                 :class="index === 0 ? 'bg-yellow-400 text-yellow-900' : index === 1 ? 'bg-stone-300 text-stone-700' : index === 2 ? 'bg-amber-600 text-amber-100' : 'bg-stone-200 text-stone-600'">
                 {{ index + 1 }}
               </span>
+              <img :src="`/api/avatar/${encodeURIComponent(player.name)}?size=36`" :alt="player.name"
+                class="w-9 h-9 rounded-xl object-cover shrink-0 bg-stone-800" loading="lazy" />
               <span class="text-white font-medium">{{ player.name }}</span>
               <span v-if="onlinePlayers.includes(player.name)" class="w-2 h-2 bg-green-400 rounded-full" title="在线"></span>
               <span v-else class="w-2 h-2 bg-stone-500 rounded-full" title="离线"></span>
@@ -155,6 +159,8 @@
                 :class="index === 0 ? 'bg-yellow-400 text-yellow-900' : index === 1 ? 'bg-stone-300 text-stone-700' : index === 2 ? 'bg-amber-600 text-amber-100' : 'bg-stone-200 text-stone-600'">
                 {{ index + 1 }}
               </span>
+              <img :src="`/api/avatar/${encodeURIComponent(player.name)}?size=36`" :alt="player.name"
+                class="w-9 h-9 rounded-xl object-cover shrink-0 bg-stone-800" loading="lazy" />
               <span class="text-white font-medium">{{ player.name }}</span>
             </div>
             <span class="text-orange-400 font-semibold text-lg">{{ player.activeDays }}天</span>
@@ -181,7 +187,11 @@
         <div v-else class="space-y-2">
           <div v-for="player in bannedPlayers" :key="player.name"
             class="flex items-center justify-between p-3 rounded-xl hover:bg-white/5 transition-colors">
-            <span class="text-white font-medium">{{ player.name }}</span>
+            <div class="flex items-center gap-3">
+              <img :src="`/api/avatar/${encodeURIComponent(player.name)}?size=36`" :alt="player.name"
+                class="w-9 h-9 rounded-xl object-cover shrink-0 bg-stone-800" loading="lazy" />
+              <span class="text-white font-medium">{{ player.name }}</span>
+            </div>
             <span class="text-stone-400 text-sm">{{ player.banReason || '无原因' }}</span>
           </div>
         </div>
