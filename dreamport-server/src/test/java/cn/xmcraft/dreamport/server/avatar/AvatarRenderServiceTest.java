@@ -70,4 +70,47 @@ class AvatarRenderServiceTest {
         String e1 = AvatarRenderService.defaultFace("a").etag();
         assertTrue(e1.equals("default-steve") || e1.equals("default-alex"));
     }
+
+    /** 覆盖查档 HTTP 层:Notch 返回固定官方 UUID,其它名字视为官方库不存在 */
+    private AvatarRenderService stubService(java.util.concurrent.atomic.AtomicInteger calls) {
+        return new AvatarRenderService() {
+            @Override
+            String fetchOfficialUuid(String name) {
+                calls.incrementAndGet();
+                return name.equals("Notch") ? "069a79f444e94726a5befca90e38aaf5" : null;
+            }
+        };
+    }
+
+    @Test
+    void 按名查档_命中与未命中都走缓存() {
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var svc = stubService(calls);
+        assertEquals("069a79f444e94726a5befca90e38aaf5", svc.officialUuidByName("Notch"));
+        assertEquals("069a79f444e94726a5befca90e38aaf5", svc.officialUuidByName("Notch"));
+        assertEquals(1, calls.get(), "命中缓存不应重复发起查档");
+        assertEquals(null, svc.officialUuidByName("Nobody"));
+        assertEquals(2, calls.get());
+        assertEquals(null, svc.officialUuidByName("Nobody"));
+        assertEquals(2, calls.get(), "未命中缓存同样生效");
+    }
+
+    @Test
+    void 按名查档_过期后重新查档() {
+        var calls = new java.util.concurrent.atomic.AtomicInteger();
+        var svc = stubService(calls);
+        assertEquals("069a79f444e94726a5befca90e38aaf5", svc.officialUuidByName("Notch"));
+        // 手工把缓存条目拨回 25h 前(超过 24h 命中 TTL)
+        var e = svc.uuidCache.get("Notch");
+        svc.uuidCache.put("Notch", new AvatarRenderService.UuidCacheEntry(e.uuid(), e.at() - 25 * 3_600_000L));
+        svc.officialUuidByName("Notch");
+        assertEquals(2, calls.get(), "过期缓存应重新查档");
+    }
+
+    @Test
+    void 查档未命中_降级默认脸() {
+        var svc = stubService(new java.util.concurrent.atomic.AtomicInteger());
+        var skin = svc.resolveSkin("Nobody");
+        assertTrue(skin.etag().equals("default-steve") || skin.etag().equals("default-alex"));
+    }
 }

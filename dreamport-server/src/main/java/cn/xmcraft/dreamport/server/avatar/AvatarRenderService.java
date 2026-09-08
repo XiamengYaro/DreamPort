@@ -1,7 +1,5 @@
 package cn.xmcraft.dreamport.server.avatar;
 
-import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
-import cn.xmcraft.dreamport.server.user.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -23,38 +21,33 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 大头照渲染服务(双层皮肤:基础脸 8x8 + 帽子层 8x8 叠加,最近邻放大)。
  *
- * 皮肤来源(严格分流,替换 crafthead 外网依赖):
- * 1. 正版身份(microsoftVerified=true)→ Mojang session server 官方皮肤,绝不经手皮肤站
- * 2. 非正版 → BlessingSkin 插件接口(dreamport/api/skin,共享密钥)→ BS 材质文件
- * 3. 兜底 → 程序绘制默认脸(Steve/Alex 按名字 hash)
+ * 皮肤来源(两层):
+ * 1. 名字正版匹配 → 名字在 Mojang 官方库存在即视为正版身份,按官方 UUID 取 session server 官方皮肤
+ *    (官方 UUID 缓存:命中 24h / 未命中 1h;Mojang 不可达自动降级且不缓存)
+ * 2. 兜底 → 程序绘制默认脸(Steve/Alex 按名字 hash)
  *
- * 缓存两级:浏览器 Cache-Control+ETag(1h);服务端内存 LRU(皮肤图,TTL 1h)。
+ * 缓存两级:浏览器 Cache-Control+ETag(1h);服务端内存 LRU(皮肤图 TTL 1h、官方 UUID 见上)。
  */
 @Service
 public class AvatarRenderService {
 
     private static final Logger log = LoggerFactory.getLogger(AvatarRenderService.class);
     private static final long SKIN_TTL_MS = 3_600_000L;
+    private static final long UUID_HIT_TTL_MS = 86_400_000L;
+    private static final long UUID_MISS_TTL_MS = 3_600_000L;
     private static final int CACHE_CAP = 2000;
     private static final String MOJANG_PROFILE = "https://sessionserver.mojang.com/session/minecraft/profile/";
+    private static final String MOJANG_API = "https://api.mojang.com/users/profiles/minecraft/";
 
-    private final UserRepository userRepository;
-    private final SystemSettingsService settingsService;
     private final ObjectMapper mapper = new ObjectMapper();
     private final HttpClient http = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(8))
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
-
-    public AvatarRenderService(UserRepository userRepository, SystemSettingsService settingsService) {
-        this.userRepository = userRepository;
-        this.settingsService = settingsService;
-    }
 
     /** 渲染结果:PNG 字节 + 内容 ETag(皮肤 hash) */
     public record AvatarImage(byte[] png, String etag) {}
@@ -64,11 +57,23 @@ public class AvatarRenderService {
 
     private record CacheEntry(SkinData skin, long at) {}
 
+    /** 包内可见(单测缓存断言使用);uuid=null 表示"官方库无此名"的未命中缓存 */
+    record UuidCacheEntry(String uuid, long at) {}
+
     /** 皮肤 LRU(访问序,上限 2000,TTL 1h) */
     private final Map<String, CacheEntry> skinCache =
             new LinkedHashMap<>(128, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, CacheEntry> eldest) {
+                    return size() > CACHE_CAP;
+                }
+            };
+
+    /** 官方 UUID 缓存(访问序,上限 2000;命中 24h / 未命中 1h)——仅在 skinFor 锁内访问 */
+    final Map<String, UuidCacheEntry> uuidCache =
+            new LinkedHashMap<>(128, 0.75f, true) {
+                @Override
+                protected boolean removeEldestEntry(Map.Entry<String, UuidCacheEntry> eldest) {
                     return size() > CACHE_CAP;
                 }
             };
@@ -96,34 +101,55 @@ public class AvatarRenderService {
         return skin;
     }
 
-    private SkinData resolveSkin(String name) {
-        // 1. 正版身份 → Mojang 官方皮肤(绝不经手皮肤站)
-        var userOpt = userRepository.findByMinecraftNameIgnoreCase(name);
-        if (userOpt.isPresent()) {
-            var u = userOpt.get();
-            if (Boolean.TRUE.equals(u.microsoftVerified()) && u.minecraftUuid() != null) {
-                try {
-                    SkinData s = mojangSkin(u.minecraftUuid());
-                    if (s != null) return s;
-                } catch (Exception e) {
-                    log.warn("[头像] Mojang 皮肤获取失败 {}: {}", name, e.getMessage());
-                }
-            }
-        }
-        // 2. 非正版 → 皮肤站插件接口
-        if (bsReady()) {
+    /** 包内可见(单测覆盖降级顺序用) */
+    SkinData resolveSkin(String name) {
+        // 1. 名字正版匹配 → Mojang 官方皮肤(名字在官方库存在即视为正版身份)
+        String uuid = officialUuidByName(name);
+        if (uuid != null) {
             try {
-                SkinData s = blessingSkinSkin(name);
+                SkinData s = mojangSkin(uuid);
                 if (s != null) return s;
             } catch (Exception e) {
-                log.warn("[头像] 皮肤站皮肤获取失败 {}: {}", name, e.getMessage());
+                log.warn("[头像] Mojang 皮肤获取失败 {}: {}", name, e.getMessage());
             }
         }
-        // 3. 兜底:程序绘制默认脸
+        // 2. 兜底:程序绘制默认脸
         return defaultFace(name);
     }
 
-    /** Mojang 官方皮肤(正版身份专用) */
+    /** 按名查官方 UUID(名字正版匹配);命中 24h/未命中 1h 缓存,网络异常不缓存下次重试 */
+    String officialUuidByName(String name) {
+        UuidCacheEntry hit = uuidCache.get(name);
+        long now = System.currentTimeMillis();
+        if (hit != null) {
+            long ttl = hit.uuid() != null ? UUID_HIT_TTL_MS : UUID_MISS_TTL_MS;
+            if (now - hit.at() < ttl) return hit.uuid();
+        }
+        String uuid;
+        try {
+            uuid = fetchOfficialUuid(name);
+        } catch (Exception e) {
+            log.warn("[头像] Mojang 按名查档失败 {}: {}", name, e.getMessage());
+            return null;
+        }
+        uuidCache.put(name, new UuidCacheEntry(uuid, now));
+        return uuid;
+    }
+
+    /** 实际查档(HTTP);200→官方 UUID(dashless),204/404→null(未命中),其它→抛出。包内可见,单测覆盖 */
+    String fetchOfficialUuid(String name) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder(URI.create(MOJANG_API + enc(name)))
+                .timeout(Duration.ofSeconds(8)).GET().build();
+        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
+        if (resp.statusCode() == 200) {
+            JsonNode id = mapper.readTree(resp.body()).path("id");
+            return id.isMissingNode() || id.asText("").isBlank() ? null : id.asText();
+        }
+        if (resp.statusCode() == 204 || resp.statusCode() == 404) return null;
+        throw new IllegalStateException("Mojang API HTTP " + resp.statusCode());
+    }
+
+    /** 官方皮肤(按官方 UUID 取 session server 材质) */
     private SkinData mojangSkin(String uuid) throws Exception {
         HttpRequest req = HttpRequest.newBuilder(URI.create(MOJANG_PROFILE + uuid + "?unsigned=false"))
                 .timeout(Duration.ofSeconds(8)).GET().build();
@@ -140,21 +166,6 @@ public class AvatarRenderService {
         String url = textures.path("textures").path("SKIN").path("url").asText("");
         if (url.isBlank()) return null;
         return downloadSkin(url);
-    }
-
-    /** 皮肤站皮肤(插件按名字解析角色→材质) */
-    private SkinData blessingSkinSkin(String name) throws Exception {
-        var cfg = settingsService.blessingskinConfig();
-        if (!Boolean.TRUE.equals(cfg.get("enabled"))) return null;
-        String url = str(cfg.get("url"));
-        String secret = str(cfg.get("apiSecret"));
-        if (url.isBlank() || secret.isBlank()) return null;
-        HttpRequest req = HttpRequest.newBuilder(URI.create(strip(url) + "/dreamport/api/skin?name=" + enc(name)))
-                .header("X-Dreamport-Secret", secret)
-                .timeout(Duration.ofSeconds(10)).GET().build();
-        HttpResponse<byte[]> resp = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
-        if (resp.statusCode() != 200 || resp.body().length < 100) return null;
-        return skinFromBytes(resp.body());
     }
 
     private SkinData downloadSkin(String url) throws Exception {
@@ -228,21 +239,6 @@ public class AvatarRenderService {
     }
 
     // ---------- 工具 ----------
-
-    private boolean bsReady() {
-        var cfg = settingsService.blessingskinConfig();
-        return Boolean.TRUE.equals(cfg.get("enabled"))
-                && str(cfg.get("url")).isBlank() == false
-                && str(cfg.get("apiSecret")).isBlank() == false;
-    }
-
-    private String strip(String url) {
-        return url == null ? "" : url.replaceAll("/+$", "");
-    }
-
-    private String str(Object o) {
-        return o == null ? "" : String.valueOf(o);
-    }
 
     private String enc(String s) {
         return java.net.URLEncoder.encode(s, java.nio.charset.StandardCharsets.UTF_8);

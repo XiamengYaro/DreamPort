@@ -10,8 +10,8 @@
 /**
  * 统一头像组件:
  * - avatarUrl(用户上传)优先
- * - 其余走后端本地渲染端点 /api/avatar/{name}(双层皮肤,正版 Mojang/非正版皮肤站,两级缓存)
- *   —— 未绑定 MC 的账号返回程序绘制的默认脸(Steve/Alex 按名字 hash),验证 ID 后即变真实头像
+ * - 其余走后端本地渲染端点 /api/avatar/{name}(双层皮肤,名字正版匹配 Mojang/兜底默认脸,两级缓存)
+ *   —— 名字不在 Mojang 官方库时返回程序绘制的默认脸(Steve/Alex 按名字 hash)
  * - 图片加载失败回退首字母圆徽
  */
 import { computed, ref } from 'vue'

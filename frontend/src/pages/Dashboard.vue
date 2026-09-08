@@ -270,12 +270,8 @@
           <!-- 头像 -->
           <div class="flex flex-col items-center gap-2">
             <div class="w-20 h-20 rounded-full overflow-hidden">
-              <AppAvatar :name="username" :avatar-url="userProfile.avatar || null" size-class="w-20 h-20" alt="头像" />
+              <AppAvatar :name="playerData?.name || username" size-class="w-20 h-20" alt="头像" />
             </div>
-            <label class="text-xs text-orange-400 cursor-pointer hover:text-orange-300">
-              更换头像
-              <input type="file" accept="image/*" class="hidden" @change="handleAvatarUpload" />
-            </label>
           </div>
 
           <!-- 信息 -->
@@ -814,32 +810,6 @@ const cancelBedrock = async () => {
   } finally {
     bedrockLoading.value = false
   }
-}
-
-// 头像上传
-const handleAvatarUpload = async (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  
-  if (file.size > 2 * 1024 * 1024) {
-    notify?.error('图片大小不能超过 2MB')
-    return
-  }
-  
-  const reader = new FileReader()
-  reader.onload = async (e) => {
-    try {
-      const imageData = e.target?.result as string
-      const r: any = await api.uploadAvatar(imageData)
-      if (r.success) {
-        userProfile.value.avatar = r.data.url
-        notify?.success('头像上传成功')
-      }
-    } catch (err: any) {
-      notify?.error(err.message || '上传失败')
-    }
-  }
-  reader.readAsDataURL(file)
 }
 
 // 邮箱修改

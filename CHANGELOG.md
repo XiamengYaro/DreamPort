@@ -10,6 +10,10 @@
 ### Removed
 - **移除微软正版验证**:MicrosoftOAuthController(/api/auth/microsoft/start|callback)整体删除——该链路从未持久化绑定结果(microsoftVerified 无任何写 true 路径),属未接线死代码;前端类型同步清理
 
+### Changed
+- **头像正版识别改 Mojang 按名查档**:名字在 Mojang 官方库存在即取官方皮肤(官方 UUID 缓存命中 24h/未命中 1h,不可达自动降级且不缓存);移除原 microsoftVerified 判定与皮肤站插件取材层
+- **控制台头像统一玩家皮肤大头照(双层)**:个人资料卡与 Minecraft 卡均按「绑定 MC 名→账号名」解析,下线「更换头像」上传入口(后端 /user/avatar/upload 端点保留)
+
 ## [插件 1.2.2] - 2026-09-08
 
 ### Changed

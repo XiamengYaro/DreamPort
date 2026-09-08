@@ -559,13 +559,6 @@ class ApiService {
     })
   }
 
-  async uploadAvatar(imageData: string) {
-    return this.request('/user/avatar/upload', {
-      method: 'POST',
-      body: JSON.stringify({ image: imageData })
-    })
-  }
-
   async updateEmail(email: string, verifyCode: string) {
     return this.request('/user/email/update', {
       method: 'POST',
