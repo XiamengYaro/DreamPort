@@ -36,10 +36,10 @@ public class DocsController {
     public record ReorderBody(String type, java.util.List<String> items) {
     }
 
-    /** 公开读取：列表 */
+    /** 公开读取：列表(统一 {success,data} 包装) */
     @GetMapping("/api/docs")
     public ResponseEntity<Object> list() {
-        return ResponseEntity.ok(docsService.listAll());
+        return ResponseEntity.ok(Map.of("success", true, "data", docsService.listAll()));
     }
 
     /** 公开读取：单篇（?category=&filename=） */
@@ -47,7 +47,7 @@ public class DocsController {
     public ResponseEntity<Object> detail(@RequestParam(required = false) String category,
                                          @RequestParam String filename) {
         try {
-            return ResponseEntity.ok(docsService.read(category, filename));
+            return ResponseEntity.ok(Map.of("success", true, "data", docsService.read(category, filename)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("文档不存在"));
         }
@@ -59,7 +59,10 @@ public class DocsController {
                                             @RequestParam(required = false) String category) {
         try {
             String filename = slug.endsWith(".md") ? slug : slug + ".md";
-            return ResponseEntity.ok(docsService.read(category, filename));
+            var doc = category != null && !category.isBlank()
+                    ? docsService.read(category, filename)
+                    : docsService.readAnywhere(filename);
+            return ResponseEntity.ok(Map.of("success", true, "data", doc));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("文档不存在"));
         }

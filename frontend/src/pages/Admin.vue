@@ -69,7 +69,7 @@
             <div class="space-y-2">
               <div v-for="a in recentAudits" :key="a.id" class="p-2.5 rounded-xl bg-stone-900/40 border border-stone-800">
                 <div class="flex items-center justify-between gap-2">
-                  <span class="badge-info text-xs">{{ a.action }}</span>
+                  <span class="badge-info text-xs">{{ auditActionLabel(a.action) }}</span>
                   <span class="text-xs text-stone-400">{{ formatTime(a.timestamp) }}</span>
                 </div>
                 <div class="text-xs text-stone-400 mt-1 truncate">{{ a.operator }} → {{ a.target }}<span v-if="a.detail"> · {{ a.detail }}</span></div>
@@ -524,11 +524,11 @@
           </div>
           <div v-if="docsData.uncategorized.length" class="mb-3">
             <div class="text-xs text-stone-500 mb-1 px-1">未分类</div>
-            <button v-for="f in docsData.uncategorized" :key="f"
+            <button v-for="f in docsData.uncategorized" :key="f.filename"
               class="w-full text-left px-2 py-1.5 rounded-lg text-sm transition-colors"
-              :class="!docForm.category && docForm.filename === f ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
-              @click="openDoc(null, f)">
-              {{ f.replace(/\.md$/, '') }}
+              :class="!docForm.category && docForm.filename === f.filename ? 'text-orange-400 bg-orange-500/10' : 'text-stone-400 hover:text-white hover:bg-white/5'"
+              @click="openDoc(null, f.filename)">
+              {{ f.title }}
             </button>
           </div>
         </div>
@@ -723,7 +723,7 @@
             <tbody>
               <tr v-for="audit in paginatedAuditLogs" :key="audit.id">
                 <td class="text-stone-400 text-sm whitespace-nowrap">{{ formatTime(audit.timestamp) }}</td>
-                <td><span class="badge-info text-xs">{{ audit.action }}</span></td>
+                <td><span class="badge-info text-xs">{{ auditActionLabel(audit.action) }}</span></td>
                 <td class="text-white">{{ audit.operator }}</td>
                 <td class="text-stone-300">{{ audit.target }}</td>
                 <td class="text-stone-400 text-sm">{{ audit.detail }}</td>
@@ -1204,6 +1204,28 @@ const users = ref<any[]>([])
 const selectedUsers = ref<string[]>([])
 const statsOverview = ref<any>({})
 const auditLogs = ref<any[]>([])
+
+// 审计操作码 → 中文标签(覆盖后端全部 .log() 操作码;未知码原样展示)
+const auditActionLabels: Record<string, string> = {
+  approve: '通过审核', reject: '拒绝审核', ban: '封禁', unban: '解封',
+  unban_expired: '临时封禁到期解封', delete: '删除用户', update_user: '更新用户',
+  batch: '批量操作', status_change: '状态变更', setup: '初始化',
+  maintenance: '维护模式', verify_bedrock: '基岩验证', set_bedrock: '绑定基岩 ID',
+  qq_bind: '绑定 QQ', qq_unbind: '解绑 QQ',
+  questionnaire_submit: '提交问卷', questionnaire_save_bulk: '批量保存问卷',
+  admin_update_questionnaire: '更新问卷配置',
+  migration_upload: '上传迁移数据', migration_seed_cleanup: '清理迁移种子',
+  appeal_approved: '申诉通过', appeal_rejected: '申诉驳回',
+  settings_register: '注册设置', settings_questionnaire: '问卷设置',
+  settings_llm: 'AI 评分设置', settings_invite: '邀请设置',
+  settings_game: '游戏设置', settings_downloads: '下载中心设置',
+  settings_astrbot: 'QQ 互通设置', settings_announcements: '公告设置',
+}
+const auditActionLabel = (a: string) => {
+  if (auditActionLabels[a]) return auditActionLabels[a]
+  if (a.startsWith('settings_')) return '系统设置变更'
+  return a
+}
 
 // 总览 Dashboard
 const serverStatus = ref<any>({ online: false, players: { online: 0, max: 0 } })

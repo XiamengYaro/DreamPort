@@ -23,7 +23,7 @@ public class DocsService {
     private static final Pattern SAFE_NAME = Pattern.compile("^[\\w\\u4e00-\\u9fa5.-]{1,80}$");
     private static final Pattern CATEGORY_PREFIX = Pattern.compile("^\\d{2}-");
 
-    private final Path root = Path.of("docs");
+    private final Path root = Path.of("docs").toAbsolutePath().normalize();
 
     public DocsService() {
         try {
@@ -39,24 +39,32 @@ public class DocsService {
     public record DocContent(String filename, String title, String category, String content) {
     }
 
-    /** 全量列表：分类目录 + 未分类文件 */
+    /** 全量列表：分类目录 + 未分类文件（双形态字段——files 为文件名字符串、docs 为对象，兼容门户与后台消费方） */
     public Map<String, Object> listAll() {
         Map<String, Object> body = new LinkedHashMap<>();
         List<Map<String, Object>> categories = new ArrayList<>();
-        List<String> uncategorized = new ArrayList<>();
+        List<Map<String, Object>> uncategorized = new ArrayList<>();
         try (var stream = Files.list(root)) {
             List<Path> entries = stream.sorted(Comparator.comparing(p -> p.getFileName().toString())).toList();
             for (Path entry : entries) {
                 String name = entry.getFileName().toString();
                 if (Files.isDirectory(entry)) {
                     List<String> files = listMd(entry);
+                    List<Map<String, Object>> docs = new ArrayList<>();
+                    for (String f : files) {
+                        docs.add(Map.of("filename", f,
+                                "title", f.endsWith(".md") ? f.substring(0, f.length() - 3) : f));
+                    }
                     Map<String, Object> cat = new LinkedHashMap<>();
+                    cat.put("dirName", name);
                     cat.put("name", name);
                     cat.put("displayName", name.replaceFirst(CATEGORY_PREFIX.pattern(), ""));
                     cat.put("files", files);
+                    cat.put("docs", docs);
                     categories.add(cat);
                 } else if (name.endsWith(".md")) {
-                    uncategorized.add(name);
+                    uncategorized.add(Map.of("filename", name,
+                            "title", name.endsWith(".md") ? name.substring(0, name.length() - 3) : name));
                 }
             }
         } catch (IOException e) {
@@ -161,6 +169,24 @@ public class DocsService {
                 }
             }
         }
+    }
+
+    /** 兜底读取：先根目录,再逐分类查找同名文档 */
+    public DocContent readAnywhere(String filename) throws IOException {
+        try {
+            return read(null, filename);
+        } catch (IOException ignored) {
+        }
+        try (var stream = Files.list(root)) {
+            for (Path dir : stream.filter(Files::isDirectory).toList()) {
+                try {
+                    return read(dir.getFileName().toString(), filename);
+                } catch (IOException ignored) {
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        throw new IOException("文档不存在");
     }
 
     /** 路径解析 + 防穿越（Rules.md 安全要求） */
