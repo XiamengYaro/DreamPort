@@ -5,6 +5,19 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### Fixed（前端动画/过渡）
+- **修复卡片 hover 上浮全站失效**：移除全局 `.card` 入场动画（0.4s + `:nth-child` 交错延迟）——其 `animation-fill-mode: both` 在动画结束后永久锁定 transform（级联优先级高于普通声明），压住 `.card-hover` 的 hover 位移；且任何列表过滤/翻页/弹窗开关引发的卡片重挂载都会整批重播入场动画（后台管理页尤甚）
+- 页面入场收敛为**路由挂载时整页一次性上浮淡入**（`main > *` + `backwards` fill）：只动页面根节点，页面内部再渲染不再重播；nth-child 位置式交错延迟一并移除
+- **修复顶栏用户菜单/通知中心零动画**：原 `<transition name="modal">` 的样式定义在 AppModal 的 scoped style 里，作用不到这两个下拉（一直瞬间弹出）；统一改用全局 `pop` 过渡（右上锚点淡入下滑），AppModal 遮罩过渡同步上移全局共用，弹窗入场不再与卡片入场动画叠加
+- **全局通知（toast）补出场动画**：改用 `TransitionGroup`——进场上滑、出场右移、多条堆叠重排走 FLIP 平滑上移（原 5 秒后瞬间消失且下方条目跳位）
+- 问卷计分弹窗补遮罩过渡（原裸 `v-if` 瞬间出现）；移动端菜单补滑入/滑出过渡
+- 全仓 48 处 `transition-all` 定向化为 `transition-colors`/`transition-[width]` 等具体属性（进度条宽度、下拉可见性、hover 配色各自精确过渡，避免布局属性被意外纳入过渡）
+
+### Removed（前端死代码）
+- index.css 无引用的 `.page-*`/`.slide-*` 过渡（路由 transition 已历史移除）、Questionnaire 未引用的 `fadeInScale` keyframes、Tailwind 配置 4 个未用动画定义（fade-in/slide-up/scale-in/float）、TopNavigation 3 个无引用样式类
+
 ## [1.4.1] - 2026-09-09
 
 **热修:守则门死锁——玩家无法确认协议导致 ID 验证/绑定/改 ID 卡住**。
