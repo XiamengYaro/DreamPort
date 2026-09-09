@@ -2,7 +2,6 @@ package cn.xmcraft.dreamport.plugin.listener;
 
 import cn.xmcraft.dreamport.common.LoginCheckResponse;
 import cn.xmcraft.dreamport.plugin.DreamPortPlugin;
-import cn.xmcraft.dreamport.plugin.i18n.I18nManager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -22,11 +21,9 @@ import java.net.InetAddress;
 public class LoginListener implements Listener {
 
     private final DreamPortPlugin plugin;
-    private final I18nManager i18n;
 
-    public LoginListener(DreamPortPlugin plugin, I18nManager i18n) {
+    public LoginListener(DreamPortPlugin plugin) {
         this.plugin = plugin;
-        this.i18n = i18n;
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -49,20 +46,20 @@ public class LoginListener implements Listener {
         LoginCheckResponse decision = plugin.backendClient().loginCheck(username, uuid, ip);
 
         if (decision.maintenance() && !player.isOp()) {
-            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, i18n.msg("maintenance.kick"));
+            event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, plugin.i18n().msg("maintenance.kick"));
             return;
         }
         if (decision.allowed()) {
             return;
         }
         String reasonKey = decision.reasonKey() == null ? "login.unknown_status" : decision.reasonKey();
-        String message = i18n.msg(reasonKey);
+        String message = plugin.i18n().msg(reasonKey);
         if (reasonKey.equals("login.not_registered")) {
             message = message + "\n§e" + cfg.webRegisterUrl();
         }
         if (reasonKey.equals("login.banned_reason")) {
             // reasonKey 不携带原因内容（后端策略：原因走审计/查询），此处按通用封禁文案处理
-            message = i18n.msg("login.banned");
+            message = plugin.i18n().msg("login.banned");
         }
         event.disallow(PlayerLoginEvent.Result.KICK_WHITELIST, message);
     }

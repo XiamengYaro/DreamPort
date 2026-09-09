@@ -30,10 +30,17 @@ public final class BackendClient {
             .connectTimeout(Duration.ofSeconds(3))
             .build();
     private final Gson gson = new Gson();
+    /** 进服决策缓存;上限 1 万条,超限时清理过期条目(修复审计:原只增不减,长期运行内存膨胀) */
+    private static final int MAX_CACHE = 10_000;
     private final Map<String, CacheEntry> decisionCache = new ConcurrentHashMap<>();
 
     public BackendClient(DreamPortPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    /** 关闭底层 HTTP 客户端(热重载/插件卸载时释放连接) */
+    public void close() {
+        http.close();
     }
 
     public String health() {
@@ -97,6 +104,10 @@ public final class BackendClient {
             try {
                 LoginCheckResponse decision = gson.fromJson(body, LoginCheckResponse.class);
                 if (decision != null && decision.decision() != null) {
+                    if (decisionCache.size() >= MAX_CACHE) {
+                        long ttl = cfg.cacheTtlSeconds() * 1000L;
+                        decisionCache.entrySet().removeIf(e -> now - e.getValue().cachedAt() > ttl);
+                    }
                     decisionCache.put(key, new CacheEntry(decision, now));
                     return decision;
                 }
@@ -160,8 +171,9 @@ public final class BackendClient {
         long start = System.currentTimeMillis();
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
             try {
+                // 修复审计：显示名用显式 server-name(缺省回退 server-id),不再把 serverId 当名字上报
                 String body = post(Protocol.HEARTBEAT, new cn.xmcraft.dreamport.common.HeartbeatRequest(
-                        cfg.serverId(), cfg.serverId(), cfg.role(), online, max, version, players));
+                        cfg.serverId(), cfg.displayName(), cfg.role(), online, max, version, players));
                 long latency = System.currentTimeMillis() - start;
                 lastLatencyMs = latency;
                 reportConnection(body != null && body.contains("\"ok\":true"),

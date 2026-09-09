@@ -75,7 +75,8 @@ public class DreamPortProxyPlugin {
             .connectTimeout(Duration.ofSeconds(3))
             .build();
 
-    /** username(小写) → 缓存决策 */
+    /** username(小写) → 缓存决策;上限防内存膨胀(修复审计) */
+    private static final int MAX_CACHE = 10_000;
     private final Map<String, CacheEntry> decisionCache = new ConcurrentHashMap<>();
 
     private record CacheEntry(boolean allowed, String reasonKey, long cachedAt) {
@@ -292,7 +293,7 @@ public class DreamPortProxyPlugin {
             String body = "{\"username\":\"" + escape(username) + "\",\"ip\":\"" + escape(ip) + "\"}";
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(backendUrl + "/internal/v1/login-check"))
-                    .timeout(Duration.ofMillis(2000))
+                    .timeout(Duration.ofMillis(800))
                     .header("Content-Type", "application/json")
                     .header(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID, serverId)
                     .header(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN, serverToken)
@@ -300,9 +301,15 @@ public class DreamPortProxyPlugin {
                     .build();
             HttpResponse<String> response = http.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() == 200) {
-                String json = response.body();
-                boolean allowed = json.contains("\"decision\":\"allow\"");
-                String reasonKey = extractReasonKey(json);
+                // 修复审计 L6：Gson 解析响应,不再用 contains/正则猜决策
+                var json = com.google.gson.JsonParser.parseString(response.body()).getAsJsonObject();
+                boolean allowed = json.has("decision")
+                        && "allow".equals(json.get("decision").getAsString());
+                String reasonKey = json.has("reasonKey") && !json.get("reasonKey").isJsonNull()
+                        ? json.get("reasonKey").getAsString() : "";
+                if (decisionCache.size() >= MAX_CACHE) {
+                    decisionCache.entrySet().removeIf(e -> now - e.getValue().cachedAt() > cacheTtlSeconds * 1000L);
+                }
                 decisionCache.put(key, new CacheEntry(allowed, reasonKey, now));
                 return new CacheEntry(allowed, reasonKey, now);
             }
@@ -312,12 +319,6 @@ public class DreamPortProxyPlugin {
             logger.warn("login-check 请求失败: {}", e.getMessage());
             return failDecision(cached);
         }
-    }
-
-    private static String extractReasonKey(String json) {
-        java.util.regex.Matcher m = java.util.regex.Pattern
-                .compile("\"reasonKey\":\"([^\"]+)\"").matcher(json);
-        return m.find() ? m.group(1) : "";
     }
 
     private CacheEntry failDecision(CacheEntry cached) {

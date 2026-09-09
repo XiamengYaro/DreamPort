@@ -5,6 +5,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.InventoryHolder;
 
 /**
@@ -35,5 +36,13 @@ public class TitlesGuiListener implements Listener {
         TitlesService.ActiveTitle clicked = titlesHolder.titles.get(slot);
         boolean isEquipped = clicked.code().equals(titlesHolder.activeCode);
         titlesService.equip(player, isEquipped ? "" : clicked.code());
+    }
+
+    // 修复审计 L5:拦截拖拽进 GUI,避免物品错位/异常
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getInventory().getHolder() instanceof TitlesService.TitlesHolder) {
+            event.setCancelled(true);
+        }
     }
 }

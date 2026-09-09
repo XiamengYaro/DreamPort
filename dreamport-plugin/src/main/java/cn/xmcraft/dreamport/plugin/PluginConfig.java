@@ -10,6 +10,7 @@ public record PluginConfig(
         String language,
         String backendUrl,
         String serverId,
+        String serverName,
         String serverToken,
         String failPolicy,
         int cacheTtlSeconds,
@@ -32,6 +33,7 @@ public record PluginConfig(
                 config.getString("language", "zh"),
                 trimTrailingSlash(config.getString("backend.url", "http://127.0.0.1:18898")),
                 config.getString("backend.server-id", "main"),
+                config.getString("backend.server-name", ""),
                 config.getString("backend.server-token", ""),
                 config.getString("check.fail-policy", "cache").toLowerCase(),
                 config.getInt("check.cache-ttl-seconds", 60),
@@ -47,6 +49,11 @@ public record PluginConfig(
                 config.getString("economy.report", "auto").toLowerCase(),
                 config.getString("web-register-url", "http://localhost:18898")
         );
+    }
+
+    /** 心跳上报的显示名：显式配置优先，缺省回退 server-id */
+    public String displayName() {
+        return serverName != null && !serverName.isBlank() ? serverName : serverId;
     }
 
     private static String trimTrailingSlash(String url) {

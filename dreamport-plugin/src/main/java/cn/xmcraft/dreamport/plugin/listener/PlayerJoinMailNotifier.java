@@ -26,8 +26,8 @@ public class PlayerJoinMailNotifier implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         var player = event.getPlayer();
-        // 延迟 5 秒(100 tick),避开进服瞬间刷屏
+        // 延迟 5 秒,避开进服瞬间刷屏(修复审计:原误写成 100 秒)
         plugin.getServer().getAsyncScheduler().runDelayed(plugin,
-                t -> mailService.notifyOnJoin(player), 100, TimeUnit.SECONDS);
+                t -> mailService.notifyOnJoin(player), 5, TimeUnit.SECONDS);
     }
 }

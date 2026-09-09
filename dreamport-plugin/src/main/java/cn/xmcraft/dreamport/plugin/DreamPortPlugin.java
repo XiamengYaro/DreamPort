@@ -51,7 +51,7 @@ public final class DreamPortPlugin extends JavaPlugin {
         this.rewardMailService = mailService;
         getServer().getPluginManager().registerEvents(new cn.xmcraft.dreamport.plugin.listener.MailGuiListener(mailService), this);
         getServer().getPluginManager().registerEvents(new cn.xmcraft.dreamport.plugin.listener.PlayerJoinMailNotifier(this, mailService), this);
-        getServer().getPluginManager().registerEvents(new LoginListener(this, i18n), this);
+        getServer().getPluginManager().registerEvents(new LoginListener(this), this);
         getServer().getPluginManager().registerEvents(new PlayerEventsListener(this), this);
         CommandExecutor executor = new XmwCommand(this);
         var command = getCommand("xmw");
@@ -147,7 +147,17 @@ public final class DreamPortPlugin extends JavaPlugin {
         reloadConfig();
         pluginConfig = PluginConfig.load(getConfig());
         i18n = new I18nManager(this, getConfig().getString("language", "zh"));
+        // 修复审计：释放旧客户端连接再重建(原每次 reload 泄漏 HttpClient)
+        backendClient.close();
         backendClient = new BackendClient(this);
+    }
+
+    @Override
+    public void onDisable() {
+        // 修复审计：插件卸载释放 HTTP 连接
+        if (backendClient != null) {
+            backendClient.close();
+        }
     }
 
     public I18nManager i18n() {

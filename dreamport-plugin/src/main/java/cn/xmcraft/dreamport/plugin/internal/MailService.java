@@ -40,6 +40,9 @@ public final class MailService {
 
     private final DreamPortPlugin plugin;
 
+    /** 修复审计 H2：跨 GUI 会话的已领取集合(原仅 MailHolder 会话内去重,重开 /mail 可双倍奖励) */
+    private final java.util.Set<Long> claimedIds = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     public MailService(DreamPortPlugin plugin) {
         this.plugin = plugin;
     }
@@ -55,7 +58,11 @@ public final class MailService {
             JsonObject data = plugin.backendClient().gson().fromJson(body, JsonObject.class).getAsJsonObject("data");
             for (var m : data.getAsJsonArray("mails")) {
                 JsonObject o = m.getAsJsonObject();
-                mails.add(new PendingMail(o.get("id").getAsLong(),
+                long id = o.get("id").getAsLong();
+                if (claimedIds.contains(id)) {
+                    continue; // 已在本进程领取过,不再展示,避免重开 GUI 后重复领取
+                }
+                mails.add(new PendingMail(id,
                         o.get("title").getAsString(),
                         o.has("note") ? o.get("note").getAsString() : "",
                         o.has("commands") ? o.get("commands").toString() : "{}"));
@@ -103,24 +110,35 @@ public final class MailService {
 
     /** 领取一封邮件:执行奖励指令/存款并回执(异步) */
     public void claim(Player player, PendingMail mail) {
+        // 修复审计 H2：同步登记,跨会话/并发第二次领取直接拒绝(原仅会话内去重)
+        if (!claimedIds.add(mail.id())) {
+            return;
+        }
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
             try {
                 JsonObject reward = plugin.backendClient().gson().fromJson(mail.commandsJson(), JsonObject.class);
                 JsonArray commands = reward != null ? reward.getAsJsonArray("commands") : new JsonArray();
                 plugin.getServer().getGlobalRegionScheduler().execute(plugin, () -> {
+                    // 单条指令异常不中断其余指令,也不影响回执
                     for (var c : commands) {
-                        JsonObject o = c.getAsJsonObject();
-                        String type = o.has("type") ? o.get("type").getAsString() : "command";
-                        if ("deposit".equals(type)) {
-                            vaultDeposit(player, o.get("amount").getAsDouble());
-                        } else if (o.has("cmd")) {
-                            String cmd = o.get("cmd").getAsString().replace("{player}", player.getName());
-                            Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                        try {
+                            JsonObject o = c.getAsJsonObject();
+                            String type = o.has("type") ? o.get("type").getAsString() : "command";
+                            if ("deposit".equals(type)) {
+                                vaultDeposit(player, o.get("amount").getAsDouble());
+                            } else if (o.has("cmd")) {
+                                String cmd = o.get("cmd").getAsString().replace("{player}", player.getName());
+                                Bukkit.dispatchCommand(Bukkit.getConsoleSender(), cmd);
+                            }
+                        } catch (Exception e) {
+                            plugin.getLogger().warning("奖励指令执行失败(" + mail.id() + "): " + e.getMessage());
                         }
                     }
                     player.sendMessage("§a已领取:" + mail.title());
+                    // 奖励执行完再回执(异步,不占主线程)
+                    plugin.getServer().getAsyncScheduler().runNow(plugin, t2 ->
+                            plugin.backendClient().mailClaimed(mail.id()));
                 });
-                plugin.backendClient().mailClaimed(mail.id());
             } catch (Exception e) {
                 plugin.getLogger().warning("邮件领取失败: " + e.getMessage());
             }

@@ -12,7 +12,10 @@ bstats:
 backend:
   url: "http://127.0.0.1:18898"
   server-id: "main"
-  server-token: "dev-internal-token"   # 与后端 wl.internal.server-token 保持一致；P4 起由后台按服签发
+  # 显示名(心跳/网页服务器列表展示);留空则回退 server-id
+  server-name: ""
+  # 与后端 wl.internal.server-token 保持一致;部署时必须配置,空串会导致后端拒绝
+  server-token: ""
 
 check:
   fail-policy: cache     # 后端不可达时的兜底：cache（用最近缓存）| allow（放行）| deny（拒绝）

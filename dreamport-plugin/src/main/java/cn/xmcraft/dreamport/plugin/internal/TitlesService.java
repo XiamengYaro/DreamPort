@@ -81,7 +81,9 @@ public final class TitlesService {
                 activeByPlayer.put(name.toLowerCase(),
                         new ActiveTitle(code, str(obj, "name"), str(obj, "color")));
             }
-        } catch (Exception ignored) {
+        } catch (Exception e) {
+            // 修复审计 L4:静默吞异常导致 PAPI 变量长期停留在旧缓存/空值,补日志便于排障
+            plugin.getLogger().warning("称号佩戴拉取失败(" + name + "): " + e.getMessage());
         }
     }
 
