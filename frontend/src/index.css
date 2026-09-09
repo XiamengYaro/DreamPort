@@ -384,47 +384,73 @@ body::before {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* 过渡动画 */
-.page-enter-active {
-  transition: all 0.3s var(--lg-ease);
+/* ═══ 页面入场 ═══
+   路由切换无 <transition>(历史偶发白屏已移除,见 App.vue 注释),
+   页面衔接由这里承担:路由挂载时整页一次性上浮淡入。
+   只作用于 main 的直接子元素(各页根节点),页面内部再渲染不会重播;
+   fill-mode 用 backwards —— 结束后不保留关键帧样式,不会锁死 hover 位移。 */
+main > * {
+  animation: cardIn 0.4s var(--lg-ease) backwards;
 }
-.page-leave-active {
-  transition: all 0.15s ease-in;
-}
-.page-enter-from {
-  opacity: 0;
-  transform: translateY(12px);
-}
-.page-leave-to {
-  opacity: 0;
-}
-
-/* 卡片交错入场 */
-.card {
-  animation: cardIn 0.4s var(--lg-ease) both;
-}
-.card:nth-child(2) { animation-delay: 0.05s; }
-.card:nth-child(3) { animation-delay: 0.1s; }
-.card:nth-child(4) { animation-delay: 0.15s; }
 
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+/* ═══ 组件过渡(全站共用,取代散落的 scoped 定义) ═══
+   modal:遮罩弹窗(AppModal/页内遮罩)——遮罩淡入淡出 + 内容卡缩放
+   pop:  下拉面板(顶栏用户菜单/通知中心)——右上锚点淡入下滑
+   toast:全局通知(App.vue TransitionGroup)——进场上滑,出场右移,堆叠 FLIP */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity var(--lg-duration) var(--lg-ease);
+}
+.modal-enter-active > *,
+.modal-leave-active > * {
+  transition: transform var(--lg-duration) var(--lg-ease);
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from > *,
+.modal-leave-to > * {
+  transform: scale(0.96);
 }
 
-.slide-enter-from {
+.pop-enter-active,
+.pop-leave-active {
+  transition: opacity var(--lg-duration) var(--lg-ease),
+              transform var(--lg-duration) var(--lg-ease);
+  transform-origin: top right;
+}
+.pop-enter-from,
+.pop-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+}
+
+.toast-enter-active {
+  transition: opacity 0.25s var(--lg-ease), transform 0.25s var(--lg-ease);
+}
+.toast-leave-active {
+  /* 出场脱离文档流,下方条目经 .toast-move 平滑上移(Vue TransitionGroup 惯用法);
+     margin 归零抵消容器 space-y-2 对绝对定位条目的偏移 */
+  position: absolute;
+  margin-top: 0 !important;
+  transition: opacity 0.2s ease-in, transform 0.2s ease-in;
+}
+.toast-enter-from {
+  opacity: 0;
   transform: translateY(-10px);
-  opacity: 0;
 }
-
-.slide-leave-to {
-  transform: translateY(10px);
+.toast-leave-to {
   opacity: 0;
+  transform: translateX(16px);
+}
+.toast-move {
+  transition: transform 0.25s var(--lg-ease);
 }
 
 /* 无障碍:用户偏好减少动效时,关闭装饰性运动 */

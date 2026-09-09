@@ -1,5 +1,5 @@
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  <header class="fixed top-0 left-0 right-0 z-50"
     :class="scrolled || mobileMenuOpen ? 'scrolled' : 'transparent'">
     <!-- 玻璃层常驻(只动透明度,不开关 backdrop-filter,防滚动黑闪);页面顶端时完全透明 -->
     <div class="nav-glass-layer absolute inset-0 pointer-events-none transition-opacity duration-300"
@@ -29,11 +29,11 @@
               <AppIcon name="ellipsis-horizontal" class="w-4 h-4" />更多
               <svg class="w-3 h-3 transition-transform duration-200 group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
             </span>
-            <div class="absolute top-full left-0 pt-2 w-44 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden">
-              <router-link to="/leaderboard" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="chart-bar" class="w-4 h-4" />排行榜</router-link>
-              <router-link to="/map" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="cursor-arrow-rays" class="w-4 h-4" />地图</router-link>
-              <router-link to="/village" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="squares-2x2" class="w-4 h-4" />村民族谱</router-link>
-              <router-link to="/machines" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-all"><AppIcon name="cpu" class="w-4 h-4" />公共机器</router-link>
+            <div class="absolute top-full left-0 pt-2 w-44 bg-stone-800 border border-stone-700 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-[opacity,visibility] duration-200 z-50 overflow-hidden">
+              <router-link to="/leaderboard" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors"><AppIcon name="chart-bar" class="w-4 h-4" />排行榜</router-link>
+              <router-link to="/map" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors"><AppIcon name="cursor-arrow-rays" class="w-4 h-4" />地图</router-link>
+              <router-link to="/village" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors"><AppIcon name="squares-2x2" class="w-4 h-4" />村民族谱</router-link>
+              <router-link to="/machines" class="flex items-center gap-2 px-4 py-3 text-sm text-stone-300 hover:text-white hover:bg-white/10 transition-colors"><AppIcon name="cpu" class="w-4 h-4" />公共机器</router-link>
             </div>
           </div>
         </div>
@@ -60,7 +60,7 @@
                 <svg class="w-3 h-3 text-white/70 transition-transform" :class="{ 'rotate-180': userMenuOpen }"
                   fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
               </button>
-              <transition name="modal">
+              <transition name="pop">
                 <div v-if="userMenuOpen" class="absolute right-0 top-full mt-2 w-60 glass-panel rounded-xl shadow-xl z-50 overflow-hidden" @click.stop>
                   <div class="p-4 flex items-center gap-3 border-b border-white/10">
                     <AppAvatar :name="username" size-class="w-11 h-11" />
@@ -89,6 +89,7 @@
     </div>
 
         <!-- 移动端菜单 -->
+    <transition name="menu">
     <div v-if="mobileMenuOpen" class="md:hidden border-t border-white/10 menu-glass">
       <nav class="px-4 py-3 space-y-1">
         <router-link to="/" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="home" class="w-4 h-4" />首页</router-link>
@@ -100,7 +101,7 @@
         <router-link to="/chat" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="chat-bubble" class="w-4 h-4" />聊天广场</router-link>
 
         <!-- 更多分组 -->
-        <button @click="moreGroupOpen = !moreGroupOpen" class="w-full flex items-center justify-between px-4 py-3 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-all">
+        <button @click="moreGroupOpen = !moreGroupOpen" class="w-full flex items-center justify-between px-4 py-3 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors">
           <span class="flex items-center gap-2"><AppIcon name="ellipsis-horizontal" class="w-4 h-4" />更多</span>
           <svg :class="{'rotate-90': moreGroupOpen}" class="w-4 h-4 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
         </button>
@@ -125,6 +126,7 @@
         </template>
       </nav>
     </div>
+    </transition>
   </header>
 </template>
 
@@ -211,17 +213,16 @@ const logout = () => {
     inset 0 1px 0 var(--lg-highlight);
 }
 
-.liquid-glass-subtle {
-  background: linear-gradient(135deg, var(--lg-tint) 0%, rgb(255 255 255 / 0.03) 100%);
-  backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
-  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(var(--lg-blur));
+/* 移动端菜单展开/收起 */
+.menu-enter-active,
+.menu-leave-active {
+  transition: opacity var(--lg-duration) var(--lg-ease),
+              transform var(--lg-duration) var(--lg-ease);
 }
-
-.mobile-menu-glass {
-  background: linear-gradient(135deg, rgba(40, 40, 40, 0.85) 0%, rgba(30, 30, 30, 0.9) 100%);
-  backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
-  -webkit-backdrop-filter: saturate(var(--lg-saturation)) blur(24px);
-  border-color: rgba(255, 255, 255, 0.1);
+.menu-enter-from,
+.menu-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .menu-glass {
@@ -231,7 +232,7 @@ const logout = () => {
 }
 
 .nav-item {
-  @apply px-3 py-2 text-sm font-medium rounded-xl transition-all duration-200 whitespace-nowrap flex items-center gap-1.5;
+  @apply px-3 py-2 text-sm font-medium rounded-xl transition-colors duration-200 whitespace-nowrap flex items-center gap-1.5;
   color: rgba(255, 255, 255, 0.7);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
@@ -246,17 +247,8 @@ const logout = () => {
   background: rgba(249, 115, 22, 0.15);
 }
 
-.nav-item-dropdown {
-  position: relative;
-}
-
-.nav-item-dropdown:hover {
-  color: white;
-  background: rgba(255, 255, 255, 0.1);
-}
-
 .mobile-nav-item {
-  @apply block px-4 py-3 rounded-xl transition-all duration-200;
+  @apply block px-4 py-3 rounded-xl transition-colors duration-200;
   color: rgba(255, 255, 255, 0.8);
 }
 

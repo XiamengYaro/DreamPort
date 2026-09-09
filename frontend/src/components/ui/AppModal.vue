@@ -52,22 +52,3 @@ const sizeClass = computed(() => ({
   xl: 'max-h-[85vh] max-w-4xl overflow-y-auto'
 })[props.size])
 </script>
-
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s ease;
-}
-.modal-enter-active > div,
-.modal-leave-active > div {
-  transition: transform 0.2s ease;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-.modal-enter-from > div,
-.modal-leave-to > div {
-  transform: scale(0.96);
-}
-</style>

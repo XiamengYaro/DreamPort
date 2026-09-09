@@ -8,7 +8,7 @@
       </span>
     </button>
 
-    <transition name="modal">
+    <transition name="pop">
       <div v-if="open" class="absolute right-0 top-full mt-2 w-80 glass-panel rounded-xl shadow-xl z-50 overflow-hidden" @click.stop>
         <div class="flex items-center justify-between px-4 py-3 border-b border-white/10">
           <span class="text-white font-semibold text-sm">通知中心</span>

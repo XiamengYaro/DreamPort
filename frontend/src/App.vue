@@ -14,9 +14,9 @@
     <!-- 底部页脚 -->
     <AppFooter :icp="icp" />
 
-    <!-- 通知弹窗 -->
+    <!-- 通知弹窗(TransitionGroup:进场上滑/出场右移,堆叠重排走 FLIP) -->
     <Teleport to="body">
-      <div class="fixed top-20 right-4 md:right-6 z-50 space-y-2" style="pointer-events: none;">
+      <TransitionGroup tag="div" name="toast" class="fixed top-20 right-4 md:right-6 z-50 space-y-2" style="pointer-events: none;">
         <div
           v-for="n in notifications"
           :key="n.id"
@@ -44,7 +44,7 @@
             </svg>
           </button>
         </div>
-      </div>
+      </TransitionGroup>
     </Teleport>
   </div>
 </template>
