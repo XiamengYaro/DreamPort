@@ -40,7 +40,12 @@ public class TitleService {
 
     // ---------- 定义 ----------
 
-    public record TitleDef(String code, String name, String desc, String color, boolean enabled) {}
+    public record TitleDef(String code, String name, String desc, String color, String gameColor, boolean enabled) {}
+
+    /** 游戏内显示色:gameColor 单独配置,留空则跟随网页 color */
+    public static String effectiveGameColor(TitleDef t) {
+        return t.gameColor() == null || t.gameColor().isBlank() ? t.color() : t.gameColor();
+    }
 
     public record AchievementDef(String id, String name, String desc, String metric,
                                  int target, String reward, boolean enabled) {}
@@ -73,7 +78,8 @@ public class TitleService {
                 String code = t.path("code").asText("");
                 if (code.isBlank()) continue;
                 list.add(new TitleDef(code, t.path("name").asText(code), t.path("desc").asText(""),
-                        t.path("color").asText("#fbbf24"), t.path("enabled").asBoolean(true)));
+                        t.path("color").asText("#fbbf24"), t.path("gameColor").asText(""),
+                        t.path("enabled").asBoolean(true)));
             }
         } catch (Exception ignored) {
         }
@@ -96,13 +102,15 @@ public class TitleService {
     }
 
     public List<TitleDef> titles() {
-        String raw = settingService.get(SettingService.KEY_TITLES_CONFIG, String.class);
+        // 用 getRaw 取原始 JSON(get(key, String.class) 无法把 JSON 对象反序列化为 String,
+        // 会静默返回 null 导致配置永远走默认——V9 遗留 bug)
+        String raw = settingService.getRaw(SettingService.KEY_TITLES_CONFIG);
         List<TitleDef> parsed = raw == null || raw.isBlank() ? parseTitles(DEFAULT_TITLES_JSON) : parseTitles(raw);
         return parsed.isEmpty() ? parseTitles(DEFAULT_TITLES_JSON) : parsed;
     }
 
     public List<AchievementDef> achievements() {
-        String raw = settingService.get(SettingService.KEY_ACHIEVEMENTS_CONFIG, String.class);
+        String raw = settingService.getRaw(SettingService.KEY_ACHIEVEMENTS_CONFIG);
         List<AchievementDef> parsed = raw == null || raw.isBlank()
                 ? parseAchievements(DEFAULT_ACHIEVEMENTS_JSON) : parseAchievements(raw);
         return parsed.isEmpty() ? parseAchievements(DEFAULT_ACHIEVEMENTS_JSON) : parsed;
@@ -296,6 +304,10 @@ public class TitleService {
             String color = m.get("color") == null ? "#fbbf24" : String.valueOf(m.get("color")).trim();
             if (!color.matches("#[0-9a-fA-F]{6}")) {
                 throw new IllegalArgumentException("称号「" + code + "」颜色格式非法,需 #rrggbb 如 #fbbf24");
+            }
+            String gameColor = m.get("gameColor") == null ? "" : String.valueOf(m.get("gameColor")).trim();
+            if (!gameColor.isEmpty() && !gameColor.matches("#[0-9a-fA-F]{6}")) {
+                throw new IllegalArgumentException("称号「" + code + "」游戏内颜色格式非法,需 #rrggbb 或留空跟随网页色");
             }
         }
         settingService.set(SettingService.KEY_TITLES_CONFIG, Map.of("titles", titles));

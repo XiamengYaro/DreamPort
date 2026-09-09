@@ -359,7 +359,7 @@ public class InternalController {
         return ResponseEntity.ok(java.util.Map.of("success", true,
                 "code", t == null ? "" : t.code(),
                 "name", t == null ? "" : t.name(),
-                "color", t == null ? "" : t.color()));
+                "color", t == null ? "" : cn.xmcraft.dreamport.server.titles.TitleService.effectiveGameColor(t)));
     }
 
     /** 玩家已拥有称号(/titles GUI 用);相对路径对应 Protocol.TITLE_MINE */
@@ -379,7 +379,8 @@ public class InternalController {
             String code = String.valueOf(row.get("title_code"));
             defs.stream().filter(d -> d.code().equals(code) && d.enabled()).findFirst()
                     .ifPresent(d -> titles.add(java.util.Map.of("code", d.code(),
-                            "name", d.name(), "desc", d.desc(), "color", d.color())));
+                            "name", d.name(), "desc", d.desc(),
+                            "color", cn.xmcraft.dreamport.server.titles.TitleService.effectiveGameColor(d))));
         }
         String active = titleService.activeTitleCode(username);
         return ResponseEntity.ok(java.util.Map.of("success", true,

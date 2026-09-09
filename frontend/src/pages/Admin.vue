@@ -713,12 +713,13 @@
             <h3 class="text-lg font-semibold text-white">称号定义</h3>
             <button @click="addTitleDef" class="btn-secondary text-sm">+ 添加称号</button>
           </div>
-          <p class="text-xs text-stone-500">code 用于插件变量与奖励关联;颜色为网页显示色(十六进制)。</p>
+          <p class="text-xs text-stone-500">code 用于插件变量与奖励关联;「颜色(网页)」用于网页显示,「游戏内颜色」用于聊天/Tab/GUI 显示,留空则跟随网页色(十六进制)。</p>
           <div v-for="(t, i) in titlesCfg.titles" :key="t.code" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div><label class="block text-xs text-stone-500 mb-1">代码(code)</label><input v-model="t.code" class="input text-sm font-mono" /></div>
               <div><label class="block text-xs text-stone-500 mb-1">名称</label><input v-model="t.name" class="input text-sm" /></div>
               <div><label class="block text-xs text-stone-500 mb-1">颜色(网页)</label><input v-model="t.color" class="input text-sm font-mono" placeholder="#fbbf24" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">游戏内颜色(留空跟随网页色)</label><input v-model="t.gameColor" class="input text-sm font-mono" placeholder="#fbbf24" /></div>
               <label class="flex items-center gap-2 text-sm text-stone-300 self-end"><input type="checkbox" v-model="t.enabled" class="accent-orange-500" /> 启用</label>
             </div>
             <div><label class="block text-xs text-stone-500 mb-1">描述</label><input v-model="t.desc" class="input text-sm" /></div>

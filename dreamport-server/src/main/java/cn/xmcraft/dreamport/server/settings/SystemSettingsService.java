@@ -179,7 +179,8 @@ public class SystemSettingsService {
 
     /** 任务规则(tasks.config:{"tasks":[{id,type,channel,period,name,desc,target,points,enabled}]}) */
     public Map<String, Object> tasksConfig() {
-        String raw = settingService.get(SettingService.KEY_TASKS_CONFIG, String.class);
+        // getRaw 取原始 JSON(get(String.class) 对 JSON 对象抛异常返回 null,配置永不生效——遗留 bug)
+        String raw = settingService.getRaw(SettingService.KEY_TASKS_CONFIG);
         if (raw == null || raw.isBlank()) {
             return Map.of("tasks", List.of());
         }
@@ -196,7 +197,8 @@ public class SystemSettingsService {
 
     /** 兑换商店(shop.config:{"rewards":[{id,name,desc,cost,commands,enabled}]}) */
     public Map<String, Object> shopConfig() {
-        String raw = settingService.get(SettingService.KEY_SHOP_CONFIG, String.class);
+        // getRaw 取原始 JSON(同上,get(String.class) 对 JSON 对象永不生效)
+        String raw = settingService.getRaw(SettingService.KEY_SHOP_CONFIG);
         if (raw == null || raw.isBlank()) {
             return Map.of("rewards", List.of());
         }

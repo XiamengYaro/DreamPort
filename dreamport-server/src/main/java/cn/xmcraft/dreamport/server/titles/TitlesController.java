@@ -145,6 +145,7 @@ public class TitlesController {
             m.put("name", t.name());
             m.put("desc", t.desc());
             m.put("color", t.color());
+            m.put("gameColor", t.gameColor());
             m.put("enabled", t.enabled());
             m.put("holders", titleService.holders(t.code()));
             titles.add(m);
