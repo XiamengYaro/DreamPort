@@ -179,11 +179,11 @@ const resetDefault = async () => {
       <span class="text-xs text-stone-500">{{ items.length }} 题 · 满分 {{ totalScore }} 分</span>
       <div class="ml-auto flex items-center gap-2">
         <button @click="resetDefault"
-          class="px-3 py-2 rounded-xl text-sm text-stone-400 hover:text-white hover:bg-white/5 transition-all">
+          class="px-3 py-2 rounded-xl text-sm text-stone-400 hover:text-white hover:bg-white/5 transition-colors">
           恢复默认题库
         </button>
         <button @click="saveBulk" :disabled="saving"
-          class="px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-1.5"
+          class="px-5 py-2 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5"
           :class="dirty ? 'bg-orange-500 text-white hover:bg-orange-600' : 'bg-stone-700 text-stone-300 hover:bg-stone-600'">
           <AppIcon name="check-circle" class="w-4 h-4" /> {{ saving ? '保存中…' : '保存整卷' }}
         </button>
@@ -201,7 +201,7 @@ const resetDefault = async () => {
         <div class="text-xs text-stone-500 px-2 pb-2 uppercase tracking-wide">题目大纲</div>
         <div class="space-y-1 max-h-[420px] overflow-y-auto">
           <button v-for="(q, i) in items" :key="q.uid" @click="select(i)"
-            class="w-full text-left px-2.5 py-2 rounded-lg text-sm transition-all flex items-start gap-2"
+            class="w-full text-left px-2.5 py-2 rounded-lg text-sm transition-colors flex items-start gap-2"
             :class="i === selected ? 'bg-orange-500/15 text-orange-400' : 'text-stone-400 hover:text-white hover:bg-white/5'">
             <span class="font-mono text-xs mt-0.5">{{ i + 1 }}.</span>
             <span class="flex-1 truncate">{{ q.text || '（未命名）' }}</span>
@@ -211,7 +211,7 @@ const resetDefault = async () => {
         </div>
         <div class="pt-2 mt-2 border-t border-stone-700/60 grid grid-cols-2 gap-1.5">
           <button v-for="(m, t) in TYPE_META" :key="t" @click="addQuestion(t as EdQuestion['type'])"
-            class="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-stone-400 hover:text-orange-400 hover:bg-white/5 transition-all">
+            class="flex items-center gap-1.5 px-2 py-2 rounded-lg text-xs text-stone-400 hover:text-orange-400 hover:bg-white/5 transition-colors">
             <AppIcon :name="m.icon" class="w-3.5 h-3.5" /> {{ m.label }}
           </button>
         </div>
@@ -239,15 +239,15 @@ const resetDefault = async () => {
             </div>
             <div class="ml-auto flex items-center gap-1">
               <button @click="moveQuestion(selected, -1)" :disabled="selected === 0"
-                class="p-2 rounded-lg text-stone-400 hover:text-white hover:bg-white/5 disabled:opacity-25 transition-all" title="上移">
+                class="p-2 rounded-lg text-stone-400 hover:text-white hover:bg-white/5 disabled:opacity-25 transition-colors" title="上移">
                 <AppIcon name="chevron-down" class="w-4 h-4 rotate-180" />
               </button>
               <button @click="moveQuestion(selected, 1)" :disabled="selected === items.length - 1"
-                class="p-2 rounded-lg text-stone-400 hover:text-white hover:bg-white/5 disabled:opacity-25 transition-all" title="下移">
+                class="p-2 rounded-lg text-stone-400 hover:text-white hover:bg-white/5 disabled:opacity-25 transition-colors" title="下移">
                 <AppIcon name="chevron-down" class="w-4 h-4" />
               </button>
               <button @click="removeQuestion(selected)"
-                class="p-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all" title="删除">
+                class="p-2 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors" title="删除">
                 <AppIcon name="x-mark" class="w-4 h-4" />
               </button>
             </div>
@@ -257,7 +257,7 @@ const resetDefault = async () => {
           <div>
             <div class="text-xs text-stone-500 mb-1.5">题干（中文）</div>
             <textarea v-model="cur.text" rows="2"
-              class="w-full bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-orange-500/50 transition-all resize-none"
+              class="w-full bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-orange-500/50 transition-colors resize-none"
               placeholder="请输入题目内容"></textarea>
             <input v-model="cur.textEn" class="w-full bg-stone-900/40 border border-stone-700/60 rounded-xl px-3 py-2 text-sm text-stone-300 outline-none focus:border-orange-500/40 mt-2"
               placeholder="题干（英文，可选）" />
@@ -271,15 +271,15 @@ const resetDefault = async () => {
             </div>
             <div v-for="(opt, oi) in cur.options" :key="oi" class="flex items-center gap-2">
               <span class="text-stone-500 text-xs w-5 text-center shrink-0">{{ cur.type === 'single_choice' ? '◯' : '▣' }}</span>
-              <input v-model="opt.text" class="flex-1 bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50 transition-all" placeholder="选项内容" />
+              <input v-model="opt.text" class="flex-1 bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50 transition-colors" placeholder="选项内容" />
               <input v-model.number="opt.score" type="number" class="w-20 bg-stone-900/40 border border-stone-700 rounded-xl px-2 py-2 text-sm text-white text-center" />
               <button @click="removeOption(cur, oi)" :disabled="cur.options.length <= 2"
-                class="p-1.5 text-stone-500 hover:text-rose-400 disabled:opacity-25 transition-all">
+                class="p-1.5 text-stone-500 hover:text-rose-400 disabled:opacity-25 transition-colors">
                 <AppIcon name="x-mark" class="w-3.5 h-3.5" />
               </button>
             </div>
             <button @click="addOption(cur)"
-              class="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1 pl-6 transition-all">
+              class="text-sm text-orange-400 hover:text-orange-300 flex items-center gap-1 pl-6 transition-colors">
               <AppIcon name="plus" class="w-3.5 h-3.5" /> 添加选项
             </button>
           </div>
@@ -319,7 +319,7 @@ const resetDefault = async () => {
             <div>
               <div class="text-xs text-stone-500 mb-1.5">评分规则（供 AI 评分参考；未启用 AI 时按回答长度评分）</div>
               <textarea v-model="cur.scoringRule" rows="3"
-                class="w-full bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/50 transition-all"
+                class="w-full bg-stone-900/40 border border-stone-700 rounded-xl px-3 py-2.5 text-sm text-white outline-none focus:border-orange-500/50 transition-colors"
                 placeholder="例如：能准确理解恶意破坏的形式与危害得满分；与问题无关或敷衍得 0 分"></textarea>
             </div>
           </div>

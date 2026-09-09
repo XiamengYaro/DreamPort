@@ -12,14 +12,14 @@
         <div class="flex flex-wrap gap-2 items-center">
           <button v-for="(opt, i) in mapOptions" :key="i"
             @click="selectedMap = i"
-            class="px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200"
+            class="px-4 py-2 rounded-xl text-sm font-medium transition-colors duration-200"
             :class="selectedMap === i
               ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
               : 'text-stone-400 hover:text-white hover:bg-white/5'">
             {{ opt.name }}
           </button>
           <a v-if="currentUrl" :href="currentUrl" target="_blank" rel="noopener noreferrer"
-            class="ml-auto px-4 py-2 rounded-xl text-sm font-medium bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25 transition-all">
+            class="ml-auto px-4 py-2 rounded-xl text-sm font-medium bg-orange-500/15 text-orange-400 border border-orange-500/20 hover:bg-orange-500/25 transition-colors">
             打开地图 ↗
           </a>
         </div>

@@ -24,7 +24,7 @@
               <span>{{ Math.round(answeredCount / questions.length * 100) }}%</span>
             </div>
             <div class="w-full h-2 bg-stone-700 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-300"
+              <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-[width] duration-300"
                 :style="{ width: (answeredCount / questions.length * 100) + '%' }"></div>
             </div>
           </div>
@@ -38,7 +38,7 @@
 
             <div v-if="question.type === 'single_choice'" class="space-y-2">
               <label v-for="option in question.options" :key="option.id"
-                class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200"
+                class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors duration-200"
                 :class="answers[question.id] === option.id ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
                 <input type="radio" :name="'q_' + question.id" :value="option.id" v-model="answers[question.id]" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-stone-200">{{ option.text }}</span>
@@ -47,7 +47,7 @@
 
             <div v-else-if="question.type === 'multiple_choice'" class="space-y-2">
               <label v-for="option in question.options" :key="option.id"
-                class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200"
+                class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors duration-200"
                 :class="isMultiSelected(question.id, option.id) ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
                 <input type="checkbox" :value="option.id" @change="toggleMultiOption(question.id, option.id)" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-stone-200">{{ option.text }}</span>
@@ -84,6 +84,7 @@
 
     <!-- 实时评分弹窗 -->
     <Teleport to="body">
+      <transition name="modal">
       <div v-if="showScoringModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
         <div class="card p-8
  max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -117,7 +118,7 @@
 
           <div v-if="!scoringComplete" class="mb-3">
             <div class="w-full h-2 bg-stone-700 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-all duration-300"
+              <div class="h-full bg-gradient-to-r from-orange-400 to-amber-400 rounded-full transition-[width] duration-300"
                 :style="{ width: scoringProgress + '%' }"></div>
             </div>
             <div v-if="currentQuestionText" class="text-xs text-stone-500 mt-2 truncate">正在评分：{{ currentQuestionText }}</div>
@@ -125,7 +126,7 @@
 
           <div class="space-y-3 mb-6 max-h-[400px] overflow-y-auto">
             <div v-for="(item, index) in scoringResults" :key="index"
-              class="p-4 rounded-xl border border-stone-700 transition-all duration-300"
+              class="p-4 rounded-xl border border-stone-700 transition duration-300"
               :class="item.isNew ? 'ring-2 ring-orange-400' : ''">
               <div class="flex items-center justify-between mb-2">
                 <span class="font-medium text-stone-200">
@@ -161,6 +162,7 @@
           </div>
         </div>
       </div>
+      </transition>
     </Teleport>
   </div>
 </template>
@@ -377,15 +379,3 @@ const goToLogin = () => {
 }
 </script>
 
-<style scoped>
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-</style>

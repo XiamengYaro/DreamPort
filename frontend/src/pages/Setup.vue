@@ -98,7 +98,7 @@ const submit = async () => {
         <AppIcon name="check-circle" class="w-14 h-14 mx-auto text-green-400" />
         <div class="text-lg font-semibold text-white">初始化完成</div>
         <div class="text-sm text-stone-300">{{ doneMessage }}</div>
-        <router-link to="/login" class="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-all">
+        <router-link to="/login" class="inline-block px-6 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 transition-colors">
           前往登录
         </router-link>
       </div>
@@ -133,13 +133,13 @@ const submit = async () => {
           <div class="text-sm font-medium text-stone-300 mb-2">部署方式</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <button @click="mode = 'fresh'"
-              class="p-4 rounded-xl border text-left transition-all"
+              class="p-4 rounded-xl border text-left transition-colors"
               :class="mode === 'fresh' ? 'border-orange-500/50 bg-orange-500/10' : 'border-stone-700 hover:border-stone-600'">
               <div class="text-white font-medium text-sm flex items-center gap-1.5"><AppIcon name="sparkles" class="w-4 h-4" /> 全新部署</div>
               <div class="text-xs text-stone-400 mt-1">从零开始，不导入历史数据</div>
             </button>
             <button @click="mode = 'import'"
-              class="p-4 rounded-xl border text-left transition-all"
+              class="p-4 rounded-xl border text-left transition-colors"
               :class="mode === 'import' ? 'border-orange-500/50 bg-orange-500/10' : 'border-stone-700 hover:border-stone-600'">
               <div class="text-white font-medium text-sm flex items-center gap-1.5"><AppIcon name="archive-box" class="w-4 h-4" /> 导入旧版数据库</div>
               <div class="text-xs text-stone-400 mt-1">上传旧版 XMWhitelist 的 .sql 导出</div>
@@ -161,7 +161,7 @@ const submit = async () => {
         <div v-if="error" class="text-sm text-red-400">{{ error }}</div>
 
         <button @click="submit" :disabled="submitting"
-          class="w-full py-3 rounded-xl bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+          class="w-full py-3 rounded-xl bg-orange-500 text-white font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
           {{ submitting ? '初始化中…' : '完成初始化' }}
         </button>
       </div>

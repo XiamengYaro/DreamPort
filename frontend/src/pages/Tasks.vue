@@ -57,7 +57,7 @@
                 </div>
               </div>
               <div class="mt-2 h-1.5 rounded-full bg-stone-800 overflow-hidden">
-                <div class="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-all"
+                <div class="h-full bg-gradient-to-r from-orange-500 to-amber-400 rounded-full transition-[width]"
                   :style="{ width: Math.min(100, Math.round(t.progress / t.target * 100)) + '%' }"></div>
               </div>
               <div class="text-xs text-stone-500 mt-1">{{ t.progress }} / {{ t.target }}</div>

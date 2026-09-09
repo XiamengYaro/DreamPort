@@ -39,7 +39,7 @@
     <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
       <button v-for="(_, index) in slides" :key="index"
         @click="goToSlide(index)"
-        class="h-2 rounded-full transition-all duration-300"
+        class="h-2 rounded-full transition-[width,background-color] duration-300"
         :class="currentIndex === index ? 'bg-orange-500 w-8' : 'bg-white/40 w-2 hover:bg-white/60'">
       </button>
     </div>

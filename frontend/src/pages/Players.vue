@@ -36,10 +36,10 @@
       <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <router-link v-for="player in filteredPlayers" :key="player.username"
           :to="`/player/${player.username}`"
-          class="card p-4 text-center hover:bg-white/10 transition-all duration-200 cursor-pointer group">
+          class="card p-4 text-center hover:bg-white/10 transition-colors duration-200 cursor-pointer group">
           <img :src="`/api/avatar/${encodeURIComponent(player.username || player.uuid)}?size=100`" 
             :alt="player.username"
-            class="w-16 h-16 rounded-xl mx-auto mb-3 border-2 border-stone-700 group-hover:border-orange-500/50 transition-all"
+            class="w-16 h-16 rounded-xl mx-auto mb-3 border-2 border-stone-700 group-hover:border-orange-500/50 transition-colors"
             @error="handleAvatarError" />
           <div class="text-white font-medium text-sm truncate">{{ player.username }}</div>
           <div class="text-xs text-stone-500 mt-1">

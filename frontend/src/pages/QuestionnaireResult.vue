@@ -32,7 +32,7 @@
             </span>
           </div>
           <div class="w-full h-2 bg-stone-200 dark:bg-stone-700 rounded-full overflow-hidden">
-            <div class="h-full rounded-full transition-all duration-1000" :class="result?.passed ? 'bg-emerald-500' : 'bg-orange-500'" :style="{ width: percentage + '%' }"></div>
+            <div class="h-full rounded-full transition-[width] duration-1000" :class="result?.passed ? 'bg-emerald-500' : 'bg-orange-500'" :style="{ width: percentage + '%' }"></div>
           </div>
           <div class="flex items-center justify-between mt-3 text-sm text-stone-400">
             <span>通过线：{{ passScore }}分（{{ passScorePercent }}%）</span>

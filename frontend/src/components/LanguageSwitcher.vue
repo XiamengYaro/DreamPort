@@ -15,7 +15,7 @@ function toggle() {
 
 <template>
   <button @click="toggle"
-    class="px-2.5 py-1.5 text-xs font-semibold rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-all border border-white/10"
+    class="px-2.5 py-1.5 text-xs font-semibold rounded-xl text-white/90 hover:text-white hover:bg-white/10 transition-colors border border-white/10"
     :title="current === 'zh' ? 'Switch to English' : '切换为中文'">
     {{ current === 'zh' ? 'EN' : '中' }}
   </button>

@@ -106,7 +106,7 @@
                     <span class="text-stone-500">{{ a.completed ? '已完成 ✓' : `${a.progress} / ${a.target}` }}</span>
                   </div>
                   <div class="h-1.5 rounded-full bg-stone-800 overflow-hidden">
-                    <div class="h-full rounded-full transition-all"
+                    <div class="h-full rounded-full transition-[width]"
                       :class="a.completed ? 'bg-emerald-500' : 'bg-orange-400'"
                       :style="{ width: Math.min(100, Math.round((a.progress / a.target) * 100)) + '%' }"></div>
                   </div>

@@ -84,7 +84,7 @@
           <h3 class="text-lg font-semibold text-white mb-4">快捷入口</h3>
           <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             <button v-for="m in quickLinks" :key="m.key" @click="activeTab = m.key"
-              class="flex flex-col items-center gap-2 p-4 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/50 hover:bg-white/5 transition-all">
+              class="flex flex-col items-center gap-2 p-4 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/50 hover:bg-white/5 transition-colors">
               <AppIcon :name="m.icon" class="w-5 h-5 text-orange-400" />
               <span class="text-xs text-stone-300">{{ m.label }}</span>
             </button>
@@ -1037,7 +1037,7 @@
                    file:bg-orange-500/15 file:text-orange-400 hover:file:bg-orange-500/25 file:cursor-pointer"
             @change="onMigrationFileChange" />
           <button @click="uploadMigration" :disabled="!migrationFile || migrationLoading"
-            class="px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
+            class="px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
             {{ migrationLoading ? '导入中…' : '开始导入' }}
           </button>
         </div>

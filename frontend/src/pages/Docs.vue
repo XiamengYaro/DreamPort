@@ -33,7 +33,7 @@
                   v-for="doc in category.docs"
                   :key="doc.filename"
                   @click="selectDoc(doc.filename)"
-                  class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200"
+                  class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors duration-200"
                   :class="selectedSlug === doc.filename
                     ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
                     : 'text-stone-400 hover:text-white hover:bg-white/5'"
@@ -49,7 +49,7 @@
                 v-for="doc in uncategorizedDocs"
                 :key="doc.filename"
                 @click="selectDoc(doc.filename)"
-                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-all duration-200"
+                class="w-full text-left px-3 py-2 rounded-lg text-sm transition-colors duration-200"
                 :class="selectedSlug === doc.filename
                   ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20'
                   : 'text-stone-400 hover:text-white hover:bg-white/5'"
@@ -121,7 +121,7 @@
                   v-for="doc in category.docs"
                   :key="doc.filename"
                   @click="selectDoc(doc.filename)"
-                  class="w-full text-left px-3 py-2 rounded-lg text-sm text-stone-400 hover:text-white hover:bg-white/5 transition-all"
+                  class="w-full text-left px-3 py-2 rounded-lg text-sm text-stone-400 hover:text-white hover:bg-white/5 transition-colors"
                 >
                   {{ doc.title }}
                 </button>

@@ -11,7 +11,7 @@
           :key="type.value"
           @click="currentType = type.value"
           :class="currentType === type.value ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'border-stone-700 text-stone-400 hover:border-stone-600'"
-          class="px-4 py-2 rounded-lg border transition-all text-sm font-medium"
+          class="px-4 py-2 rounded-lg border transition-colors text-sm font-medium"
         >
           {{ type.label }}
           <span v-if="getCount(type.value) > 0" class="ml-1 px-1.5 py-0.5 bg-orange-500/10 rounded text-xs">{{ getCount(type.value) }}</span>
