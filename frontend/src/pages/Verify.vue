@@ -7,28 +7,8 @@
         <p class="mt-1 text-stone-400">验证你的 Minecraft 账户</p>
       </div>
 
-      <!-- 服务器守则(注册后验证前强制阅读) -->
-      <div v-if="rulesGateActive" class="card p-6 mb-6 border-2 border-orange-500/40">
-        <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
-          <AppIcon name="shield-check" class="w-5 h-5 text-orange-400" /> 服务器守则
-        </h2>
-        <p class="text-xs mb-3" :class="countdown > 0 ? 'text-orange-400' : 'text-emerald-400'">
-          <template v-if="countdown > 0">请仔细阅读以下守则——<span class="font-bold">{{ countdown }}</span> 秒后可选择同意</template>
-          <template v-else>阅读时间到——请勾选同意后继续</template>
-        </p>
-        <div class="max-h-72 overflow-y-auto bg-stone-900/60 border border-stone-700/60 rounded-xl p-4 text-sm text-stone-300 leading-relaxed" v-html="rulesHtml"></div>
-        <label class="flex items-center gap-3 mt-4 text-sm" :class="countdown > 0 ? 'opacity-40 cursor-not-allowed text-stone-500' : 'cursor-pointer text-stone-300'">
-          <input v-model="rulesAgreed" type="checkbox" class="accent-orange-500 w-4 h-4" :disabled="countdown > 0" />
-          我已完整阅读并同意服务器守则
-        </label>
-        <button class="btn-primary w-full mt-4" :disabled="!rulesAgreed || accepting" @click="acceptRules">
-          {{ accepting ? '提交中...' : '同意并继续' }}
-        </button>
-      </div>
-
       <!-- 双平台验证（both） -->
-      <div v-if="platform === 'both'" class="grid grid-cols-1 md:grid-cols-2 gap-6"
-        :class="rulesGateActive ? 'opacity-40 pointer-events-none select-none' : ''">
+      <div v-if="platform === 'both'" class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Java 版验证 -->
         <div class="card p-6">
           <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -132,7 +112,7 @@
       </div>
 
       <!-- 单平台验证 -->
-      <div v-else class="max-w-md mx-auto" :class="rulesGateActive ? 'opacity-40 pointer-events-none select-none' : ''">
+      <div v-else class="max-w-md mx-auto">
         <!-- Java 版验证 -->
         <div v-if="platform === 'java'" class="card p-8">
           <h2 class="text-xl font-semibold text-white mb-6 text-center flex items-center justify-center gap-2">
@@ -283,11 +263,9 @@
 <script setup lang="ts">
 import { useBrand } from '@/lib/brand'
 const brand = useBrand()
-import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
-import { renderMarkdown } from '@/lib/markdown'
-import AppIcon from '@/components/AppIcon.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -303,55 +281,13 @@ const verifyPageConfig = ref({
   bedrockServerAddress: 'mc.xmcraft.cn'
 })
 
-const javaStatus = ref<any>({ name: '', uuid: '', verified: false, rulesAccepted: false })
+const javaStatus = ref<any>({ name: '', uuid: '', verified: false })
 
-// ── 服务器守则门(注册后 ID 验证前强制阅读;同意记录在服务端)──
-const rulesCfg = ref({ doc: '', seconds: 15 })
-const rulesContent = ref('')
-const countdown = ref(0)
-const rulesAgreed = ref(false)
-const accepting = ref(false)
-const rulesAcceptedFlag = ref(false)
-const rulesAcceptedNow = computed(() => rulesAcceptedFlag.value || javaStatus.value.rulesAccepted === true || bedrockStatus.value.rulesAccepted === true)
-// 守则门:只要未同意守则就显示守则卡片。不能再用「已验证(绑定过 UUID)」短路——
-// 服务端 set/verify 强制先同意守则,若已绑定 UUID 的玩家不显示守则入口即死锁无法确认协议
-const rulesGateActive = computed(() => !rulesAcceptedNow.value)
-const rulesHtml = computed(() => renderMarkdown(rulesContent.value))
-
-let countdownTimer: ReturnType<typeof setInterval> | null = null
-
-const startCountdown = () => {
-  // 修复审计：先清旧计时器,避免 watch + onMounted 叠加出多个并行 interval
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-  countdown.value = Number(rulesCfg.value.seconds) || 15
-  rulesAgreed.value = false
-  countdownTimer = setInterval(() => {
-    countdown.value--
-    if (countdown.value <= 0 && countdownTimer) {
-      clearInterval(countdownTimer)
-      countdownTimer = null
-    }
-  }, 1000)
-}
-
-onUnmounted(() => {
-  if (countdownTimer) {
-    clearInterval(countdownTimer)
-    countdownTimer = null
-  }
-})
-
-watch(rulesGateActive, (active) => {
-  if (active) startCountdown()
-})
 const javaMessage = ref('')
 const javaSuccess = ref(false)
 const javaLoading = ref(false)
 
-const bedrockStatus = ref<any>({ name: '', uuid: '', verified: false, rulesAccepted: false })
+const bedrockStatus = ref<any>({ name: '', uuid: '', verified: false })
 const bedrockMessage = ref('')
 const bedrockSuccess = ref(false)
 const bedrockLoading = ref(false)
@@ -371,75 +307,12 @@ onMounted(async () => {
       if (data.data.verifyPage) {
         verifyPageConfig.value = { ...verifyPageConfig.value, ...data.data.verifyPage }
       }
-      if (data.data.rules) {
-        rulesCfg.value = {
-          doc: data.data.rules.doc || '',
-          seconds: Number(data.data.rules.seconds) || 15
-        }
-      }
     }
   } catch (e) {}
 
   // 加载验证状态
   await Promise.all([loadJavaStatus(), loadBedrockStatus()])
-
-  // 守则门激活:拉守则内容(后台指定文档或内置默认)并启动倒计时
-  if (rulesGateActive.value) {
-    await loadRulesContent()
-    startCountdown()
-  }
 })
-
-// 守则内容:后台指定文档优先,未配置用内置默认
-const loadRulesContent = async () => {
-  const doc = String(rulesCfg.value.doc || '')
-  if (doc) {
-    try {
-      const parts = doc.split('/')
-      const filename = parts.pop() as string
-      const category = parts.length ? parts.join('/') : null
-      const r: any = await api.readDoc(category, filename)
-      if (r.success && r.data && r.data.content) {
-        rulesContent.value = r.data.content
-        return
-      }
-    } catch (e) {
-      console.error('守则文档读取失败', e)
-    }
-  }
-  rulesContent.value = DEFAULT_RULES
-}
-
-const DEFAULT_RULES = [
-  '## 服务器守则',
-  '',
-  '1. **尊重他人**——禁止辱骂、歧视、骚扰或任何形式的恶意攻击;',
-  '2. **禁止作弊**——不得使用外挂、作弊客户端或利用漏洞牟利;',
-  '3. **保护环境**——禁止恶意破坏他人建筑、窃取物品或破坏地形;',
-  '4. **遵守秩序**——服从管理员管理,不发布违法违规信息与广告;',
-  '5. **账号安全**——妥善保管账号密码,账号行为由本人负责。',
-  '',
-  '违反守则将视情节轻重予以警告、临时封禁或永久封禁处理。'
-].join('\n')
-
-// 同意守则(服务端记录,幂等)
-const acceptRules = async () => {
-  accepting.value = true
-  try {
-    const r: any = await api.acceptRules()
-    if (r.success) {
-      rulesAcceptedFlag.value = true
-      notify && notify.success('已同意服务器守则')
-      await Promise.all([loadJavaStatus(), loadBedrockStatus()])
-    } else {
-      notify && notify.error(r.message || r.msg || '提交失败')
-    }
-  } catch (e: any) {
-    notify && notify.error(e.message || '提交失败')
-  } finally {
-    accepting.value = false
-  }
-}
 
 const loadJavaStatus = async () => {
   try {
@@ -448,8 +321,7 @@ const loadJavaStatus = async () => {
       javaStatus.value = {
         name: r.data.minecraftName || '',
         uuid: r.data.minecraftUuid || '',
-        verified: r.data.verified || false,
-        rulesAccepted: r.data.rulesAccepted === true
+        verified: r.data.verified || false
       }
       // 同时更新用户状态
       if (r.data.status) {
@@ -467,7 +339,6 @@ const loadBedrockStatus = async () => {
         name: r.data.bedrockName || '',
         uuid: r.data.bedrockUuid || '',
         verified: r.data.bedrockVerified || false,
-        rulesAccepted: r.data.rulesAccepted === true
       }
       // 同时更新用户状态
       if (r.data.status) {
@@ -532,17 +403,4 @@ const skipVerify = () => {
 }
 </script>
 
-<style scoped>
-  .rules-box :deep(h1),
-  .rules-box :deep(h2) {
-    @apply text-white font-bold mb-2 mt-3 text-base;
-  }
-  .rules-box :deep(p),
-  .rules-box :deep(li) {
-    @apply text-stone-300;
-  }
-  .rules-box :deep(ul),
-  .rules-box :deep(ol) {
-    @apply pl-5 list-disc space-y-1;
-  }
-</style>
+<style scoped></style>

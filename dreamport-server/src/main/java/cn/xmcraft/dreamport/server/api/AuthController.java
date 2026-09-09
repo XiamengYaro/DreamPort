@@ -36,13 +36,15 @@ public class AuthController {
     private final cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService;
     private final cn.xmcraft.dreamport.server.invite.InviteService inviteService;
     private final cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public AuthController(UserService userService, TokenService tokenService, RateLimiter rateLimiter,
                           cn.xmcraft.dreamport.server.settings.SettingService settingService,
                           cn.xmcraft.dreamport.server.verification.CaptchaService captchaService,
                           cn.xmcraft.dreamport.server.verification.VerifyCodeService verifyCodeService,
                           cn.xmcraft.dreamport.server.invite.InviteService inviteService,
-                          cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings) {
+                          cn.xmcraft.dreamport.server.settings.SystemSettingsService systemSettings,
+                          org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.userService = userService;
         this.tokenService = tokenService;
         this.rateLimiter = rateLimiter;
@@ -51,6 +53,7 @@ public class AuthController {
         this.verifyCodeService = verifyCodeService;
         this.inviteService = inviteService;
         this.systemSettings = systemSettings;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /** 是否在管理员名单（dp_setting admins.list，语义对齐旧版 config.admins） */
@@ -66,7 +69,8 @@ public class AuthController {
                                   String verifyCode,
                                   @com.fasterxml.jackson.annotation.JsonAlias("captchaToken") String captchaToken,
                                   String captchaAnswer,
-                                  String inviteCode) {
+                                  String inviteCode,
+                                  Boolean rulesAccepted) {
     }
 
     public record LoginRequest(String username, String password) {
@@ -77,6 +81,10 @@ public class AuthController {
                                                         HttpServletRequest request) {
         if (!rateLimiter.allow("register:" + clientIp(request), 3, 60_000)) {
             return tooManyRequests();
+        }
+        // 守则门:注册页强制阅读并勾选同意,否则拒绝注册(同意记录随注册写入 dp_rules_consent)
+        if (req.rulesAccepted() == null || !req.rulesAccepted()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("请先阅读并同意服务器守则"));
         }
         // 图形验证码：仅当前端携带 token 时才校验（旧注册页无图形验证码控件）
         if (req.captchaToken() != null && !req.captchaToken().isBlank()
@@ -116,6 +124,10 @@ public class AuthController {
                 return ResponseEntity.badRequest().body(ApiResponse.failure(inviteResult.message()));
             }
         }
+        // 注册即同意守则(守则门在注册页强制;记录供 status/审计查询)
+        jdbcTemplate.update(
+                "INSERT IGNORE INTO dp_rules_consent (username, accepted_at) VALUES (?, ?)",
+                result.user().username(), System.currentTimeMillis());
         String token = tokenService.issue(result.user().username(), TokenService.ROLE_USER);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);

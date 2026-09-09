@@ -58,7 +58,24 @@
               </button>
             </div>
           </div>
-          <button type="submit" class="btn-primary w-full" :disabled="loading">{{ loading ? '注册中...' : '提交注册' }}</button>
+
+          <!-- 服务器守则(注册强制阅读→勾选同意,否则无法提交) -->
+          <div class="mb-6 p-4 rounded-xl border-2 border-orange-500/40 bg-stone-900/40">
+            <h2 class="text-sm font-semibold text-white mb-2 flex items-center gap-2">
+              <AppIcon name="shield-check" class="w-4 h-4 text-orange-400" /> 服务器守则
+            </h2>
+            <p class="text-xs mb-2" :class="countdown > 0 ? 'text-orange-400' : 'text-emerald-400'">
+              <template v-if="countdown > 0">请仔细阅读以下守则——<span class="font-bold">{{ countdown }}</span> 秒后可勾选同意</template>
+              <template v-else>阅读时间到——请勾选后提交注册</template>
+            </p>
+            <div class="max-h-48 overflow-y-auto bg-stone-800/60 border border-stone-700/60 rounded-lg p-3 text-xs text-stone-300 leading-relaxed" v-html="rulesHtml"></div>
+            <label class="flex items-center gap-2 mt-3 text-xs" :class="countdown > 0 ? 'opacity-40 cursor-not-allowed text-stone-500' : 'cursor-pointer text-stone-300'">
+              <input v-model="rulesAgreed" type="checkbox" class="accent-orange-500 w-4 h-4" :disabled="countdown > 0" />
+              我已完整阅读并同意遵守服务器守则
+            </label>
+          </div>
+
+          <button type="submit" class="btn-primary w-full" :disabled="loading || !rulesAgreed">{{ loading ? '注册中...' : '提交注册' }}</button>
         </form>
         <div class="mt-6 text-center">
           <router-link to="/login" class="text-sm text-orange-500 hover:text-orange-400 transition-colors">已有 {{ brand.short }} 账号？立即登录</router-link>
@@ -71,9 +88,11 @@
 <script setup lang="ts">
 import { useBrand } from '@/lib/brand'
 const brand = useBrand()
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'
+import { renderMarkdown } from '@/lib/markdown'
+import AppIcon from '@/components/AppIcon.vue'
 
 const router = useRouter()
 const notify = inject('notify') as any
@@ -90,14 +109,78 @@ const form = ref({
   verifyCode: ''
 })
 
+// ── 服务器守则(注册强制阅读→勾选同意,随注册提交)──
+const rulesCfg = ref({ doc: '', seconds: 15 })
+const rulesContent = ref('')
+const countdown = ref(0)
+const rulesAgreed = ref(false)
+const rulesHtml = computed(() => renderMarkdown(rulesContent.value))
+let rulesCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+const startRulesCountdown = () => {
+  if (rulesCountdownTimer) {
+    clearInterval(rulesCountdownTimer)
+    rulesCountdownTimer = null
+  }
+  countdown.value = Number(rulesCfg.value.seconds) || 15
+  rulesAgreed.value = false
+  rulesCountdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0 && rulesCountdownTimer) {
+      clearInterval(rulesCountdownTimer)
+      rulesCountdownTimer = null
+    }
+  }, 1000)
+}
+
+// 守则内容:后台指定文档优先,未配置用内置默认
+const loadRulesContent = async () => {
+  const doc = String(rulesCfg.value.doc || '')
+  if (doc) {
+    try {
+      const parts = doc.split('/')
+      const filename = parts.pop() as string
+      const category = parts.length ? parts.join('/') : null
+      const r: any = await api.readDoc(category, filename)
+      if (r.success && r.data && r.data.content) {
+        rulesContent.value = r.data.content
+        return
+      }
+    } catch (e) {
+      console.error('守则文档读取失败', e)
+    }
+  }
+  rulesContent.value = DEFAULT_RULES
+}
+
+const DEFAULT_RULES = [
+  '## 服务器守则',
+  '',
+  '1. **尊重他人**——禁止辱骂、歧视、骚扰或任何形式的恶意攻击;',
+  '2. **禁止作弊**——不得使用外挂、作弊客户端或利用漏洞牟利;',
+  '3. **保护环境**——禁止恶意破坏他人建筑、窃取物品或破坏地形;',
+  '4. **遵守秩序**——服从管理员管理,不发布违法违规信息与广告;',
+  '5. **账号安全**——妥善保管账号密码,账号行为由本人负责。',
+  '',
+  '违反守则将视情节轻重予以警告、临时封禁或永久封禁处理。'
+].join('\n')
+
 onMounted(async () => {
   try {
     const res = await fetch('/api/config');
     const data = await res.json();
     if (data.success) {
       if (data.data.portal?.logo) logoUrl.value = data.data.portal.logo
+      if (data.data.rules) {
+        rulesCfg.value = {
+          doc: data.data.rules.doc || '',
+          seconds: Number(data.data.rules.seconds) || 15
+        }
+      }
     }
   } catch (e) {}
+  await loadRulesContent()
+  startRulesCountdown()
 })
 
 const sendVerifyCode = async () => {
@@ -123,6 +206,7 @@ const handleRegister = async () => {
   if (!/^[A-Za-z0-9_]{3,16}$/.test(form.value.minecraftName)) {
     notify?.error('游戏名不合法（3-16 位字母数字下划线）'); return
   }
+  if (!rulesAgreed.value) { notify?.error('请先阅读并勾选同意服务器守则'); return }
 
   loading.value = true
   try {
@@ -130,7 +214,8 @@ const handleRegister = async () => {
       minecraftName: form.value.minecraftName,
       email: form.value.email,
       password: form.value.password,
-      verifyCode: form.value.verifyCode
+      verifyCode: form.value.verifyCode,
+      rulesAccepted: true
     })
     if (response.success) {
       notify?.success('注册成功，请进行 ID 验证')

@@ -207,9 +207,7 @@ public class VerificationController {
         if (me == null) {
             return unauthorized();
         }
-        if (!rulesAccepted(me)) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure("请先阅读并同意服务器守则"));
-        }
+        // 守则已在注册页强制(注册即写 dp_rules_consent),此处不再重复拦截
         var userOpt = userRepository.findByUsernameIgnoreCase(me);
         var result = minecraftVerifyService.setMinecraftId(me, body.minecraftName());
         return wrap(result);
@@ -299,9 +297,7 @@ public class VerificationController {
         if (me == null) {
             return unauthorized();
         }
-        if (!rulesAccepted(me)) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure("请先阅读并同意服务器守则"));
-        }
+        // 守则已在注册页强制,此处不再重复拦截
         return wrap(minecraftVerifyService.verifyMinecraft(me));
     }
 
