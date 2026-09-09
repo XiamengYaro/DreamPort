@@ -1,5 +1,6 @@
 package cn.xmcraft.dreamport.plugin.internal;
 
+import cn.xmcraft.dreamport.common.Protocol;
 import cn.xmcraft.dreamport.plugin.DreamPortPlugin;
 import com.google.gson.JsonObject;
 import org.bukkit.Bukkit;
@@ -69,7 +70,7 @@ public final class TitlesService {
 
     private void fetchAndCache(String name) {
         String body = plugin.backendClient().getInternal(
-                "/internal/v1/title/active?username=" + urlEncode(name));
+                Protocol.TITLE_ACTIVE + "?username=" + urlEncode(name));
         if (body == null) return;
         try {
             JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
@@ -95,7 +96,7 @@ public final class TitlesService {
         List<OwnedTitle> owned = new ArrayList<>();
         String activeCode = "";
         String body = plugin.backendClient().getInternal(
-                "/internal/v1/title/mine?username=" + urlEncode(name));
+                Protocol.TITLE_MINE + "?username=" + urlEncode(name));
         try {
             JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
             if (obj != null && obj.has("titles")) {
@@ -144,7 +145,7 @@ public final class TitlesService {
     /** 佩戴/脱下(code 空 = 脱下)并刷新本地缓存 */
     public void equip(Player player, String code) {
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
-            String body = plugin.backendClient().post("/internal/v1/title/equip",
+            String body = plugin.backendClient().post(Protocol.TITLE_EQUIP,
                     Map.of("username", player.getName(), "code", code == null ? "" : code));
             boolean ok = body != null && body.contains("\"success\":true");
             String msg = ok

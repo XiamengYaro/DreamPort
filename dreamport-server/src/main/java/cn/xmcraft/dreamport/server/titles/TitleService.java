@@ -164,6 +164,7 @@ public class TitleService {
 
     /** 单用户全量评估:进度写 dp_achievement_progress;新达标 → 授予称号+通知 */
     public void evaluate(String username) {
+        var defs = titles();
         for (var a : achievements()) {
             if (!a.enabled()) continue;
             int value = metricValue(username, a.metric());
@@ -171,8 +172,13 @@ public class TitleService {
             boolean newlyCompleted = completed && !hasProgressCompleted(username, a.id());
             upsertProgress(username, a.id(), value, completed);
             if (newlyCompleted && !owned(username, a.reward())) {
-                grant(username, a.reward());
-                notify(username, a.name(), a.reward());
+                // 奖励称号已从定义中移除时跳过授予,避免写入幽灵记录
+                boolean rewardExists = !a.reward().isEmpty()
+                        && defs.stream().anyMatch(t -> t.code().equals(a.reward()));
+                if (rewardExists) {
+                    grant(username, a.reward());
+                    notify(username, a.name(), a.reward());
+                }
             }
         }
     }
@@ -255,11 +261,11 @@ public class TitleService {
         return r.isEmpty() ? null : r.get(0);
     }
 
-    /** 佩戴中的称号定义(未佩戴/定义缺失返回 null) */
+    /** 佩戴中的称号定义(未佩戴/定义缺失/已禁用返回 null) */
     public TitleDef activeTitle(String username) {
         String code = activeTitleCode(username);
         if (code == null) return null;
-        for (var t : titles()) if (t.code().equals(code)) return t;
+        for (var t : titles()) if (t.enabled() && t.code().equals(code)) return t;
         return null;
     }
 
@@ -279,11 +285,41 @@ public class TitleService {
         return n == null ? 0 : n;
     }
 
+    /** 保存称号定义(校验字段:code/name 非空、color 为 #rrggbb;畸形抛 IllegalArgumentException 由控制器转 400) */
     public void saveTitlesFromMaps(List<Map<String, Object>> titles) {
+        if (titles == null) throw new IllegalArgumentException("称号定义不能为空");
+        for (Map<String, Object> m : titles) {
+            String code = m.get("code") == null ? "" : String.valueOf(m.get("code")).trim();
+            String name = m.get("name") == null ? "" : String.valueOf(m.get("name")).trim();
+            if (code.isEmpty()) throw new IllegalArgumentException("称号 code 不能为空");
+            if (name.isEmpty()) throw new IllegalArgumentException("称号「" + code + "」名称不能为空");
+            String color = m.get("color") == null ? "#fbbf24" : String.valueOf(m.get("color")).trim();
+            if (!color.matches("#[0-9a-fA-F]{6}")) {
+                throw new IllegalArgumentException("称号「" + code + "」颜色格式非法,需 #rrggbb 如 #fbbf24");
+            }
+        }
         settingService.set(SettingService.KEY_TITLES_CONFIG, Map.of("titles", titles));
     }
 
+    /** 保存成就定义(校验:id/metric 合法、reward 引用存在的称号;畸形抛 IllegalArgumentException) */
     public void saveAchievementsFromMaps(List<Map<String, Object>> achievements) {
+        if (achievements == null) throw new IllegalArgumentException("成就定义不能为空");
+        var titleCodes = titles().stream().map(TitleDef::code).toList();
+        for (Map<String, Object> m : achievements) {
+            String id = m.get("id") == null ? "" : String.valueOf(m.get("id")).trim();
+            String metric = m.get("metric") == null ? "" : String.valueOf(m.get("metric"));
+            String reward = m.get("reward") == null ? "" : String.valueOf(m.get("reward"));
+            if (id.isEmpty()) throw new IllegalArgumentException("成就 ID 不能为空");
+            if (!switch (metric) {
+                case "playtime_total", "register_days", "invite_count", "points_total" -> true;
+                default -> false;
+            }) {
+                throw new IllegalArgumentException("成就「" + id + "」指标非法(需 playtime_total/register_days/invite_count/points_total)");
+            }
+            if (!reward.isEmpty() && !titleCodes.contains(reward)) {
+                throw new IllegalArgumentException("成就「" + id + "」奖励称号「" + reward + "」不存在于称号定义");
+            }
+        }
         settingService.set(SettingService.KEY_ACHIEVEMENTS_CONFIG, Map.of("achievements", achievements));
     }
 
@@ -291,6 +327,11 @@ public class TitleService {
         Integer n = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM dp_user WHERE username = ?", Integer.class, username);
         return n != null && n > 0;
+    }
+
+    /** 是否已拥有某称号(供管理端撤销前校验) */
+    public boolean hasTitle(String username, String code) {
+        return owned(username, code);
     }
 
     /** 撤销称号(同时清佩戴) */

@@ -54,7 +54,10 @@ public class TitlesController {
         for (var row : titleService.ownedRows(me)) {
             ownedAt.put(row.get("title_code").toString(), Long.parseLong(row.get("obtained_at").toString()));
         }
-        String equipped = titleService.activeTitleCode(me);
+        String equippedRaw = titleService.activeTitleCode(me);
+        // 已禁用/已删除定义的称号视为未佩戴,与 activeTitle/enabled 过滤口径一致
+        String equipped = (equippedRaw != null && defs.stream().noneMatch(t -> t.code().equals(equippedRaw)))
+                ? null : equippedRaw;
 
         List<Map<String, Object>> owned = new ArrayList<>();
         List<Map<String, Object>> locked = new ArrayList<>();
@@ -166,8 +169,12 @@ public class TitlesController {
     public ResponseEntity<Object> saveTitlesConfig(@RequestBody java.util.List<Map<String, Object>> body,
                                                    jakarta.servlet.http.HttpServletRequest request) {
         if (!admin(request)) return forbidden();
-        titleService.saveTitlesFromMaps(body);
-        return ResponseEntity.ok(ApiResponse.success("称号定义已保存"));
+        try {
+            titleService.saveTitlesFromMaps(body);
+            return ResponseEntity.ok(ApiResponse.success("称号定义已保存"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(e.getMessage()));
+        }
     }
 
     /** 保存成就定义 */
@@ -175,8 +182,12 @@ public class TitlesController {
     public ResponseEntity<Object> saveAchievementsConfig(@RequestBody java.util.List<Map<String, Object>> body,
                                                          jakarta.servlet.http.HttpServletRequest request) {
         if (!admin(request)) return forbidden();
-        titleService.saveAchievementsFromMaps(body);
-        return ResponseEntity.ok(ApiResponse.success("成就定义已保存"));
+        try {
+            titleService.saveAchievementsFromMaps(body);
+            return ResponseEntity.ok(ApiResponse.success("成就定义已保存"));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure(e.getMessage()));
+        }
     }
 
     /** 手动授予称号 */
@@ -205,8 +216,17 @@ public class TitlesController {
     public ResponseEntity<Object> revoke(@RequestBody Map<String, Object> body,
                                          jakarta.servlet.http.HttpServletRequest request) {
         if (!admin(request)) return forbidden();
-        String username = String.valueOf(body.getOrDefault("username", ""));
-        String code = String.valueOf(body.getOrDefault("code", ""));
+        String username = String.valueOf(body.getOrDefault("username", "")).trim();
+        String code = String.valueOf(body.getOrDefault("code", "")).trim();
+        if (username.isBlank() || code.isBlank()) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("参数缺失"));
+        }
+        if (!titleService.userExists(username)) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
+        }
+        if (!titleService.hasTitle(username, code)) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("该玩家未拥有该称号"));
+        }
         titleService.revoke(username, code);
         return ResponseEntity.ok(ApiResponse.success("已撤销"));
     }

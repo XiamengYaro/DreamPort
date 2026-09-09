@@ -14,6 +14,7 @@ import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.review.ReviewService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
+import cn.xmcraft.dreamport.server.titles.TitleService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.village.VillageTradeRecord;
@@ -63,13 +64,15 @@ public class CommunityController {
 
     private final EconomyService economyService;
 
+    private final TitleService titleService;
+
     public CommunityController(VillageTradeRepository villageRepository,
                                PublicMachineRepository machineRepository,
                                InviteRepository inviteRepository, InviteService inviteService,
                                NotificationRepository notificationRepository,
                                AppealRepository appealRepository, UserRepository userRepository,
                                ReviewService reviewService, WlProps props, SettingService settingService,
-                               EconomyService economyService) {
+                               EconomyService economyService, TitleService titleService) {
         this.villageRepository = villageRepository;
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
@@ -81,6 +84,7 @@ public class CommunityController {
         this.props = props;
         this.economyService = economyService;
         this.settingService = settingService;
+        this.titleService = titleService;
     }
 
     // ---------- 村民族谱 ----------
@@ -327,6 +331,10 @@ public class CommunityController {
         profile.put("lastLogin", econ.getOrDefault("lastLogin", null));
         profile.put("loginCount", econ.get("loginCount"));
         profile.put("banUntil", u.banUntil());
+        // 当前佩戴称号(公开展示;经 enabled 过滤,未佩戴/已禁用为 null)
+        var activeTitle = titleService.activeTitle(u.username());
+        profile.put("title", activeTitle == null ? null
+                : Map.of("code", activeTitle.code(), "name", activeTitle.name(), "color", activeTitle.color()));
         // 统一响应包装:前端按 r.success 判定,裸对象会导致详情页恒显"玩家不存在"
         return ResponseEntity.ok(Map.of("success", true, "data", profile));
     }
