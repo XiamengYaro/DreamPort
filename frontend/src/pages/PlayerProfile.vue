@@ -68,7 +68,7 @@
         </div>
 
         <!-- 称号与成就(仅本人可见;网页端佩戴,游戏内 PAPI 周期同步) -->
-        <div v-if="isSelf" class="card p-6 mb-6">
+        <div ref="titlesSection" v-if="isSelf" class="card p-6 mb-6">
           <h2 class="text-lg font-semibold text-white mb-4">我的称号与成就</h2>
           <div v-if="titlesLoading" class="text-sm text-stone-500">加载中...</div>
           <template v-else>
@@ -162,7 +162,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getStatusText } from '@/lib/status'
@@ -173,6 +173,7 @@ const loading = ref(false)
 const profile = ref<any>(null)
 const isSelf = ref(false)
 const titlesLoading = ref(false)
+const titlesSection = ref<HTMLElement | null>(null)
 const myTitles = ref<any>({ owned: [], locked: [], equipped: null, achievements: [] })
 
 onMounted(async () => {
@@ -188,7 +189,14 @@ const loadProfile = async () => {
       profile.value = r.data
       const me = localStorage.getItem('username')
       isSelf.value = !!me && me.toLowerCase() === String(r.data.username).toLowerCase()
-      if (isSelf.value) await loadMyTitles()
+      if (isSelf.value) {
+        await loadMyTitles()
+        // 导航「我的称号」入口带 ?titles=1,直达称号面板
+        if (route.query.titles) {
+          await nextTick()
+          titlesSection.value?.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
     }
   } catch (e) {
     console.error('Failed to load player profile:', e)
