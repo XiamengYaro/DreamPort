@@ -53,15 +53,17 @@ public class ChatController {
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public SseEmitter stream(@org.springframework.web.bind.annotation.RequestParam(required = false) String ticket,
-                             HttpServletRequest request) {
+                             HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response) {
         String user = AuthUtil.currentUser(request);
         // 支持一次性流票据（优先）；仍兼容旧前端 ?token= 传参
         if (user == null && ticket != null && !ticket.isBlank()) {
             user = streamTicketService.consume(ticket);
         }
         if (user == null) {
+            // 未认证直接回 401（原 completeWithError 会落 500 错误体）
+            response.setStatus(401);
             SseEmitter emitter = new SseEmitter();
-            emitter.completeWithError(new IllegalStateException("未登录"));
+            emitter.complete();
             return emitter;
         }
         return chatService.subscribe();

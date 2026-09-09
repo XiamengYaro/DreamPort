@@ -5,6 +5,40 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [Unreleased]
+
+2026-09-09 全仓库深度审计(服务端/插件/前端)修复——5 个 CRITICAL 安全漏洞与全量 HIGH/MEDIUM 项。
+
+### Security（服务端）
+- **修复任意已通过玩家可提权 admin**：`/api/admin/login` 增加管理员名单校验（原 P4 待办未实现，等于管理后门）
+- **修复问卷 SSE 流式提交越权**：`/questionnaire/stream` 强制 username=当前登录者；`saveResult` 状态机改为已通过/封禁用户重答不降级（原可代他人答题并把其状态改写为 rejected 踢出服务器）
+- **修复问卷计分规则泄露**：config 不再下发选项分值，客观题改按选项 id 精确计分（原文本 contains 匹配可拼接选项文本刷满分，白名单门槛形同虚设）
+- **修复 7 个 /internal/v1 端点免鉴权**：`/activity` `/signin` `/mail/pending` `/mail/claimed` `/title/active` `/title/mine` `/title/equip` 补 server-token 校验（原可匿名读/销毁他人奖励邮件、代签到刷积分、改他人称号）；并移除 `/internal/**` CORS（防浏览器跨站调用）
+- **修复 `/api/chat/save` 无鉴权**：补登录+本人+限流+敏感词过滤（原可匿名冒充任意玩家刷入公开聊天历史）
+- **WS 审核推送仅 admin 角色可订阅**（原任意登录用户可监听全部审核/封禁流水）
+- **公开玩家资料页 QQ 号脱敏**；Mojang 查询错误不再回显内部细节
+- **限流/访问日志统一取 XFF 最后一跳**（原信任第一段可伪造绕过登录/注册/验证码限流）
+- **SettingService 删除改参数化**；头像/机器/门户上传加 magic-bytes 校验+头像重编码与清理旧文件，SVG 新上传禁收（CSP sandbox 兜底旧文件）
+- **头像服务 SSRF 修复**：皮肤 URL 仅放行 https 且 host 在 minecraft.net
+- **邀请码原子消费**（原 TOCTOU 可并发双人同用一码）；QQ 绑定同步化；问卷 SSE 改有界线程池；AuthFilter 前置修正访问日志用户标记
+
+### Fixed（功能）
+- **在线时长任务/成就复活**：`dp_daily_activity` 此前全库无任何写入，`/internal/v1/activity` 会话时长落库后「今日在线 X 分钟 / 周 5 小时」任务与累计时长成就可正常推进
+
+### Frontend
+- **补齐 api.ts 缺失的 5 个称号管理方法**：修复 Admin「系统设置」整 Tab 加载失败（原 TypeError 使 12 项配置全部丢失）与称号/成就 Tab 瘫痪；saveTitles/saveAchievements 请求体改裸数组对齐后端契约
+- **公告管理装载已有数据**（原打开即空、点保存即清空线上公告）；称号总览并入系统设置加载
+- **SSE 聊天改一次性流票据**：JWT 不再进 URL（新增 `/api/chat/stream-ticket`）
+- **401 统一清 token 回登录**；App 挂载以服务端校验刷新 isAdmin；问卷 complete 事件写 sessionStorage 复活 `/questionnaire-result`
+- 客观题按选项 id 提交（与后端新评分契约同步）；Verify 倒计时去叠加；TopNavigation 监听卸载清理；PlayerChart 单点除零；Dashboard 在线状态按心跳玩家列表判定（原恒显"在线"）；Status 时间线不再用当前时间冒充审核时间；Docs 裸 fetch 收口 api 层；Portal 移除假管理员/假轮播示例数据；去重复路由/方法
+
+### Plugin（Paper/Velocity）
+- **奖励邮件领取跨 GUI 会话幂等**（原重开 /mail 可双倍奖励）；回执改奖励执行后异步发送
+- 进服邮件提醒延迟 100 秒 → 5 秒；热重载 i18n 即时生效；onDisable 释放 HttpClient；/xmw 消息改主线程路由
+- 决策缓存上限；心跳上报显式 server-name；称号拉取补日志；GUI 拦截拖拽
+- **默认 server-token 清空**（原 dev-internal-token 与后端默认一致，漏配等于无鉴权）
+- Velocity：login-check 响应改 Gson 解析、超时收紧、缓存上限、默认 token 清空
+
 ## [1.3.0] - 2026-09-08
 
 **收口纯正版账号**:产品只服务正版玩家——移除 BS 皮肤站互通与微软正版绑定,头像全面本地双层渲染,全局移动端适配。

@@ -54,10 +54,6 @@ public class MinecraftVerifyService {
     }
 
     public Result setMinecraftId(String username, String minecraftName) {
-        var conflict = userRepository.findByUsernameIgnoreCase(minecraftName);
-        if (conflict.isPresent() && !conflict.get().username().equalsIgnoreCase(username)) {
-            // 该名字已注册为账户；再查是否已被其他账户绑定为 minecraft_name
-        }
         var taken = userRepository.listAll().stream()
                 .filter(u -> u.minecraftName() != null
                         && u.minecraftName().equalsIgnoreCase(minecraftName)

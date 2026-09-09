@@ -85,9 +85,4 @@ public class EconomyService {
         stats.put("source", "plugin-snapshot");
         return stats;
     }
-
-    @SuppressWarnings("unused")
-    private static List<PlayerEconomy> copyOf(List<PlayerEconomy> list) {
-        return new ArrayList<>(list);
-    }
 }
