@@ -32,6 +32,10 @@
                   :class="profile.status === 'banned' ? 'bg-rose-500/15 text-rose-400' : 'bg-emerald-500/15 text-emerald-400'">
                   {{ getStatusText(profile.status) }}
                 </span>
+                <span v-if="profile.title" class="ml-2 align-middle text-sm px-2.5 py-1 rounded-lg font-semibold"
+                  :style="{ color: profile.title.color, background: hexToRgba(profile.title.color, 0.12), border: '1px solid ' + hexToRgba(profile.title.color, 0.35) }">
+                  {{ profile.title.name }}
+                </span>
               </h1>
               <div class="space-y-1 text-sm text-stone-400">
                 <p>游戏 ID: <span class="text-stone-300 font-mono">{{ profile.minecraftName || profile.username }}</span></p>
@@ -61,6 +65,58 @@
             <div class="text-2xl font-bold text-orange-400">{{ profile.loginCount || '-' }}</div>
             <div class="text-xs text-stone-400 mt-1">登录次数</div>
           </div>
+        </div>
+
+        <!-- 称号与成就(仅本人可见;网页端佩戴,游戏内 PAPI 周期同步) -->
+        <div v-if="isSelf" class="card p-6 mb-6">
+          <h2 class="text-lg font-semibold text-white mb-4">我的称号与成就</h2>
+          <div v-if="titlesLoading" class="text-sm text-stone-500">加载中...</div>
+          <template v-else>
+            <div v-if="myTitles.owned.length" class="mb-5">
+              <h3 class="text-xs text-stone-500 mb-2">已拥有 · 点击佩戴/脱下(游戏内约 1 分钟内同步)</h3>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="t in myTitles.owned" :key="t.code" @click="toggleEquip(t.code)"
+                  class="px-3 py-1.5 rounded-xl text-sm border transition"
+                  :class="t.code === myTitles.equipped
+                    ? 'border-orange-500 bg-orange-500/15 font-semibold'
+                    : 'border-stone-700 bg-stone-800/50 hover:border-orange-400/60'">
+                  <span :style="{ color: t.color }">{{ t.name }}</span>
+                  <span v-if="t.code === myTitles.equipped" class="ml-1 text-orange-300">✓ 佩戴中</span>
+                </button>
+              </div>
+            </div>
+            <div v-if="myTitles.locked.length" class="mb-5">
+              <h3 class="text-xs text-stone-500 mb-2">未解锁</h3>
+              <div class="flex flex-wrap gap-2">
+                <span v-for="t in myTitles.locked" :key="t.code"
+                  class="px-3 py-1.5 rounded-xl text-sm border border-stone-800 bg-stone-900/40 text-stone-600 flex items-center gap-1.5">
+                  <AppIcon name="no-symbol" class="w-3.5 h-3.5" />
+                  <span :style="{ color: t.color, opacity: 0.55 }">{{ t.name }}</span>
+                </span>
+              </div>
+            </div>
+            <div v-if="myTitles.achievements.length">
+              <h3 class="text-xs text-stone-500 mb-2">成就进度(达标自动授予)</h3>
+              <div class="space-y-3">
+                <div v-for="a in myTitles.achievements" :key="a.id">
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="text-stone-300">{{ a.name }}
+                      <span v-if="a.rewardOwned" class="text-emerald-400 ml-1 text-xs">已获得</span>
+                    </span>
+                    <span class="text-stone-500">{{ a.completed ? '已完成 ✓' : `${a.progress} / ${a.target}` }}</span>
+                  </div>
+                  <div class="h-1.5 rounded-full bg-stone-800 overflow-hidden">
+                    <div class="h-full rounded-full transition-all"
+                      :class="a.completed ? 'bg-emerald-500' : 'bg-orange-400'"
+                      :style="{ width: Math.min(100, Math.round((a.progress / a.target) * 100)) + '%' }"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p v-if="!myTitles.owned.length && !myTitles.locked.length && !myTitles.achievements.length" class="text-sm text-stone-500">
+              暂无称号与成就,达成成就或由管理员授予后即可在这里佩戴。
+            </p>
+          </template>
         </div>
 
         <!-- 封禁提示 -->
@@ -115,6 +171,9 @@ import AppIcon from '@/components/AppIcon.vue'
 const route = useRoute()
 const loading = ref(false)
 const profile = ref<any>(null)
+const isSelf = ref(false)
+const titlesLoading = ref(false)
+const myTitles = ref<any>({ owned: [], locked: [], equipped: null, achievements: [] })
 
 onMounted(async () => {
   await loadProfile()
@@ -127,11 +186,44 @@ const loadProfile = async () => {
     const r: any = await api.getPlayerProfile(username)
     if (r.success) {
       profile.value = r.data
+      const me = localStorage.getItem('username')
+      isSelf.value = !!me && me.toLowerCase() === String(r.data.username).toLowerCase()
+      if (isSelf.value) await loadMyTitles()
     }
   } catch (e) {
     console.error('Failed to load player profile:', e)
   }
   loading.value = false
+}
+
+const loadMyTitles = async () => {
+  titlesLoading.value = true
+  try {
+    const r: any = await api.getMyTitles()
+    if (r.success) myTitles.value = r.data
+  } catch (e) {
+    console.error('Failed to load titles:', e)
+  }
+  titlesLoading.value = false
+}
+
+const toggleEquip = async (code: string) => {
+  try {
+    const r: any = myTitles.value.equipped === code
+      ? await api.unequipTitle()
+      : await api.equipTitle(code)
+    if (r.success) await loadMyTitles()
+  } catch (e: any) {
+    console.error('Failed to toggle title:', e)
+  }
+}
+
+const hexToRgba = (hex: string, alpha: number) => {
+  if (!/^#[0-9a-fA-F]{6}$/.test(hex)) return undefined
+  const r = parseInt(hex.slice(1, 3), 16)
+  const g = parseInt(hex.slice(3, 5), 16)
+  const b = parseInt(hex.slice(5, 7), 16)
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`
 }
 
 const formatDate = (ts: number) => {

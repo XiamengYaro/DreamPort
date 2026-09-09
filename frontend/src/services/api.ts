@@ -837,6 +837,18 @@ class ApiService {
   async grantTitle(username: string, code: string) { return this.request('/admin/titles/grant', { method: 'POST', body: JSON.stringify({ username, code }) }) }
   async revokeTitle(username: string, code: string) { return this.request('/admin/titles/revoke', { method: 'POST', body: JSON.stringify({ username, code }) }) }
 
+  // 称号与成就(用户端;JWT 鉴权,作用于当前登录玩家)
+  async getMyTitles() { return this.request('/titles/mine') }
+  async equipTitle(code: string) { return this.request('/titles/equip', { method: 'POST', body: JSON.stringify({ code }) }) }
+  async unequipTitle() { return this.request('/titles/unequip', { method: 'POST', body: JSON.stringify({}) }) }
+
+  // 奖励礼包(管理端:模板 CRUD + 发放)
+  async getRewardKits() { return this.request('/admin/rewards/kits') }
+  async createRewardKit(name: string, note: string) { return this.request('/admin/rewards/kits', { method: 'POST', body: JSON.stringify({ name, note }) }) }
+  async updateRewardKit(id: number, body: { note?: string; commandsText?: string }) { return this.request(`/admin/rewards/kits/${id}`, { method: 'PUT', body: JSON.stringify(body) }) }
+  async deleteRewardKit(id: number) { return this.request(`/admin/rewards/kits/${id}`, { method: 'DELETE' }) }
+  async sendReward(body: { usernames?: string[]; all?: boolean; kitId?: number; commandsText?: string; title?: string; note?: string }) { return this.request('/admin/rewards/send', { method: 'POST', body: JSON.stringify(body) }) }
+
   // 聊天 SSE 一次性流票据(避免 JWT 进 URL,审计修复)
   async getChatStreamTicket() {
     return this.request('/chat/stream-ticket', { method: 'POST', body: '{}' })

@@ -633,6 +633,79 @@
         </div>
       </div>
 
+      <!-- 奖励发放 Tab(礼包 + 指令包) -->
+      <div v-if="activeTab === 'rewards' && !loading" class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-white">奖励礼包</h3>
+            <button @click="showCreateKit = !showCreateKit" class="btn-secondary text-sm">+ 创建礼包</button>
+          </div>
+          <p class="text-xs text-stone-500">流程:创建礼包 → 服内管理员把物品放进背包执行 /xmw kit save &lt;礼包名&gt; → 状态变「可发放」→ 在下方发放。礼包内容 = 采集的物品 + 每个礼包可配的附加指令(可混合)。</p>
+          <div v-if="showCreateKit" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div><label class="block text-xs text-stone-500 mb-1">礼包名(2-32 位中文/字母/数字/_/-)</label><input v-model="newKit.name" class="input text-sm" placeholder="如: 新手大礼包" /></div>
+              <div><label class="block text-xs text-stone-500 mb-1">备注</label><input v-model="newKit.note" class="input text-sm" /></div>
+            </div>
+            <button @click="createKit" class="btn-primary text-sm">创建</button>
+          </div>
+          <EmptyState v-if="rewardKits.length === 0" text="暂无礼包,点击右上角创建" />
+          <div v-for="k in rewardKits" :key="k.id" class="p-4 rounded-xl bg-stone-900/40 border border-stone-800 space-y-3">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-medium text-stone-100">{{ k.name }}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full" :class="kitStatusClass(k.status)">{{ kitStatusText(k.status) }}</span>
+              </div>
+              <button @click="deleteKit(k)" class="text-xs text-rose-400 hover:text-rose-300">删除</button>
+            </div>
+            <div class="text-xs text-stone-500 space-y-1">
+              <div v-if="k.summary">内容概要:{{ k.summary }}</div>
+              <div v-if="k.status === 'capturing'">待采集 — 服内管理员把物品放进背包后执行 <code class="text-orange-400">/xmw kit save {{ k.name }}</code></div>
+              <div v-if="k.capturedBy">采集人:{{ k.capturedBy }} · {{ formatTs(k.capturedAt) }}</div>
+            </div>
+            <div><label class="block text-xs text-stone-500 mb-1">附加指令(每行一条,{player} 替换为领取玩家;与物品一起发放)</label>
+              <textarea v-model="k.commandsText" rows="2" class="input text-sm font-mono" placeholder="如: eco give {player} 100"></textarea></div>
+            <button @click="saveKitCommands(k)" class="btn-secondary text-xs">保存附加指令</button>
+          </div>
+        </div>
+
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white">发放奖励</h3>
+          <p class="text-xs text-stone-500">奖励以游戏内邮件发放:玩家进服输入 /mail 领取(礼包物品直接进背包;背包空间不足会提示清理后重试,邮件保留不丢失)。</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-stone-500 mb-1">发放对象</label>
+              <div class="flex items-center gap-4 h-[38px]">
+                <label class="flex items-center gap-2 text-sm text-stone-300"><input type="radio" value="single" v-model="sendMode" class="accent-orange-500" /> 指定玩家</label>
+                <label class="flex items-center gap-2 text-sm text-stone-300"><input type="radio" value="all" v-model="sendMode" class="accent-orange-500" /> 全员(已通过白名单)</label>
+              </div>
+            </div>
+            <div v-if="sendMode === 'single'"><label class="block text-xs text-stone-500 mb-1">玩家名(多个用英文逗号分隔)</label><input v-model="sendForm.usernamesStr" class="input text-sm" /></div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs text-stone-500 mb-1">奖励来源</label>
+              <select v-model="sendForm.source" class="input text-sm">
+                <option value="kit">奖励礼包</option>
+                <option value="commands">指令包</option>
+              </select></div>
+            <div v-if="sendForm.source === 'kit'"><label class="block text-xs text-stone-500 mb-1">选择礼包</label>
+              <select v-model.number="sendForm.kitId" class="input text-sm">
+                <option v-for="k in readyKits" :key="k.id" :value="k.id">{{ k.name }}(可发放)</option>
+              </select></div>
+          </div>
+          <div v-if="sendForm.source === 'commands'"><label class="block text-xs text-stone-500 mb-1">奖励指令(每行一条,{player} 替换为领取玩家)</label>
+            <textarea v-model="sendForm.commandsText" rows="3" class="input text-sm font-mono" placeholder="如: eco give {player} 1000"></textarea></div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-xs text-stone-500 mb-1">邮件标题(留空用默认)</label><input v-model="sendForm.title" class="input text-sm" /></div>
+            <div><label class="block text-xs text-stone-500 mb-1">备注(留空用默认)</label><input v-model="sendForm.note" class="input text-sm" /></div>
+          </div>
+          <p v-if="sendMode === 'all' && sendForm.source === 'kit'" class="text-xs text-amber-400">⚠ 全员发放礼包会为每名玩家快照一份完整内容,人数较多时注意数据库占用。</p>
+          <div class="flex items-center gap-3">
+            <button @click="doSendReward" :disabled="sendingReward" class="btn-primary text-sm">{{ sendingReward ? '发放中...' : '发放' }}</button>
+            <span v-if="sendResult" class="text-sm" :class="sendResult.ok ? 'text-emerald-400' : 'text-rose-400'">{{ sendResult.text }}</span>
+          </div>
+        </div>
+      </div>
+
             <!-- 称号与成就 Tab -->
       <div v-if="activeTab === 'titles' && !loading" class="space-y-6">
         <div class="card p-6 space-y-4">
@@ -1166,6 +1239,7 @@ const menuItems = [
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
+  { key: 'rewards', icon: 'sparkles', label: '奖励发放' },
   { key: 'titles', icon: 'shield-check', label: '称号与成就' },
   { key: 'audits', icon: 'document-text', label: '审计日志' },
   { key: 'appeals', icon: 'envelope', label: '申诉处理' },
@@ -1336,16 +1410,6 @@ const achCfg = ref<any>({ achievements: [] })
 
 const grantForm = ref<any>({ username: '', code: '' })
 
-const loadTitlesAdmin = async () => {
-  try {
-    const r: any = await api.getTitlesOverview()
-    if (r.success) {
-      titlesCfg.value = { titles: r.data.titles }
-      achCfg.value = { achievements: r.data.achievements }
-    }
-  } catch (e) { console.error(e) }
-}
-
 const addTitleDef = () => {
   titlesCfg.value.titles.push({ code: '', name: '新称号', desc: '', color: '#fbbf24', enabled: true })
 }
@@ -1386,6 +1450,100 @@ const saveDownloads = async () => {
     const r: any = await api.saveDownloadsAdmin(parsed)
     if (r.success) notify?.success('下载中心已保存')
   } catch (e: any) { notify?.error(e.message?.includes('JSON') ? 'JSON 格式错误' : (e.message || '保存失败')) }
+}
+
+// ===== 奖励发放(礼包 + 指令包) =====
+const rewardKits = ref<any[]>([])
+const showCreateKit = ref(false)
+const newKit = ref<any>({ name: '', note: '' })
+const sendMode = ref<'single' | 'all'>('single')
+const sendForm = ref<any>({ usernamesStr: '', source: 'kit', kitId: null, commandsText: '', title: '', note: '' })
+const sendingReward = ref(false)
+const sendResult = ref<any>(null)
+
+const readyKits = computed(() => rewardKits.value.filter(k => k.status === 'ready'))
+
+/** 后端 commands JSON({"commands":[...]} 或裸数组)→ textarea 文本 */
+const commandsToText = (commandsJson: string) => {
+  try {
+    const parsed = JSON.parse(commandsJson || '[]')
+    const arr = Array.isArray(parsed) ? parsed : (parsed.commands || [])
+    return arr.map((c: any) => c.cmd || '').filter(Boolean).join('\n')
+  } catch { return '' }
+}
+const kitStatusText = (s: string) => s === 'ready' ? '可发放' : s === 'disabled' ? '已停用' : '待采集'
+const kitStatusClass = (s: string) => s === 'ready' ? 'bg-emerald-500/20 text-emerald-400'
+  : s === 'disabled' ? 'bg-rose-500/20 text-rose-400' : 'bg-amber-500/20 text-amber-400'
+const formatTs = (ts: number) => ts ? new Date(ts).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''
+
+const loadRewardKits = async () => {
+  try {
+    const r: any = await api.getRewardKits()
+    if (r.success) {
+      rewardKits.value = (r.data.kits || []).map((k: any) => ({ ...k, commandsText: commandsToText(k.commands) }))
+      if (!sendForm.value.kitId && readyKits.value.length) sendForm.value.kitId = readyKits.value[0].id
+    }
+  } catch (e) { console.error(e) }
+}
+
+const createKit = async () => {
+  if (!newKit.value.name.trim()) { notify?.error('请填写礼包名'); return }
+  try {
+    const r: any = await api.createRewardKit(newKit.value.name.trim(), newKit.value.note)
+    if (r.success) {
+      notify?.success(r.message || '已创建')
+      newKit.value = { name: '', note: '' }
+      showCreateKit.value = false
+      await loadRewardKits()
+    } else notify?.error(r.message || '创建失败')
+  } catch (e: any) { notify?.error(e.message || '创建失败') }
+}
+
+const saveKitCommands = async (k: any) => {
+  try {
+    const r: any = await api.updateRewardKit(k.id, { note: k.note, commandsText: k.commandsText })
+    if (r.success) notify?.success('附加指令已保存')
+    else notify?.error(r.message || '保存失败')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
+
+const deleteKit = async (k: any) => {
+  if (!confirm(`确定删除礼包「${k.name}」？已发放的邮件不受影响。`)) return
+  try {
+    const r: any = await api.deleteRewardKit(k.id)
+    if (r.success) { notify?.success('已删除'); await loadRewardKits() }
+    else notify?.error(r.message || '删除失败')
+  } catch (e: any) { notify?.error(e.message || '删除失败') }
+}
+
+const doSendReward = async () => {
+  const body: any = {
+    all: sendMode.value === 'all',
+    title: sendForm.value.title || undefined,
+    note: sendForm.value.note || undefined
+  }
+  if (!body.all) {
+    const names = sendForm.value.usernamesStr.split(/[,，]/).map((x: string) => x.trim()).filter(Boolean)
+    if (!names.length) { notify?.error('请填写玩家名'); return }
+    body.usernames = names
+  }
+  if (sendForm.value.source === 'kit') {
+    if (!sendForm.value.kitId) { notify?.error('请选择礼包'); return }
+    body.kitId = sendForm.value.kitId
+  } else {
+    if (!sendForm.value.commandsText.trim()) { notify?.error('请填写奖励指令'); return }
+    body.commandsText = sendForm.value.commandsText
+  }
+  sendingReward.value = true
+  try {
+    const r: any = await api.sendReward(body)
+    sendResult.value = r.success ? { ok: true, text: r.message } : { ok: false, text: r.message || '发放失败' }
+    if (r.success) notify?.success(r.message)
+    else notify?.error(r.message || '发放失败')
+  } catch (e: any) {
+    sendResult.value = { ok: false, text: e.message || '发放失败' }
+    notify?.error(e.message || '发放失败')
+  } finally { sendingReward.value = false }
 }
 
 const loadMaintenance = async () => {
@@ -1582,7 +1740,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus(), loadRewardKits()])
   loading.value = false
 })
 

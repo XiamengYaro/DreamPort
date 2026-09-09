@@ -9,6 +9,11 @@
 
 2026-09-09 全仓库深度审计(服务端/插件/前端)修复——5 个 CRITICAL 安全漏洞与全量 HIGH/MEDIUM 项。
 
+### Added（奖励礼包）
+- **礼包化奖励发放(端到端)**:管理后台新增「奖励发放」页——① 奖励礼包卡:Web 创建礼包模板 → 服内管理员把物品放进背包执行 `/xmw kit save <礼包名>` 采集上传(Paper ItemStack#serializeAsBytes 序列化 Base64,自带数据版本号,MC 升级自动迁移)→ 状态变「可发放」,列表展示内容概要/采集人;每个礼包可配附加指令(与物品混合发放);② 发放奖励卡:单人/全员(已通过白名单)发放,来源选礼包或手填指令包,发放时把物品+指令**快照**进游戏内邮件(dp_mail 新增 items MEDIUMTEXT 列)
+- **游戏内邮件支持物品直发**:领取时整包反序列化→背包空间检查(不足提示清理后重试,邮件保留零损失)→物品入包→再执行附加指令→异步回执;`/xmw kit list` 服内查模板
+- 新端点:`POST /internal/v1/kit/save`、`GET /internal/v1/kit/list`(server-token);`/api/admin/rewards/{kits,send}`(admin JWT+审计+铃铛通知);Flyway V10(dp_reward_kit 表+dp_mail.items 列)
+
 ### Security（服务端）
 - **修复任意已通过玩家可提权 admin**：`/api/admin/login` 增加管理员名单校验（原 P4 待办未实现，等于管理后门）
 - **修复问卷 SSE 流式提交越权**：`/questionnaire/stream` 强制 username=当前登录者；`saveResult` 状态机改为已通过/封禁用户重答不降级（原可代他人答题并把其状态改写为 rejected 踢出服务器）
