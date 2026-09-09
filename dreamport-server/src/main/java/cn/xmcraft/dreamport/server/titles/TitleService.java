@@ -71,6 +71,7 @@ public class TitleService {
               {"id":"points_500","name":"理财达人","desc":"累计获得 500 积分","metric":"points_total","target":500,"reward":"saver","enabled":true}
             ]}""";
 
+    /** 解析称号定义;JSON 畸形返回 null(仅此时回退内置默认),空数组=用户显式清空应被尊重 */
     private List<TitleDef> parseTitles(String json) {
         List<TitleDef> list = new ArrayList<>();
         try {
@@ -81,11 +82,13 @@ public class TitleService {
                         t.path("color").asText("#fbbf24"), t.path("gameColor").asText(""),
                         t.path("enabled").asBoolean(true)));
             }
-        } catch (Exception ignored) {
+            return list;
+        } catch (Exception e) {
+            return null;
         }
-        return list;
     }
 
+    /** 解析成就定义;语义同 parseTitles(畸形 null,空数组=显式清空) */
     private List<AchievementDef> parseAchievements(String json) {
         List<AchievementDef> list = new ArrayList<>();
         try {
@@ -96,24 +99,27 @@ public class TitleService {
                         a.path("metric").asText("playtime_total"), a.path("target").asInt(1),
                         a.path("reward").asText(""), a.path("enabled").asBoolean(true)));
             }
-        } catch (Exception ignored) {
+            return list;
+        } catch (Exception e) {
+            return null;
         }
-        return list;
     }
 
     public List<TitleDef> titles() {
         // 用 getRaw 取原始 JSON(get(key, String.class) 无法把 JSON 对象反序列化为 String,
-        // 会静默返回 null 导致配置永远走默认——V9 遗留 bug)
+        // 会静默返回 null 导致配置永远走默认——V9 遗留 bug)。
+        // 仅在「从未配置/JSON 畸形」时回退内置默认;显式空列表是用户的删除结果,不再复活(修复后台删不掉)
         String raw = settingService.getRaw(SettingService.KEY_TITLES_CONFIG);
-        List<TitleDef> parsed = raw == null || raw.isBlank() ? parseTitles(DEFAULT_TITLES_JSON) : parseTitles(raw);
-        return parsed.isEmpty() ? parseTitles(DEFAULT_TITLES_JSON) : parsed;
+        if (raw == null || raw.isBlank()) return parseTitles(DEFAULT_TITLES_JSON);
+        List<TitleDef> parsed = parseTitles(raw);
+        return parsed == null ? parseTitles(DEFAULT_TITLES_JSON) : parsed;
     }
 
     public List<AchievementDef> achievements() {
         String raw = settingService.getRaw(SettingService.KEY_ACHIEVEMENTS_CONFIG);
-        List<AchievementDef> parsed = raw == null || raw.isBlank()
-                ? parseAchievements(DEFAULT_ACHIEVEMENTS_JSON) : parseAchievements(raw);
-        return parsed.isEmpty() ? parseAchievements(DEFAULT_ACHIEVEMENTS_JSON) : parsed;
+        if (raw == null || raw.isBlank()) return parseAchievements(DEFAULT_ACHIEVEMENTS_JSON);
+        List<AchievementDef> parsed = parseAchievements(raw);
+        return parsed == null ? parseAchievements(DEFAULT_ACHIEVEMENTS_JSON) : parsed;
     }
 
     public void saveTitles(String json) {
@@ -313,7 +319,10 @@ public class TitleService {
         settingService.set(SettingService.KEY_TITLES_CONFIG, Map.of("titles", titles));
     }
 
-    /** 保存成就定义(校验:id/metric 合法、reward 引用存在的称号;畸形抛 IllegalArgumentException) */
+    /**
+     * 保存成就定义(校验:id/metric 合法;奖励称号已被删除时**自动清空引用**而非拒绝保存——
+     * 先删称号再改成就的顺序此前会 400 卡死整个保存;评估端 evaluate 对缺失奖励本就跳过)
+     */
     public void saveAchievementsFromMaps(List<Map<String, Object>> achievements) {
         if (achievements == null) throw new IllegalArgumentException("成就定义不能为空");
         var titleCodes = titles().stream().map(TitleDef::code).toList();
@@ -329,7 +338,7 @@ public class TitleService {
                 throw new IllegalArgumentException("成就「" + id + "」指标非法(需 playtime_total/register_days/invite_count/points_total)");
             }
             if (!reward.isEmpty() && !titleCodes.contains(reward)) {
-                throw new IllegalArgumentException("成就「" + id + "」奖励称号「" + reward + "」不存在于称号定义");
+                m.put("reward", "");
             }
         }
         settingService.set(SettingService.KEY_ACHIEVEMENTS_CONFIG, Map.of("achievements", achievements));

@@ -1490,8 +1490,18 @@ const saveTitles = async () => {
   try {
     // 修复审计：后端 titlesconfig 收裸数组,原发 {titles:[...]} 形状不匹配
     const r: any = await api.saveTitlesConfigAdmin(titlesCfg.value.titles)
-    if (r.success) notify && notify.success('称号定义已保存')
+    if (r.success) { notify && notify.success('称号定义已保存'); await reloadTitlesOverview() }
   } catch (e: any) { notify && notify.error(e.message || '保存失败') }
+}
+/** 保存后回读服务端总览:与后端规整结果(如成就奖励引用被自动清空)保持一致 */
+const reloadTitlesOverview = async () => {
+  try {
+    const r: any = await api.getTitlesOverview()
+    if (r.success) {
+      titlesCfg.value = { titles: Array.isArray(r.data?.titles) ? r.data.titles : [] }
+      achCfg.value = { achievements: Array.isArray(r.data?.achievements) ? r.data.achievements : [] }
+    }
+  } catch (e) { console.error(e) }
 }
 const addAchievementDef = () => {
   achCfg.value.achievements.push({ id: 'ach_' + Date.now(), name: '新成就', desc: '', metric: 'playtime_total', target: 10, reward: '', enabled: true })
@@ -1500,7 +1510,7 @@ const saveAchievements = async () => {
   try {
     // 修复审计：后端 achievementsconfig 收裸数组
     const r: any = await api.saveAchievementsConfigAdmin(achCfg.value.achievements)
-    if (r.success) notify && notify.success('成就定义已保存')
+    if (r.success) { notify && notify.success('成就定义已保存'); await reloadTitlesOverview() }
   } catch (e: any) { notify && notify.error(e.message || '保存失败') }
 }
 const doGrant = async () => {
