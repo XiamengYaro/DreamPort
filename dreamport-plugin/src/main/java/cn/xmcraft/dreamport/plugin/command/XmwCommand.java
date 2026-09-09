@@ -7,7 +7,9 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.inventory.ItemStack;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -19,7 +21,7 @@ import java.util.Locale;
 public final class XmwCommand implements CommandExecutor, TabCompleter {
 
     private static final List<String> SUB = List.of("reload", "status", "signin", "approve", "reject",
-            "ban", "unban", "delete", "list", "info", "qq", "version");
+            "ban", "unban", "delete", "list", "info", "qq", "version", "kit");
 
     private final DreamPortPlugin plugin;
 
@@ -44,6 +46,7 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
             case "approve", "reject", "ban", "unban", "delete" -> handleOp(sender, sub, args);
             case "qq" -> handleQq(sender, args);
             case "signin" -> handleSignin(sender);
+            case "kit" -> handleKit(sender, args);
             default -> reply(sender, "§6[DreamPort] §c未知子命令: " + args[0]);
         }
         return true;
@@ -228,8 +231,123 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
         reply(sender, "§6[DreamPort] §c没有权限");
     }
 
+    // ---------- 奖励礼包采集 ----------
+
+    /**
+     * /xmw kit save <礼包名>:把当前背包 36 格内容上传为礼包模板(管理后台创建,采集后 ready 可发放);
+     * /xmw kit list:查看礼包模板列表。物品经 ItemStack#serializeAsBytes 序列化为 Base64。
+     */
+    private void handleKit(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("dreamport.admin")) {
+            noPermission(sender);
+            return;
+        }
+        if (args.length >= 2 && "list".equalsIgnoreCase(args[1])) {
+            kitList(sender);
+            return;
+        }
+        if (args.length >= 3 && "save".equalsIgnoreCase(args[1])) {
+            kitSave(sender, args[2]);
+            return;
+        }
+        usage(sender, "/xmw kit save <礼包名> | /xmw kit list");
+    }
+
+    /** 采集背包:主线程读 36 格并序列化(读背包要求主线程),上传在异步线程 */
+    private void kitSave(CommandSender sender, String kitName) {
+        if (!(sender instanceof org.bukkit.entity.Player player)) {
+            reply(sender, "§6[DreamPort] §c只有玩家可以采集背包");
+            return;
+        }
+        var items = new ArrayList<java.util.Map<String, Object>>();
+        StringBuilder summary = new StringBuilder();
+        int count = 0;
+        for (ItemStack it : player.getInventory().getStorageContents()) {
+            if (it == null || it.getType().isAir() || it.getAmount() <= 0) {
+                continue;
+            }
+            try {
+                String b64 = java.util.Base64.getEncoder().encodeToString(it.serializeAsBytes());
+                String rawName = it.hasItemMeta() && it.getItemMeta().hasDisplayName()
+                        ? it.getItemMeta().getDisplayName() : it.getType().name();
+                String name = (rawName == null || rawName.isBlank() ? it.getType().name() : rawName)
+                        .replaceAll("§.", "");
+                items.add(java.util.Map.of("s", b64, "n", name, "c", it.getAmount()));
+                if (count < 6) {
+                    if (count > 0) summary.append(", ");
+                    summary.append(name).append("×").append(it.getAmount());
+                }
+                count++;
+            } catch (Exception e) {
+                reply(sender, "§6[DreamPort] §c物品序列化失败(" + it.getType() + "): " + e.getMessage());
+                return;
+            }
+        }
+        if (items.isEmpty()) {
+            reply(sender, "§6[DreamPort] §c背包为空:请先把礼包物品放进背包再执行采集");
+            return;
+        }
+        if (count > 6) {
+            summary.append(" 等 ").append(count).append(" 组");
+        }
+        String itemsJson = plugin.backendClient().gson().toJson(items);
+        String summaryStr = summary.toString();
+        async(sender, () -> {
+            String body = plugin.backendClient().kitSave(kitName, player.getName(), itemsJson, summaryStr);
+            if (body == null) {
+                reply(sender, "§6[DreamPort] §c上传失败: 后端不可达");
+                return;
+            }
+            try {
+                JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
+                boolean ok = obj.has("success") && obj.get("success").getAsBoolean();
+                String msg = obj.has("message") && !obj.get("message").isJsonNull()
+                        ? obj.get("message").getAsString() : body;
+                reply(sender, "§6[DreamPort] " + (ok ? "§a" + msg : "§c" + msg));
+            } catch (Exception e) {
+                reply(sender, "§6[DreamPort] §c上传响应解析失败");
+            }
+        });
+    }
+
+    /** 礼包模板列表(名称/状态/内容概要) */
+    private void kitList(CommandSender sender) {
+        async(sender, () -> {
+            String body = plugin.backendClient().kitList();
+            if (body == null) {
+                reply(sender, "§6[DreamPort] §c后端不可达");
+                return;
+            }
+            try {
+                JsonObject obj = plugin.backendClient().gson().fromJson(body, JsonObject.class);
+                JsonArray kits = obj.has("kits") ? obj.getAsJsonArray("kits") : new JsonArray();
+                if (kits.isEmpty()) {
+                    reply(sender, "§6[DreamPort] §7暂无礼包模板(请在管理后台创建)");
+                    return;
+                }
+                reply(sender, "§6[DreamPort] 礼包模板 (" + kits.size() + "):");
+                for (var k : kits) {
+                    JsonObject o = k.getAsJsonObject();
+                    String status = o.get("status").getAsString();
+                    String statusText = switch (status) {
+                        case "ready" -> "§a可发放";
+                        case "disabled" -> "§c已停用";
+                        default -> "§e待采集";
+                    };
+                    String summary = o.has("summary") && !o.get("summary").isJsonNull()
+                            ? o.get("summary").getAsString() : "";
+                    reply(sender, "§e- " + o.get("name").getAsString() + " " + statusText
+                            + (summary.isBlank() ? "" : " §7" + summary));
+                }
+                reply(sender, "§7采集: 把物品放进背包后执行 /xmw kit save <礼包名>");
+            } catch (Exception e) {
+                reply(sender, "§6[DreamPort] §c礼包列表解析失败");
+            }
+        });
+    }
+
     private void usage(CommandSender sender, String usage) {
-        reply(sender, "§6[DreamPort] §f用法: " + usage);
+        reply(sender, "§f用法: " + usage);
     }
 
     @Override
@@ -239,6 +357,9 @@ public final class XmwCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && "qq".equalsIgnoreCase(args[0])) {
             return List.of("bind");
+        }
+        if (args.length == 2 && "kit".equalsIgnoreCase(args[0])) {
+            return List.of("save", "list");
         }
         return List.of();
     }

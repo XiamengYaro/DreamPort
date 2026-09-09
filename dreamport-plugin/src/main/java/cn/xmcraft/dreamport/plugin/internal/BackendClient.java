@@ -246,6 +246,17 @@ public final class BackendClient {
         postAsync(Protocol.MAIL_CLAIMED, java.util.Map.of("id", id));
     }
 
+    /** 采集背包上传为礼包模板(/xmw kit save);itemsJson 为 [{"s":"<base64>","n":"展示名","c":数量}] */
+    public String kitSave(String kitName, String player, String itemsJson, String summary) {
+        return post(Protocol.KIT_SAVE, java.util.Map.of("kitName", kitName, "player", player,
+                "items", itemsJson, "summary", summary == null ? "" : summary));
+    }
+
+    /** 礼包模板列表(/xmw kit list);@return 原始 JSON 响应体 */
+    public String kitList() {
+        return getInternal(Protocol.KIT_LIST);
+    }
+
     private void postAsync(String path, Object body) {
         plugin.getServer().getAsyncScheduler().runNow(plugin,
                 task -> post(path, body));

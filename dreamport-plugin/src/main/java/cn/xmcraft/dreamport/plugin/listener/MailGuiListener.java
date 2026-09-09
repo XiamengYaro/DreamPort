@@ -34,12 +34,11 @@ public class MailGuiListener implements Listener {
             return;
         }
         var mail = mailHolder.mails.get(slot);
-        // 同一会话内防重复领取:领取后槽位物品清空并登记
-        event.getView().setItem(slot, null);
-        if (!mailHolder.claimed.add(mail.id())) {
-            return;
+        // claim 在主线程同步判定:受理=true(清空槽位);拒绝=false(背包满/解析失败——
+        // 槽位物品保留,玩家清理背包后可直接重试)
+        if (mailService.claim(player, mail)) {
+            event.getView().setItem(slot, null);
         }
-        mailService.claim(player, mail);
     }
 
     // 修复审计 L5:拦截拖拽进 GUI
