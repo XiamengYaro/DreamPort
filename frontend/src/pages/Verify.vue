@@ -312,9 +312,10 @@ const countdown = ref(0)
 const rulesAgreed = ref(false)
 const accepting = ref(false)
 const rulesAcceptedFlag = ref(false)
-const verifiedAny = computed(() => javaStatus.value.verified === true || bedrockStatus.value.verified === true)
 const rulesAcceptedNow = computed(() => rulesAcceptedFlag.value || javaStatus.value.rulesAccepted === true || bedrockStatus.value.rulesAccepted === true)
-const rulesGateActive = computed(() => !rulesAcceptedNow.value && !verifiedAny.value)
+// 守则门:只要未同意守则就显示守则卡片。不能再用「已验证(绑定过 UUID)」短路——
+// 服务端 set/verify 强制先同意守则,若已绑定 UUID 的玩家不显示守则入口即死锁无法确认协议
+const rulesGateActive = computed(() => !rulesAcceptedNow.value)
 const rulesHtml = computed(() => renderMarkdown(rulesContent.value))
 
 let countdownTimer: ReturnType<typeof setInterval> | null = null

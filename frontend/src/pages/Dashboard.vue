@@ -168,6 +168,25 @@
         </div>
       </div>
 
+      <!-- 服务器守则(未同意时强制阅读;服务端验证/绑定/改 ID 前置) -->
+      <div v-if="rulesGateActive" class="card p-6 mb-6 border-2 border-orange-500/40">
+        <h2 class="text-xl font-semibold text-white mb-2 flex items-center gap-2">
+          <AppIcon name="shield-check" class="w-5 h-5 text-orange-400" /> 服务器守则
+        </h2>
+        <p class="text-xs mb-3" :class="countdown > 0 ? 'text-orange-400' : 'text-emerald-400'">
+          <template v-if="countdown > 0">请仔细阅读以下守则——<span class="font-bold">{{ countdown }}</span> 秒后可选择同意</template>
+          <template v-else>阅读时间到——请勾选同意后继续</template>
+        </p>
+        <div class="max-h-72 overflow-y-auto bg-stone-900/60 border border-stone-700/60 rounded-xl p-4 text-sm text-stone-300 leading-relaxed" v-html="rulesHtml"></div>
+        <label class="flex items-center gap-3 mt-4 text-sm" :class="countdown > 0 ? 'opacity-40 cursor-not-allowed text-stone-500' : 'cursor-pointer text-stone-300'">
+          <input v-model="rulesAgreed" type="checkbox" class="accent-orange-500 w-4 h-4" :disabled="countdown > 0" />
+          我已完整阅读并同意服务器守则
+        </label>
+        <button class="btn-primary w-full mt-4" :disabled="!rulesAgreed || accepting" @click="acceptRules">
+          {{ accepting ? '提交中...' : '同意并继续' }}
+        </button>
+      </div>
+
       <!-- Minecraft ID 管理 -->
       <div class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -364,6 +383,7 @@ import PlayerChart from '@/components/PlayerChart.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import StatCard from '@/components/ui/StatCard.vue'
+import { renderMarkdown } from '@/lib/markdown'
 
 const notify = inject('notify') as any
 
@@ -392,6 +412,97 @@ const bedrockMessage = ref('')
 const bedrockSuccess = ref(false)
 const bedrockVerifyMessage = ref('')
 const bedrockVerifySuccess = ref(false)
+
+// ── 服务器守则门(未同意时强制阅读;服务端验证/绑定/改 ID 前置,同意记录在 dp_rules_consent)──
+const rulesCfg = ref({ doc: '', seconds: 15 })
+const rulesContent = ref('')
+const countdown = ref(0)
+const rulesAgreed = ref(false)
+const accepting = ref(false)
+const rulesAcceptedFlag = ref(false)
+const rulesAcceptedNow = computed(() => rulesAcceptedFlag.value || minecraftStatus.value.rulesAccepted === true)
+const rulesGateActive = computed(() => !rulesAcceptedNow.value)
+const rulesHtml = computed(() => renderMarkdown(rulesContent.value))
+let rulesCountdownTimer: ReturnType<typeof setInterval> | null = null
+
+const loadRulesConfig = async () => {
+  try {
+    const res = await fetch('/api/config')
+    const data = await res.json()
+    if (data.success && data.data.rules) {
+      rulesCfg.value = {
+        doc: data.data.rules.doc || '',
+        seconds: Number(data.data.rules.seconds) || 15
+      }
+    }
+  } catch (e) {}
+}
+
+const startRulesCountdown = () => {
+  if (rulesCountdownTimer) {
+    clearInterval(rulesCountdownTimer)
+    rulesCountdownTimer = null
+  }
+  countdown.value = Number(rulesCfg.value.seconds) || 15
+  rulesAgreed.value = false
+  rulesCountdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0 && rulesCountdownTimer) {
+      clearInterval(rulesCountdownTimer)
+      rulesCountdownTimer = null
+    }
+  }, 1000)
+}
+
+// 守则内容:后台指定文档优先,未配置用内置默认
+const loadRulesContent = async () => {
+  const doc = String(rulesCfg.value.doc || '')
+  if (doc) {
+    try {
+      const parts = doc.split('/')
+      const filename = parts.pop() as string
+      const category = parts.length ? parts.join('/') : null
+      const r: any = await api.readDoc(category, filename)
+      if (r.success && r.data && r.data.content) {
+        rulesContent.value = r.data.content
+        return
+      }
+    } catch (e) {
+      console.error('守则文档读取失败', e)
+    }
+  }
+  rulesContent.value = DEFAULT_RULES
+}
+
+const DEFAULT_RULES = [
+  '## 服务器守则',
+  '',
+  '1. **尊重他人**——禁止辱骂、歧视、骚扰或任何形式的恶意攻击;',
+  '2. **禁止作弊**——不得使用外挂、作弊客户端或利用漏洞牟利;',
+  '3. **保护环境**——禁止恶意破坏他人建筑、窃取物品或破坏地形;',
+  '4. **遵守秩序**——服从管理员管理,不发布违法违规信息与广告;',
+  '5. **账号安全**——妥善保管账号密码,账号行为由本人负责。',
+  '',
+  '违反守则将视情节轻重予以警告、临时封禁或永久封禁处理。'
+].join('\n')
+
+// 同意守则(服务端记录,幂等)
+const acceptRules = async () => {
+  accepting.value = true
+  try {
+    const r: any = await api.acceptRules()
+    if (r.success) {
+      rulesAcceptedFlag.value = true
+      notify && notify.success('已同意服务器守则')
+    } else {
+      notify && notify.error(r.message || r.msg || '提交失败')
+    }
+  } catch (e: any) {
+    notify && notify.error(e.message || '提交失败')
+  } finally {
+    accepting.value = false
+  }
+}
 
 // Minecraft ID 相关
 const showChangeIdModal = ref(false)
@@ -475,6 +586,7 @@ const emailMessage = ref('')
 const emailSuccess = ref(false)
 
 onMounted(async () => {
+  await loadRulesConfig()
   await Promise.all([
     loadServerStatus(),
     loadUserProfile(),
@@ -484,6 +596,11 @@ onMounted(async () => {
     loadMinecraftStatus(),
     loadQqStatus()
   ])
+  // 守则门激活:加载守则内容并启动倒计时(未同意守则时,验证/绑定/改 ID 前必须确认)
+  if (rulesGateActive.value) {
+    await loadRulesContent()
+    startRulesCountdown()
+  }
 })
 
 const loadQqStatus = async () => {
@@ -616,7 +733,8 @@ const loadMinecraftStatus = async () => {
         name: r.data.minecraftName || '',
         uuid: r.data.minecraftUuid || '',
         verified: r.data.verified || false,
-        verifiedAt: r.data.verifiedAt || 0
+        verifiedAt: r.data.verifiedAt || 0,
+        rulesAccepted: r.data.rulesAccepted === true
       }
     }
   } catch (e) {}
