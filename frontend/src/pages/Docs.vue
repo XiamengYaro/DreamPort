@@ -139,6 +139,7 @@ import { useBrand } from '@/lib/brand'
 const brand = useBrand()
 import { ref, computed, onMounted } from 'vue'
 import { renderMarkdown } from '@/lib/markdown'
+import api from '@/services/api'
 
 interface Doc {
   filename: string
@@ -193,10 +194,10 @@ const loadDoc = async (slug: string) => {
   contentLoading.value = true
   content.value = ''
   try {
-    const res = await fetch(`/api/docs/${slug}`)
-    const data = await res.json()
-    if (data.success) {
-      content.value = data.data.content || ''
+    // 修复审计：裸 fetch 收口至 api 层(Rules §7)
+    const res: any = await api.readDocBySlug(slug)
+    if (res.success) {
+      content.value = res.data.content || ''
     }
   } catch (e) {
     console.error('Failed to load doc:', e)

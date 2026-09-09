@@ -169,6 +169,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', onDocClickUser)
 })
 
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))

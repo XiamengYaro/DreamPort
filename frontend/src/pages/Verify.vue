@@ -283,7 +283,7 @@
 <script setup lang="ts">
 import { useBrand } from '@/lib/brand'
 const brand = useBrand()
-import { ref, computed, watch, onMounted, inject } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
 import { renderMarkdown } from '@/lib/markdown'
@@ -317,14 +317,31 @@ const rulesAcceptedNow = computed(() => rulesAcceptedFlag.value || javaStatus.va
 const rulesGateActive = computed(() => !rulesAcceptedNow.value && !verifiedAny.value)
 const rulesHtml = computed(() => renderMarkdown(rulesContent.value))
 
+let countdownTimer: ReturnType<typeof setInterval> | null = null
+
 const startCountdown = () => {
+  // 修复审计：先清旧计时器,避免 watch + onMounted 叠加出多个并行 interval
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
   countdown.value = Number(rulesCfg.value.seconds) || 15
   rulesAgreed.value = false
-  const timer = setInterval(() => {
+  countdownTimer = setInterval(() => {
     countdown.value--
-    if (countdown.value <= 0) clearInterval(timer)
+    if (countdown.value <= 0 && countdownTimer) {
+      clearInterval(countdownTimer)
+      countdownTimer = null
+    }
   }, 1000)
 }
+
+onUnmounted(() => {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+})
 
 watch(rulesGateActive, (active) => {
   if (active) startCountdown()

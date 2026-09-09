@@ -1209,8 +1209,15 @@ const loadSystemSettings = async () => {
     }
     if (rules.success) rulesCfg.value = { doc: rules.data.doc || '', seconds: Number(rules.data.seconds) || 15 }
     if (tsk.success) tasksCfg.value = tsk.data
+    if (ann.success) {
+      // 修复审计：公告管理此前从不加载已有数据,打开即空、保存即清空线上公告
+      newsList.value = Array.isArray(ann.data?.news) ? ann.data.news : []
+      changelogList.value = Array.isArray(ann.data?.changelog) ? ann.data.changelog : []
+    }
     if (titlesData.success) {
-      // 称号总览数据在 loadTitlesAdmin 中已有专用加载;此处占位
+      // 修复审计：称号总览并入系统设置加载,管理员进入即见现有定义
+      titlesCfg.value = { titles: Array.isArray(titlesData.data?.titles) ? titlesData.data.titles : [] }
+      achCfg.value = { achievements: Array.isArray(titlesData.data?.achievements) ? titlesData.data.achievements : [] }
     }
     if (shop.success) {
       shopCfg.value = {
@@ -1344,7 +1351,8 @@ const addTitleDef = () => {
 }
 const saveTitles = async () => {
   try {
-    const r: any = await api.saveTitlesConfigAdmin({ titles: titlesCfg.value.titles })
+    // 修复审计：后端 titlesconfig 收裸数组,原发 {titles:[...]} 形状不匹配
+    const r: any = await api.saveTitlesConfigAdmin(titlesCfg.value.titles)
     if (r.success) notify && notify.success('称号定义已保存')
   } catch (e: any) { notify && notify.error(e.message || '保存失败') }
 }
@@ -1353,7 +1361,8 @@ const addAchievementDef = () => {
 }
 const saveAchievements = async () => {
   try {
-    const r: any = await api.saveAchievementsConfigAdmin({ achievements: achCfg.value.achievements })
+    // 修复审计：后端 achievementsconfig 收裸数组
+    const r: any = await api.saveAchievementsConfigAdmin(achCfg.value.achievements)
     if (r.success) notify && notify.success('成就定义已保存')
   } catch (e: any) { notify && notify.error(e.message || '保存失败') }
 }

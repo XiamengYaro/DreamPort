@@ -88,6 +88,10 @@ onMounted(async () => {
         localStorage.removeItem('isAdmin')
         localStorage.removeItem('username')
         router.replace('/login')
+      } else {
+        // 修复审计(前端)：以服务端返回为准刷新本地 isAdmin,避免残留的旧值绕开 UI 门禁
+        if (r.data.isAdmin) localStorage.setItem('isAdmin', 'true')
+        else localStorage.removeItem('isAdmin')
       }
     } catch {
       api.setToken(null)

@@ -37,19 +37,19 @@
             <div class="text-xs mb-3 text-stone-500">{{ question.maxScore }}分</div>
 
             <div v-if="question.type === 'single_choice'" class="space-y-2">
-              <label v-for="option in question.options" :key="option.text"
+              <label v-for="option in question.options" :key="option.id"
                 class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200"
-                :class="answers[question.id] === option.text ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
-                <input type="radio" :name="'q_' + question.id" :value="option.text" v-model="answers[question.id]" class="w-4 h-4 text-orange-500" />
+                :class="answers[question.id] === option.id ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
+                <input type="radio" :name="'q_' + question.id" :value="option.id" v-model="answers[question.id]" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-stone-200">{{ option.text }}</span>
               </label>
             </div>
 
             <div v-else-if="question.type === 'multiple_choice'" class="space-y-2">
-              <label v-for="option in question.options" :key="option.text"
+              <label v-for="option in question.options" :key="option.id"
                 class="flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all duration-200"
-                :class="isMultiSelected(question.id, option.text) ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
-                <input type="checkbox" :value="option.text" @change="toggleMultiOption(question.id, option.text)" class="w-4 h-4 text-orange-500" />
+                :class="isMultiSelected(question.id, option.id) ? 'bg-orange-900/20 border border-orange-700' : 'bg-stone-800/50 border border-stone-700 hover:bg-stone-800'">
+                <input type="checkbox" :value="option.id" @change="toggleMultiOption(question.id, option.id)" class="w-4 h-4 text-orange-500" />
                 <span class="text-sm text-stone-200">{{ option.text }}</span>
               </label>
             </div>
@@ -232,16 +232,16 @@ const validationLabel = (rule: string) => {
   return '任意内容'
 }
 
-const isMultiSelected = (questionId: string, optionText: string) => {
+const isMultiSelected = (questionId: string, optionId: number) => {
   const selected = answers.value[questionId]
-  return Array.isArray(selected) && selected.includes(optionText)
+  return Array.isArray(selected) && selected.includes(optionId)
 }
 
-const toggleMultiOption = (questionId: string, optionText: string) => {
+const toggleMultiOption = (questionId: string, optionId: number) => {
   if (!answers.value[questionId]) answers.value[questionId] = []
   const arr = answers.value[questionId]
-  const idx = arr.indexOf(optionText)
-  if (idx >= 0) arr.splice(idx, 1); else arr.push(optionText)
+  const idx = arr.indexOf(optionId)
+  if (idx >= 0) arr.splice(idx, 1); else arr.push(optionId)
 }
 
 const goBack = () => {
@@ -338,6 +338,18 @@ const handleSubmit = async () => {
               scoringTotalScore.value = event.totalScore
               scoringMaxScore.value = event.maxScore
               scoringSummary.value = event.summary || ''
+              // 修复审计：写入结果快照,复活 /questionnaire-result 路由(此前无人写该键,页面恒不可达)
+              try {
+                sessionStorage.setItem('questionnaireResult', JSON.stringify({
+                  totalScore: event.totalScore,
+                  maxScore: event.maxScore,
+                  passed: event.passed,
+                  summary: event.summary || '',
+                  results: scoringResults.value.map((r: any) => ({ questionId: r.questionId, score: r.score, maxScore: r.maxScore, reason: r.reason })),
+                  username: username.value,
+                  time: Date.now()
+                }))
+              } catch (e) { /* ignore */ }
             }
           } catch (e) {
             console.error('Parse event error:', e)

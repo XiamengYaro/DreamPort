@@ -114,7 +114,7 @@ let eventSource: EventSource | null = null
 let reconnectCount = 0
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
-const connectSSE = () => {
+const connectSSE = async () => {
   const token = localStorage.getItem('token') || ''
   if (!token) return
 
@@ -123,7 +123,18 @@ const connectSSE = () => {
     eventSource = null
   }
 
-  eventSource = new EventSource(`/api/chat/stream?token=${encodeURIComponent(token)}`)
+  // 修复审计：SSE 不用 JWT 进 URL(会留存在网关/代理日志)，改一次性流票据
+  let ticket = ''
+  try {
+    const res: any = await api.getChatStreamTicket()
+    if (res.success && res.data?.ticket) ticket = res.data.ticket
+  } catch (e) { /* 未登录/票据获取失败，保持未连接 */ }
+  if (!ticket) {
+    isConnected.value = false
+    return
+  }
+
+  eventSource = new EventSource(`/api/chat/stream?ticket=${encodeURIComponent(ticket)}`)
 
   eventSource.onopen = () => {
     reconnectCount = 0

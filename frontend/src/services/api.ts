@@ -39,6 +39,18 @@ class ApiService {
 
     const data = await response.json()
 
+    if (response.status === 401 && !path.startsWith('/login') && !path.startsWith('/admin/login')) {
+      // 修复审计(前端)：token 失效统一清理并回登录，避免页面"假死"
+      this.setToken(null)
+      localStorage.removeItem('isAdmin')
+      localStorage.removeItem('username')
+      localStorage.removeItem('pendingUsername')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+      throw new Error(data.message || '登录已过期，请重新登录')
+    }
+
     if (!response.ok) {
       throw new Error(data.message || 'Request failed')
     }
@@ -334,6 +346,10 @@ class ApiService {
     const q = new URLSearchParams({ filename })
     if (category) q.set('category', category)
     return this.request(`/docs/detail?${q.toString()}`)
+  }
+
+  async readDocBySlug(slug: string) {
+    return this.request(`/docs/${encodeURIComponent(slug)}`)
   }
 
   async createDoc(title: string, category: string, content?: string) {
@@ -814,8 +830,17 @@ class ApiService {
   async getRulesConfig() { return this.request('/admin/settings/rules') }
   async saveRulesConfig(body: any) { return this.request('/admin/settings/rules', { method: 'PUT', body: JSON.stringify(body) }) }
 
-  async getQuestionnaireSettings() { return this.request('/admin/settings/questionnaire') }
-  async saveQuestionnaireSettings(body: any) { return this.request('/admin/settings/questionnaire', { method: 'PUT', body: JSON.stringify(body) }) }
+  // 称号与成就(管理端;titlesconfig/achievementsconfig 后端收裸数组)
+  async getTitlesOverview() { return this.request('/admin/titles/overview') }
+  async saveTitlesConfigAdmin(titles: any[]) { return this.request('/admin/settings/titlesconfig', { method: 'PUT', body: JSON.stringify(titles) }) }
+  async saveAchievementsConfigAdmin(achievements: any[]) { return this.request('/admin/settings/achievementsconfig', { method: 'PUT', body: JSON.stringify(achievements) }) }
+  async grantTitle(username: string, code: string) { return this.request('/admin/titles/grant', { method: 'POST', body: JSON.stringify({ username, code }) }) }
+  async revokeTitle(username: string, code: string) { return this.request('/admin/titles/revoke', { method: 'POST', body: JSON.stringify({ username, code }) }) }
+
+  // 聊天 SSE 一次性流票据(避免 JWT 进 URL,审计修复)
+  async getChatStreamTicket() {
+    return this.request('/chat/stream-ticket', { method: 'POST', body: '{}' })
+  }
 
   async getMigrationReport() {
     return this.request('/admin/migration/report')

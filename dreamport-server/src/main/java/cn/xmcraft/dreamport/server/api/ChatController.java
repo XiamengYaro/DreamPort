@@ -26,20 +26,40 @@ public class ChatController {
     private final ChatService chatService;
     private final QqBridgeService qqBridge;
     private final cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter;
+    private final cn.xmcraft.dreamport.server.web.StreamTicketService streamTicketService;
 
     public ChatController(ChatService chatService, QqBridgeService qqBridge,
-                          cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter) {
+                          cn.xmcraft.dreamport.server.web.RateLimiter rateLimiter,
+                          cn.xmcraft.dreamport.server.web.StreamTicketService streamTicketService) {
         this.chatService = chatService;
         this.qqBridge = qqBridge;
         this.rateLimiter = rateLimiter;
+        this.streamTicketService = streamTicketService;
     }
 
     public record SendBody(String message) {
     }
 
+    /** 换取 SSE 一次性流票据（避免 JWT 进 URL，修复审计） */
+    @PostMapping("/stream-ticket")
+    public ResponseEntity<Object> streamTicket(HttpServletRequest request) {
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return ResponseEntity.status(401).body(ApiResponse.failure("未登录"));
+        }
+        return ResponseEntity.ok(ApiResponse.success(null,
+                Map.of("ticket", streamTicketService.issue(me))));
+    }
+
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter stream(HttpServletRequest request) {
-        if (AuthUtil.currentUser(request) == null) {
+    public SseEmitter stream(@org.springframework.web.bind.annotation.RequestParam(required = false) String ticket,
+                             HttpServletRequest request) {
+        String user = AuthUtil.currentUser(request);
+        // 支持一次性流票据（优先）；仍兼容旧前端 ?token= 传参
+        if (user == null && ticket != null && !ticket.isBlank()) {
+            user = streamTicketService.consume(ticket);
+        }
+        if (user == null) {
             SseEmitter emitter = new SseEmitter();
             emitter.completeWithError(new IllegalStateException("未登录"));
             return emitter;

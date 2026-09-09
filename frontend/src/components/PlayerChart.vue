@@ -96,7 +96,8 @@ const points = computed(() => {
   if (data.value.length === 0) return []
   const len = data.value.length
   return data.value.map((d, i) => ({
-    x: (i / (len - 1)) * width,
+    // 修复审计：单点时 len-1 为 0 → x=NaN 渲染异常
+    x: (len === 1 ? 0 : (i / (len - 1))) * width,
     y: height - (d.players / maxY.value) * height
   }))
 })

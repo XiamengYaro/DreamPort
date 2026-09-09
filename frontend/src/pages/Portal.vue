@@ -87,27 +87,12 @@ const portalConfig = ref({
   server_ip: 'play.xmcraft.cn',
   server_port: 25565,
   version: '1.20.4',
-  carousel: [
-    { image: '/bg.png', title: '欢迎来到夏日小镇★XMCraft', subtitle: '开始你的冒险之旅' },
-    { image: '/images/banner2.jpg', title: '社区活动', subtitle: '参与精彩活动赢取奖励' },
-    { image: '/images/banner3.jpg', title: '建筑展示', subtitle: '展示你的创意建筑' }
-  ],
+  // 修复审计：移除假管理员/假轮播/示例内容——配置缺失时展示空区块而非示例数据
+  carousel: [],
   social: { wiki: 'https://wiki.xmcraft.cn' },
-  team: [
-    { name: '管理员A', role: '服主', avatar: '' },
-    { name: '管理员B', role: '管理员', avatar: '' },
-    { name: '管理员C', role: '管理员', avatar: '' },
-    { name: '管理员D', role: '技术支持', avatar: '' }
-  ],
-  features: [
-    { icon: 'star', title: '多样玩法', description: '生存、创造、红石、PVP 等多种游戏模式' },
-    { icon: 'star', title: '友好社区', description: '活跃的玩家社区，定期举办精彩活动' },
-    { icon: 'star', title: '安全稳定', description: '专业的反作弊系统，24小时稳定运行' }
-  ],
-  timeline: [
-    { date: '2020-07-15', title: '服务器创立', description: '夏日小镇正式开服，欢迎各位玩家加入！', image: '' },
-    { date: '2024-06-15', title: '第一届建筑大赛', description: '成功举办首届建筑大赛，玩家们展示了惊人的创造力', image: '' }
-  ]
+  team: [],
+  features: [],
+  timeline: []
 })
 
 onMounted(async () => {

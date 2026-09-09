@@ -105,7 +105,8 @@ const timelineSteps = computed(() => {
   const steps = [
     { label: '注册账号', time: r.createdAt || r.regTime, done: true },
     { label: '完成问卷', time: r.questionnaireScoredAt, done: !!r.questionnaireScoredAt },
-    { label: '审核结果', time: r.status === 'pending' ? null : Date.now(), done: ['approved', 'rejected'].includes(r.status) },
+    // 修复审计：不再用 Date.now() 冒充审核时间；封禁用户展示封禁时间,其余无真实时间戳则不伪造
+    { label: '审核结果', time: r.status === 'banned' ? r.banTime : (r.status === 'pending' ? null : (r.questionnaireScoredAt || null)), done: ['approved', 'rejected', 'banned'].includes(r.status) },
     { label: 'ID 验证', time: r.verifiedAt, done: !!r.verifiedAt },
   ]
   return steps

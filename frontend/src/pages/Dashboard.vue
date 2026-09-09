@@ -24,10 +24,10 @@
           暂无服务器数据 —— 进入服务器后系统会自动采集(余额/时长/最近登录)
         </div>
         <template v-else>
-        <!-- 在线状态 -->
+        <!-- 在线状态(修复审计:原恒显"在线",改为按服务器心跳玩家列表判定) -->
         <div class="flex items-center gap-2 mb-4">
-          <span class="w-2.5 h-2.5 bg-green-400 rounded-full animate-pulse"></span>
-          <span class="text-green-400 text-sm font-medium">在线</span>
+          <span class="w-2.5 h-2.5 rounded-full" :class="isOnline ? 'bg-green-400 animate-pulse' : 'bg-stone-500'"></span>
+          <span class="text-sm font-medium" :class="isOnline ? 'text-green-400' : 'text-stone-400'">{{ isOnline ? '在线' : '离线' }}</span>
         </div>
         <div class="flex items-start gap-6">
           <!-- 左侧：头像 -->
@@ -377,6 +377,14 @@ const bedrockPrefix = ref('.')
 const serverStatus = ref<any>({})
 const userProfile = ref<any>({})
 const playerData = ref<any>({})
+
+// 按服务器心跳玩家列表判定当前账号是否在线(修复审计:原来有数据即显示"在线")
+const isOnline = computed(() => {
+  const name = String(playerData.value?.name || username.value || '').toLowerCase()
+  if (!name) return false
+  return (serverStatus.value?.servers || []).some((s: any) =>
+    Array.isArray(s.players) && s.players.some((p: string) => String(p).toLowerCase() === name))
+})
 const bedrockStatus = ref<any>({ name: '', uuid: '', verified: false })
 const bedrockNameInput = ref('')
 const bedrockLoading = ref(false)
