@@ -39,6 +39,53 @@
         </div>
       </div>
 
+      <!-- 两步验证 -->
+      <div v-else-if="pendingStatus === 'needs_2fa'" class="card p-8
+">
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-orange-900/20 mb-4">
+            <AppIcon name="shield-check" class="w-8 h-8 text-orange-400" />
+          </div>
+          <h2 class="text-xl font-semibold mb-2 text-white">两步验证</h2>
+          <p class="text-sm text-stone-400">请输入验证器 App 中的 6 位验证码(也可使用恢复码)</p>
+        </div>
+        <input v-model="twoFaCode" type="text" inputmode="numeric" class="input text-center text-lg tracking-widest mb-3"
+          placeholder="000000" maxlength="10" @keyup.enter="verifyTwoFa" />
+        <button class="btn-primary w-full" :disabled="!twoFaCode.trim() || loading" @click="verifyTwoFa">
+          {{ loading ? '验证中…' : '验证并登录' }}
+        </button>
+        <div class="mt-4 text-center">
+          <button class="text-sm text-stone-400 hover:text-orange-400 transition-colors" @click="emailCode">
+            无法使用验证器？发送邮箱验证码
+          </button>
+        </div>
+        <div class="mt-2 text-center">
+          <button class="text-sm text-stone-500 hover:text-white transition-colors"
+            @click="pendingAction = null; pendingStatus = ''">返回登录</button>
+        </div>
+      </div>
+
+      <!-- 管理员强制绑定 2FA -->
+      <div v-else-if="pendingStatus === 'needs_2fa_setup'" class="card p-8
+">
+        <div class="text-center mb-4">
+          <AppIcon name="shield-check" class="w-10 h-10 text-orange-400 mx-auto mb-2" />
+          <h2 class="text-xl font-semibold mb-1 text-white">需要绑定两步验证</h2>
+          <p class="text-sm text-stone-400">管理员已开启强制两步验证,请用验证器 App 扫码完成绑定后继续登录</p>
+        </div>
+        <div class="flex justify-center mb-3">
+          <img v-if="twoFaQr" :src="twoFaQr" alt="TOTP 二维码" class="w-48 h-48 rounded-xl bg-white p-2" />
+        </div>
+        <p class="text-xs text-stone-500 text-center mb-3">
+          密钥(手动添加用)：<code class="text-orange-300 select-all">{{ twoFaSecret }}</code>
+        </p>
+        <input v-model="twoFaCode" type="text" inputmode="numeric" class="input text-center text-lg tracking-widest mb-3"
+          placeholder="输入验证码确认" maxlength="6" @keyup.enter="enableTwoFaChallenge" />
+        <button class="btn-primary w-full" :disabled="!twoFaCode.trim() || loading" @click="enableTwoFaChallenge">
+          {{ loading ? '验证中…' : '确认绑定并登录' }}
+        </button>
+      </div>
+
       <!-- 问卷未通过 -->
       <div v-else-if="pendingStatus === 'rejected'" class="card p-8
 ">
@@ -95,6 +142,8 @@ import { useBrand } from '@/lib/brand'
 const brand = useBrand()
 import { ref, inject, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import QRCode from 'qrcode'
+import AppIcon from '@/components/AppIcon.vue'
 import api from '@/services/api'
 
 const router = useRouter()
@@ -122,6 +171,27 @@ const pendingAction = ref<string | null>(null)
 const pendingStatus = ref('')
 const questionnaireScore = ref(0)
 
+// 2FA 中间态
+const twoFaChallengeId = ref('')
+const twoFaIsAdmin = ref(false)
+const twoFaCode = ref('')
+const twoFaQr = ref('')
+const twoFaSecret = ref('')
+
+const finishLogin = (data: any) => {
+  api.setToken(data.token)
+  localStorage.setItem('username', data.username)
+  if (data.isAdmin) localStorage.setItem('isAdmin', 'true')
+  else localStorage.removeItem('isAdmin')
+  notify?.success('登录成功')
+  const redirectPath = route.query.redirect as string
+  if (redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('//')) {
+    router.push(redirectPath)
+  } else {
+    router.push('/dashboard')
+  }
+}
+
 const handleLogin = async () => {
   loading.value = true
   try {
@@ -131,17 +201,27 @@ const handleLogin = async () => {
       const status = data.status || 'approved'
 
       if (status === 'approved') {
-        api.setToken(data.token)
-        localStorage.setItem('username', data.username)
-        if (data.isAdmin) localStorage.setItem('isAdmin', 'true')
-        else localStorage.removeItem('isAdmin')
-        notify?.success('登录成功')
-        // 安全重定向：验证路径以防止开放重定向攻击
-        const redirectPath = route.query.redirect as string
-        if (redirectPath && redirectPath.startsWith('/') && !redirectPath.startsWith('//')) {
-          router.push(redirectPath)
-        } else {
-          router.push('/dashboard')
+        finishLogin(data)
+      } else if (status === 'needs_2fa') {
+        pendingStatus.value = 'needs_2fa'
+        pendingAction.value = 'needs_2fa'
+        twoFaChallengeId.value = data.challengeId || ''
+        twoFaIsAdmin.value = !!data.isAdmin
+        twoFaCode.value = ''
+      } else if (status === 'needs_2fa_setup') {
+        // 管理员强制绑定:拉取二维码信息后进入绑定卡片
+        pendingStatus.value = 'needs_2fa_setup'
+        pendingAction.value = 'needs_2fa_setup'
+        twoFaChallengeId.value = data.challengeId || ''
+        twoFaIsAdmin.value = !!data.isAdmin
+        try {
+          const setup: any = await api.setup2faChallenge(data.challengeId)
+          if (setup.success) {
+            twoFaSecret.value = setup.data.secret
+            twoFaQr.value = await QRCode.toDataURL(setup.data.otpauth, { width: 240, margin: 1 })
+          }
+        } catch (e: any) {
+          notify?.error(e.message || '初始化绑定失败')
         }
       } else if (status === 'needs_questionnaire') {
         api.setToken(data.token)
@@ -182,6 +262,52 @@ const handleLogin = async () => {
 
 const continueQuestionnaire = () => {
   router.push('/questionnaire')
+}
+
+const verifyTwoFa = async () => {
+  loading.value = true
+  try {
+    const r: any = await api.verify2fa(twoFaChallengeId.value, twoFaCode.value.trim())
+    if (r.success) {
+      finishLogin(r.data)
+    } else {
+      notify?.error(r.message || '验证码错误')
+    }
+  } catch (error: any) {
+    notify?.error(error.message || '验证失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const emailCode = async () => {
+  try {
+    const r: any = await api.send2faEmailCode(twoFaChallengeId.value)
+    if (r.success) notify?.success(r.message || '验证码已发送')
+    else notify?.error(r.message || '发送失败')
+  } catch (error: any) {
+    notify?.error(error.message || '发送失败')
+  }
+}
+
+const enableTwoFaChallenge = async () => {
+  loading.value = true
+  try {
+    const r: any = await api.enable2faChallenge(twoFaChallengeId.value, twoFaCode.value.trim())
+    if (r.success) {
+      if (r.data?.recoveryCodes?.length) {
+        // 强制绑定场景:恢复码仅此一次,先展示再进入(用阻塞 alert 保证玩家看到)
+        alert('请立即保存一次性恢复码(关闭后无法再查看):\n\n' + r.data.recoveryCodes.join('\n'))
+      }
+      finishLogin(r.data)
+    } else {
+      notify?.error(r.message || '验证码错误')
+    }
+  } catch (error: any) {
+    notify?.error(error.message || '验证失败')
+  } finally {
+    loading.value = false
+  }
 }
 
 const exitLogin = () => {

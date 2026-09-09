@@ -476,6 +476,15 @@
           <button @click="saveDownloads" class="btn-primary text-sm">保存下载中心</button>
         </div>
 
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white flex items-center gap-2"><AppIcon name="shield-check" class="w-5 h-5" /> 账号安全</h3>
+          <label class="flex items-center gap-2 text-sm text-stone-300 cursor-pointer">
+            <input type="checkbox" v-model="securityCfg.admin2faRequired" class="accent-orange-500" />
+            管理员强制两步验证(开启后,名单内管理员未绑定 2FA 时登录会被引导强制绑定)
+          </label>
+          <button @click="saveSecurity" class="btn-primary text-sm">保存安全设置</button>
+        </div>
+
         <WebhookSettingsCard />
       </div>
 
@@ -1306,15 +1315,30 @@ const astrbotCfg = ref<any>({ enabled: false, apiToken: '', hasToken: false, gro
 const downloadsJson = ref('{}')
 
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
+const securityCfg = ref<any>({ admin2faRequired: false })
+
+const loadSecurity = async () => {
+  try {
+    const r: any = await api.getSecurityConfig()
+    if (r.success) securityCfg.value = { admin2faRequired: !!r.data?.admin2faRequired }
+  } catch (e) { console.error(e) }
+}
+const saveSecurity = async () => {
+  try {
+    const r: any = await api.saveSecurityConfig(securityCfg.value.admin2faRequired)
+    if (r.success) notify?.success('安全设置已保存')
+    else notify?.error(r.message || '保存失败')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+}
 
 const loadSystemSettings = async () => {
   try {
-    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules, tsk, shop, titlesData] = await Promise.all([
+    const [reg, llm, inv, game, dls, quest, astr, ann, syscfg, rules, tsk, shop, titlesData, sec] = await Promise.all([
       api.getRegisterSettings(), api.getLlmSettings(), api.getInviteSettings(),
       api.getGameSettings(), api.getDownloadsAdmin(), api.getQuestionnaireSettings(),
       api.getAstrbotSettings(), api.getAnnouncementsAdmin(), api.getSystemConfig(),
       api.getRulesConfig(), api.getTasksConfigAdmin(), api.getShopConfigAdmin(),
-      api.getTitlesOverview()
+      api.getTitlesOverview(), api.getSecurityConfig()
     ])
     if (reg.success) Object.assign(sysCfg.value, reg.data,
       { emailDomainWhitelistStr: (reg.data.emailDomainWhitelist || []).join(', ') })
@@ -1323,6 +1347,7 @@ const loadSystemSettings = async () => {
     if (game.success) Object.assign(gameCfg.value, game.data)
     if (dls.success) downloadsJson.value = JSON.stringify(dls.data ?? {}, null, 2)
     if (quest.success) Object.assign(questCfg.value, quest.data)
+    if (sec.success) securityCfg.value = { admin2faRequired: !!sec.data?.admin2faRequired }
     if (syscfg.success) adminsStr.value = (syscfg.data.admins || []).join('\n')
     if (astr.success) {
       Object.assign(astrbotCfg.value, astr.data)

@@ -938,6 +938,68 @@ class ApiService {
     return this.request('/admin/webhook/test', { method: 'POST', body: '{}' })
   }
 
+  // ===== 2FA(TOTP + 恢复码 + 邮箱备用) =====
+  async get2faStatus() {
+    return this.request('/user/2fa/status')
+  }
+
+  async setup2fa() {
+    return this.request('/user/2fa/setup', { method: 'POST', body: '{}' })
+  }
+
+  async enable2fa(code: string) {
+    return this.request('/user/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ code })
+    })
+  }
+
+  async disable2fa(password: string, code: string) {
+    return this.request('/user/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password, code })
+    })
+  }
+
+  async verify2fa(challengeId: string, code: string) {
+    return this.request('/login/2fa', {
+      method: 'POST',
+      body: JSON.stringify({ challengeId, code })
+    })
+  }
+
+  async send2faEmailCode(challengeId: string) {
+    return this.request('/login/2fa/email', {
+      method: 'POST',
+      body: JSON.stringify({ challengeId })
+    })
+  }
+
+  async setup2faChallenge(challengeId: string) {
+    return this.request('/login/2fa/setup', {
+      method: 'POST',
+      body: JSON.stringify({ challengeId })
+    })
+  }
+
+  async enable2faChallenge(challengeId: string, code: string) {
+    return this.request('/login/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ challengeId, code })
+    })
+  }
+
+  async getSecurityConfig() {
+    return this.request('/admin/security/config')
+  }
+
+  async saveSecurityConfig(admin2faRequired: boolean) {
+    return this.request('/admin/security/config', {
+      method: 'PUT',
+      body: JSON.stringify({ admin2faRequired })
+    })
+  }
+
   // Player Profile
   async getPlayerList() {
     return this.request('/players/list')

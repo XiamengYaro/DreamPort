@@ -103,6 +103,64 @@
         </button>
       </div>
 
+      <!-- 两步验证(2FA) -->
+      <div class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+          <AppIcon name="shield-check" class="w-5 h-5 text-orange-400" />
+          两步验证
+          <span v-if="twoFa.enabled" class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">已启用</span>
+          <span v-else class="text-xs px-2 py-0.5 rounded-full bg-stone-600/40 text-stone-300">未启用</span>
+        </h2>
+
+        <!-- 未启用:开启向导 -->
+        <template v-if="!twoFa.enabled">
+          <p class="text-sm text-stone-400 mb-3">用验证器 App(如 Google Authenticator、Aegis)扫码绑定;登录时需额外输入 6 位验证码。支持一次性恢复码与邮箱备用验证码。</p>
+          <button v-if="twoFa.step === 'idle'" class="btn-primary text-sm" @click="startTwoFa">开启两步验证</button>
+          <template v-else-if="twoFa.step === 'scan'">
+            <div class="flex flex-col sm:flex-row gap-5 items-start">
+              <img v-if="twoFa.qr" :src="twoFa.qr" alt="TOTP 二维码" class="w-44 h-44 rounded-xl bg-white p-2 shrink-0" />
+              <div class="flex-1 w-full">
+                <p class="text-sm text-stone-300 mb-2">扫码后输入 App 显示的 6 位验证码确认:</p>
+                <code class="block text-xs text-orange-300 bg-black/30 rounded-lg p-2 mb-3 break-all select-all">{{ twoFa.secret }}</code>
+                <input v-model="twoFa.code" class="input text-center tracking-widest mb-2" placeholder="000000" maxlength="6" />
+                <div class="flex gap-2">
+                  <button class="btn-primary text-sm" :disabled="twoFa.code.length !== 6 || twoFa.loading" @click="enableTwoFa">
+                    {{ twoFa.loading ? '验证中…' : '确认启用' }}
+                  </button>
+                  <button class="btn-secondary text-sm" @click="resetTwoFaWizard">取消</button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </template>
+
+        <!-- 已启用:恢复码管理 + 停用 -->
+        <template v-else>
+          <div class="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl mb-3 text-sm text-emerald-300">
+            账号已受两步验证保护。登录时需输入验证器验证码;验证器丢失可用恢复码或邮箱备用验证码。
+          </div>
+          <details class="mb-3">
+            <summary class="text-sm text-stone-400 cursor-pointer hover:text-white">停用两步验证</summary>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-3">
+              <input v-model="twoFa.disablePassword" type="password" class="input" placeholder="当前密码" autocomplete="current-password" />
+              <input v-model="twoFa.disableCode" class="input" placeholder="验证码或恢复码" />
+              <button class="btn-secondary !text-rose-300 text-sm" :disabled="twoFa.loading" @click="disableTwoFa">
+                {{ twoFa.loading ? '处理中…' : '停用两步验证' }}
+              </button>
+            </div>
+          </details>
+        </template>
+
+        <!-- 一次性恢复码展示 -->
+        <div v-if="twoFa.recoveryCodes.length" class="mt-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30">
+          <p class="text-sm text-amber-300 font-medium mb-2">⚠ 请立即保存一次性恢复码(仅本次显示,验证器丢失时用于登录):</p>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 font-mono text-sm text-white">
+            <code v-for="c in twoFa.recoveryCodes" :key="c" class="bg-black/30 rounded-lg px-2 py-1 text-center">{{ c }}</code>
+          </div>
+          <button class="btn-secondary text-xs mt-2" @click="copyRecoveryCodes">复制全部</button>
+        </div>
+      </div>
+
       <!-- 账户绑定区（桌面双栏） -->
       <div class="mb-6 grid gap-6 lg:grid-cols-2">
         <!-- 基岩版 ID 管理 -->
@@ -458,6 +516,100 @@ const changeMyPassword = async () => {
   pwdLoading.value = false
 }
 
+// 两步验证(2FA)
+const twoFa = ref({
+  enabled: false,
+  step: 'idle' as 'idle' | 'scan',
+  qr: '',
+  secret: '',
+  code: '',
+  disablePassword: '',
+  disableCode: '',
+  recoveryCodes: [] as string[],
+  loading: false
+})
+
+const loadTwoFaStatus = async () => {
+  try {
+    const r: any = await api.get2faStatus()
+    if (r.success) {
+      twoFa.value.enabled = !!r.data?.enabled
+    }
+  } catch (e) { console.error(e) }
+}
+
+const startTwoFa = async () => {
+  twoFa.value.loading = true
+  try {
+    const r: any = await api.setup2fa()
+    if (r.success) {
+      const QRCode = await import('qrcode')
+      twoFa.value.secret = r.data.secret
+      twoFa.value.qr = await (QRCode.default || QRCode).toDataURL(r.data.otpauth, { width: 220, margin: 1 })
+      twoFa.value.step = 'scan'
+    } else {
+      notify?.error(r.message || '初始化失败')
+    }
+  } catch (e: any) {
+    notify?.error(e.message || '初始化失败')
+  }
+  twoFa.value.loading = false
+}
+
+const enableTwoFa = async () => {
+  twoFa.value.loading = true
+  try {
+    const r: any = await api.enable2fa(twoFa.value.code.trim())
+    if (r.success) {
+      twoFa.value.enabled = true
+      twoFa.value.recoveryCodes = r.data?.recoveryCodes || []
+      twoFa.value.step = 'idle'
+      twoFa.value.code = ''
+      notify?.success('两步验证已启用')
+    } else {
+      notify?.error(r.message || '验证码错误')
+    }
+  } catch (e: any) {
+    notify?.error(e.message || '验证失败')
+  }
+  twoFa.value.loading = false
+}
+
+const disableTwoFa = async () => {
+  if (!confirm('确认停用两步验证?')) return
+  twoFa.value.loading = true
+  try {
+    const r: any = await api.disable2fa(twoFa.value.disablePassword, twoFa.value.disableCode.trim())
+    if (r.success) {
+      notify?.success(r.message || '已停用')
+      twoFa.value.enabled = false
+      twoFa.value.disablePassword = ''
+      twoFa.value.disableCode = ''
+    } else {
+      notify?.error(r.message || '密码或验证码错误')
+    }
+  } catch (e: any) {
+    notify?.error(e.message || '停用失败')
+  }
+  twoFa.value.loading = false
+}
+
+const resetTwoFaWizard = () => {
+  twoFa.value.step = 'idle'
+  twoFa.value.code = ''
+  twoFa.value.qr = ''
+  twoFa.value.secret = ''
+}
+
+const copyRecoveryCodes = async () => {
+  try {
+    await navigator.clipboard.writeText(twoFa.value.recoveryCodes.join('\n'))
+    notify?.success('已复制')
+  } catch {
+    notify?.error('复制失败,请手动选择复制')
+  }
+}
+
 // QQ 绑定
 const qqStatus = ref<any>({ bound: false, qq: '', boundAt: 0 })
 const qqCode = ref('')
@@ -482,7 +634,8 @@ onMounted(async () => {
     loadPlayerData(),
     loadBedrockStatus(),
     loadMinecraftStatus(),
-    loadQqStatus()
+    loadQqStatus(),
+    loadTwoFaStatus()
   ])
 })
 
