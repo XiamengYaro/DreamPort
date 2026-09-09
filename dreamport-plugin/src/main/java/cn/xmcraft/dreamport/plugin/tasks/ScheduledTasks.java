@@ -12,6 +12,7 @@ import java.util.function.Consumer;
  * - 心跳上报（60s，三角色通用）
  * - whitelist 指令队列轮询（30s，bukkit 白名单模式）
  * - 经济快照采集（300s，primary）
+ * - 称号佩戴刷新（60s，PAPI 变量缓存）
  */
 public final class ScheduledTasks {
 
@@ -71,6 +72,9 @@ public final class ScheduledTasks {
         if (plugin.pluginConfig().receiveChat()) {
             startInboxPolling(plugin);
         }
+
+        // 称号佩戴周期刷新(60s:网页佩戴变更同步进服 PAPI 变量)
+        runAtRate(plugin, 60, task -> plugin.titlesService().refreshOnline());
 
         // console 发送器引用
         BukkitDispatch.console = console;

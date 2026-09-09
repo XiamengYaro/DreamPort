@@ -32,6 +32,7 @@ public class PlayerEventsListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
         joinAt.put(event.getPlayer().getUniqueId(), System.currentTimeMillis());
+        plugin.titlesService().applyOnJoin(event.getPlayer());
         if (plugin.pluginConfig().reportJoinQuit()) {
             String name = event.getPlayer().getName();
             plugin.getServer().getAsyncScheduler().runNow(plugin,

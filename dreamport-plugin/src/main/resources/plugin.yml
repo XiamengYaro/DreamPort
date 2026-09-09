@@ -5,15 +5,18 @@ api-version: '1.20'
 description: DreamPort 薄插件 —— 服务器门户与玩家管理（primary/secondary/proxy）
 author: Xia_Meng_
 folia-supported: true
+softdepend: [PlaceholderAPI]
 
 commands:
   xmw:
     description: DreamPort 管理命令
-    usage: /xmw <status|reload|signin>
+    usage: /xmw <status|reload>
     permission: dreamport.use
   mail:
-    description: 打开奖励邮箱 GUI
-    usage: /mail
+    description: 打开奖励邮箱
+    permission: dreamport.use
+  titles:
+    description: 打开称号 GUI（佩戴/脱下）
     permission: dreamport.use
 
 permissions:

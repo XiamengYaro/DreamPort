@@ -306,13 +306,48 @@ public class InternalController {
         return java.util.Map.of("success", ok);
     }
 
-    /** 当前佩戴称号(插件 Team 前缀用) */
+    /** 当前佩戴称号(插件 PAPI 变量 %dreamport_title% 用) */
     @org.springframework.web.bind.annotation.GetMapping("/title/active")
     public java.util.Map<String, Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username) {
         var t = titleService.activeTitle(username);
         return java.util.Map.of("success", true,
                 "code", t == null ? "" : t.code(),
-                "name", t == null ? "" : t.name());
+                "name", t == null ? "" : t.name(),
+                "color", t == null ? "" : t.color());
+    }
+
+    /** 玩家已拥有称号(/titles GUI 用) */
+    @org.springframework.web.bind.annotation.GetMapping("/title/mine")
+    public java.util.Map<String, Object> titleMine(@org.springframework.web.bind.annotation.RequestParam String username) {
+        var defs = titleService.titles();
+        List<java.util.Map<String, Object>> titles = new java.util.ArrayList<>();
+        for (var row : titleService.ownedRows(username)) {
+            String code = String.valueOf(row.get("title_code"));
+            defs.stream().filter(d -> d.code().equals(code) && d.enabled()).findFirst()
+                    .ifPresent(d -> titles.add(java.util.Map.of("code", d.code(),
+                            "name", d.name(), "desc", d.desc(), "color", d.color())));
+        }
+        String active = titleService.activeTitleCode(username);
+        return java.util.Map.of("success", true,
+                "active", active == null ? "" : active, "titles", titles);
+    }
+
+    /** 游戏内佩戴/脱下(code 为空 = 脱下) */
+    @org.springframework.web.bind.annotation.PostMapping("/title/equip")
+    public java.util.Map<String, Object> titleEquip(@org.springframework.web.bind.annotation.RequestBody TitleEquipBody body) {
+        try {
+            if (body.code() == null || body.code().isBlank()) {
+                titleService.unequip(body.username());
+            } else {
+                titleService.equip(body.username(), body.code());
+            }
+            return java.util.Map.of("success", true);
+        } catch (IllegalStateException e) {
+            return java.util.Map.of("success", false, "message", e.getMessage());
+        }
+    }
+
+    public record TitleEquipBody(String username, String code) {
     }
 
     public record ActivityBody(String username, long sessionSeconds, int loginCount) {

@@ -18,6 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public final class DreamPortPlugin extends JavaPlugin {
     private cn.xmcraft.dreamport.plugin.internal.MailService rewardMailService;
+    private cn.xmcraft.dreamport.plugin.internal.TitlesService titlesService;
 
 
     private static final String[] BANNER_LINES = {
@@ -61,6 +62,20 @@ public final class DreamPortPlugin extends JavaPlugin {
         var mailCommand = getCommand("mail");
         if (mailCommand != null) {
             mailCommand.setExecutor(new cn.xmcraft.dreamport.plugin.command.MailCommand(mailService));
+        }
+
+        // 称号系统:PAPI 变量(%dreamport_title%,需 PlaceholderAPI)+ /titles GUI
+        this.titlesService = new cn.xmcraft.dreamport.plugin.internal.TitlesService(this);
+        getServer().getPluginManager().registerEvents(new cn.xmcraft.dreamport.plugin.listener.TitlesGuiListener(this.titlesService), this);
+        var titlesCommand = getCommand("titles");
+        if (titlesCommand != null) {
+            titlesCommand.setExecutor(new cn.xmcraft.dreamport.plugin.command.TitlesCommand(this.titlesService));
+        }
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new cn.xmcraft.dreamport.plugin.internal.TitlesExpansion(this).register();
+            getLogger().info("已注册 PlaceholderAPI 扩展:%dreamport_title% 可用于聊天/Tab 格式");
+        } else {
+            getLogger().info("未检测到 PlaceholderAPI,称号占位符不可用(/titles 佩戴不受影响)");
         }
 
         // 周期任务
@@ -145,5 +160,9 @@ public final class DreamPortPlugin extends JavaPlugin {
 
     public BackendClient backendClient() {
         return backendClient;
+    }
+
+    public cn.xmcraft.dreamport.plugin.internal.TitlesService titlesService() {
+        return titlesService;
     }
 }
