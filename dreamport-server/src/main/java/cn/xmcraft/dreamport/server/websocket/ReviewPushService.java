@@ -112,7 +112,8 @@ public class ReviewPushService implements DisposableBean {
                 switch (type) {
                     case "auth" -> {
                         Claims claims = tokenService.parse(node.path("token").asText(""));
-                        if (claims != null) {
+                        // 修复审计 M2：审核事件只对管理员开放——普通登录用户不应能监听审核/封禁流水
+                        if (claims != null && TokenService.ROLE_ADMIN.equals(claims.get("role", String.class))) {
                             authenticated.add(conn);
                             conn.send(mapper.writeValueAsString(Map.of("type", "auth_success", "username", claims.getSubject())));
                         } else {

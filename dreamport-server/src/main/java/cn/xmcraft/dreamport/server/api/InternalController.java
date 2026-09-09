@@ -278,47 +278,98 @@ public class InternalController {
 
     /** 玩家退出时上报会话时长(驱动每日/每周在线任务) */
     @org.springframework.web.bind.annotation.PostMapping("/activity")
-    public java.util.Map<String, Object> activity(@org.springframework.web.bind.annotation.RequestBody ActivityBody body) {
+    public ResponseEntity<Object> activity(@org.springframework.web.bind.annotation.RequestBody ActivityBody body,
+                                           HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null || body.username() == null || body.username().isBlank()) {
+            return badRequest("username 必填");
+        }
+        // 修复审计 H4：会话时长落 dp_daily_activity（此前 sessionSeconds 被丢弃，
+        // 导致在线时长任务/成就永不推进）
+        taskService.recordActivity(body.username(), body.sessionSeconds(), body.loginCount());
         taskService.onActivity(body.username());
-        return java.util.Map.of("success", true);
+        return ResponseEntity.ok(java.util.Map.of("success", true));
     }
 
     /** 游戏内签到上报(每日一次) */
     @org.springframework.web.bind.annotation.PostMapping("/signin")
-    public java.util.Map<String, Object> signin(@org.springframework.web.bind.annotation.RequestBody SigninBody body) {
+    public ResponseEntity<Object> signin(@org.springframework.web.bind.annotation.RequestBody SigninBody body,
+                                         HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null || body.username() == null || body.username().isBlank()) {
+            return badRequest("username 必填");
+        }
         boolean first = taskService.signin(body.username(), "game");
         if (first) taskService.onSignin(body.username(), "game");
-        return java.util.Map.of("success", true, "first", first,
-                "message", first ? "签到成功" : "今日已签到");
+        return ResponseEntity.ok(java.util.Map.of("success", true, "first", first,
+                "message", first ? "签到成功" : "今日已签到"));
     }
 
     /** 待领取奖励邮件 */
     @org.springframework.web.bind.annotation.GetMapping("/mail/pending")
-    public java.util.Map<String, Object> mailPending(@org.springframework.web.bind.annotation.RequestParam String username) {
-        return java.util.Map.of("success", true,
-                "data", java.util.Map.of("mails", rewardMailService.pending(username)));
+    public ResponseEntity<Object> mailPending(@org.springframework.web.bind.annotation.RequestParam String username,
+                                              HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (username == null || username.isBlank()) {
+            return badRequest("username 必填");
+        }
+        return ResponseEntity.ok(java.util.Map.of("success", true,
+                "data", java.util.Map.of("mails", rewardMailService.pending(username))));
     }
 
     /** 领取回执 */
     @org.springframework.web.bind.annotation.PostMapping("/mail/claimed")
-    public java.util.Map<String, Object> mailClaimed(@org.springframework.web.bind.annotation.RequestBody ClaimedBody body) {
+    public ResponseEntity<Object> mailClaimed(@org.springframework.web.bind.annotation.RequestBody ClaimedBody body,
+                                              HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null) {
+            return badRequest("请求体必填");
+        }
         boolean ok = rewardMailService.markClaimed(body.id());
-        return java.util.Map.of("success", ok);
+        return ResponseEntity.ok(java.util.Map.of("success", ok));
     }
 
     /** 当前佩戴称号(插件 PAPI 变量 %dreamport_title% 用) */
     @org.springframework.web.bind.annotation.GetMapping("/title/active")
-    public java.util.Map<String, Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username) {
+    public ResponseEntity<Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username,
+                                              HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (username == null || username.isBlank()) {
+            return badRequest("username 必填");
+        }
         var t = titleService.activeTitle(username);
-        return java.util.Map.of("success", true,
+        return ResponseEntity.ok(java.util.Map.of("success", true,
                 "code", t == null ? "" : t.code(),
                 "name", t == null ? "" : t.name(),
-                "color", t == null ? "" : t.color());
+                "color", t == null ? "" : t.color()));
     }
 
     /** 玩家已拥有称号(/titles GUI 用) */
     @org.springframework.web.bind.annotation.GetMapping("/title/mine")
-    public java.util.Map<String, Object> titleMine(@org.springframework.web.bind.annotation.RequestParam String username) {
+    public ResponseEntity<Object> titleMine(@org.springframework.web.bind.annotation.RequestParam String username,
+                                            HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (username == null || username.isBlank()) {
+            return badRequest("username 必填");
+        }
         var defs = titleService.titles();
         List<java.util.Map<String, Object>> titles = new java.util.ArrayList<>();
         for (var row : titleService.ownedRows(username)) {
@@ -328,22 +379,30 @@ public class InternalController {
                             "name", d.name(), "desc", d.desc(), "color", d.color())));
         }
         String active = titleService.activeTitleCode(username);
-        return java.util.Map.of("success", true,
-                "active", active == null ? "" : active, "titles", titles);
+        return ResponseEntity.ok(java.util.Map.of("success", true,
+                "active", active == null ? "" : active, "titles", titles));
     }
 
     /** 游戏内佩戴/脱下(code 为空 = 脱下) */
     @org.springframework.web.bind.annotation.PostMapping("/title/equip")
-    public java.util.Map<String, Object> titleEquip(@org.springframework.web.bind.annotation.RequestBody TitleEquipBody body) {
+    public ResponseEntity<Object> titleEquip(@org.springframework.web.bind.annotation.RequestBody TitleEquipBody body,
+                                             HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null || body.username() == null || body.username().isBlank()) {
+            return badRequest("username 必填");
+        }
         try {
             if (body.code() == null || body.code().isBlank()) {
                 titleService.unequip(body.username());
             } else {
                 titleService.equip(body.username(), body.code());
             }
-            return java.util.Map.of("success", true);
+            return ResponseEntity.ok(java.util.Map.of("success", true));
         } catch (IllegalStateException e) {
-            return java.util.Map.of("success", false, "message", e.getMessage());
+            return ResponseEntity.ok(java.util.Map.of("success", false, "message", e.getMessage()));
         }
     }
 

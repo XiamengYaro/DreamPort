@@ -177,10 +177,6 @@ public class VerificationController {
         return passwordService.hash(rawPassword);
     }
 
-    private String emailToUsernameGuess(String email) {
-        return email == null ? "" : email.split("@")[0];
-    }
-
     // ---------- ID 绑定与验证 ----------
 
     /** 服务器守则是否已同意 */
@@ -245,7 +241,7 @@ public class VerificationController {
         try {
             newName = officialNameByUuid(user.minecraftUuid());
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure("Mojang 查询失败：" + e.getMessage()));
+            return ResponseEntity.badRequest().body(ApiResponse.failure("Mojang 查询失败，请稍后重试"));
         }
         if (newName == null || newName.isBlank()) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("Mojang 未查到该 UUID 的档案"));
@@ -498,6 +494,23 @@ public class VerificationController {
         if (bytes.length > 2 * 1024 * 1024) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("头像不能超过 2MB"));
         }
+        // 修复审计 M3：校验可解码图像并归一化为 PNG（此前任意内容可直接落盘）
+        java.awt.image.BufferedImage img;
+        try {
+            img = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(bytes));
+        } catch (Exception e) {
+            img = null;
+        }
+        if (img == null) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("图片无法识别，请上传 PNG/JPG"));
+        }
+        try {
+            java.io.ByteArrayOutputStream out = new java.io.ByteArrayOutputStream();
+            javax.imageio.ImageIO.write(img, "png", out);
+            bytes = out.toByteArray();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.failure("图片处理失败"));
+        }
         String filename = "avatar_" + me + "_" + Long.toHexString(System.currentTimeMillis()) + ".png";
         java.nio.file.Path dir = java.nio.file.Path.of("static", "uploads");
         try {
@@ -511,6 +524,14 @@ public class VerificationController {
             return unauthorized();
         }
         UserRecord user = userOpt.get();
+        // 清理旧头像文件，避免 uploads 目录只增不删
+        if (user.avatar() != null && user.avatar().startsWith("/uploads/")) {
+            String oldName = user.avatar().substring("/uploads/".length());
+            try {
+                java.nio.file.Files.deleteIfExists(dir.resolve(oldName));
+            } catch (Exception ignored) {
+            }
+        }
         userRepository.save(new UserRecord(user.id(), user.username(), user.email(), user.status(),
                 user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
                 user.qqNumber(), user.qqBoundAt(), user.questionnaireScore(), user.questionnairePassed(),
@@ -558,9 +579,7 @@ public class VerificationController {
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        return forwarded != null && !forwarded.isBlank()
-                ? forwarded.split(",")[0].trim() : request.getRemoteAddr();
+        return cn.xmcraft.dreamport.server.web.ClientIp.realIp(request);
     }
 
     @SuppressWarnings("unused")

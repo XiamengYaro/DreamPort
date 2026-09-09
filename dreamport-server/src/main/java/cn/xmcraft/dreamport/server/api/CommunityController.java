@@ -199,6 +199,14 @@ public class CommunityController {
         if (ext == null) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("仅支持 jpg/png/gif/webp"));
         }
+        // 修复审计 M3：校验 magic bytes，防止伪装扩展名的任意内容落盘
+        try {
+            if (!isImageBytes(file.getBytes(), ext)) {
+                return ResponseEntity.badRequest().body(ApiResponse.failure("文件内容与扩展名不符"));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(ApiResponse.failure("文件读取失败"));
+        }
         String filename = java.util.UUID.randomUUID() + ext;
         try {
             Path dir = Path.of("static", "uploads");
@@ -222,6 +230,20 @@ public class CommunityController {
             }
         }
         return null;
+    }
+
+    private boolean isImageBytes(byte[] b, String ext) {
+        if (b == null || b.length < 12) {
+            return false;
+        }
+        return switch (ext) {
+            case ".png" -> (b[0] & 0xFF) == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47;
+            case ".jpg" -> (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF;
+            case ".gif" -> b[0] == 'G' && b[1] == 'I' && b[2] == 'F' && b[3] == '8';
+            case ".webp" -> b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
+                    && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P';
+            default -> false;
+        };
     }
 
     @GetMapping("/machine/admin/pending")
@@ -291,7 +313,8 @@ public class CommunityController {
         profile.put("status", u.status());
         profile.put("regTime", u.regTime());
         profile.put("daysSinceReg", (System.currentTimeMillis() - u.regTime()) / 86_400_000L);
-        profile.put("qqNumber", u.qqNumber());
+        // 修复审计 M1：公开资料页 QQ 号脱敏展示（保留前3后2）
+        profile.put("qqNumber", cn.xmcraft.dreamport.server.qq.QqBindingService.mask(u.qqNumber()));
         profile.put("banReason", u.banReason());
         // 合并服务器内数据:经济/时长快照按「游戏名」存储,优先用游戏名匹配
         // (账号名与游戏名不一致的玩家——改过 ID/迁移账号——按用户名查会漏)

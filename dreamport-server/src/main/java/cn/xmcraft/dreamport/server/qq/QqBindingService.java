@@ -18,7 +18,7 @@ public class QqBindingService {
     }
 
     /** 绑定 QQ 到目标账号；先清除该 QQ 在其他账号上的旧绑定 */
-    public void bind(UserRecord target, String qq) {
+    public synchronized void bind(UserRecord target, String qq) {
         for (UserRecord u : userRepository.listAll()) {
             if (u.qqNumber() != null && u.qqNumber().equals(qq) && !u.id().equals(target.id())) {
                 userRepository.save(clearQq(u));
@@ -28,7 +28,7 @@ public class QqBindingService {
     }
 
     /** 按 QQ 解绑全部账号；@return 是否发生变更 */
-    public boolean unbindQq(String qq) {
+    public synchronized boolean unbindQq(String qq) {
         boolean changed = false;
         for (UserRecord u : userRepository.listAll()) {
             if (qq != null && qq.equals(u.qqNumber())) {

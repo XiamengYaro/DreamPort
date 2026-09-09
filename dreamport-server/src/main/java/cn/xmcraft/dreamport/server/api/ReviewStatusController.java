@@ -40,8 +40,6 @@ public class ReviewStatusController {
         body.put("questionnaireScore", user.questionnaireScore());
         body.put("questionnairePassed", user.questionnairePassed());
         body.put("regTime", user.regTime());
-        body.put("questionnaireScoredAt", user.questionnaireScoredAt());
-        body.put("verifiedAt", user.verifiedAt());
         body.put("banReason", user.banReason());
         return body;
     }

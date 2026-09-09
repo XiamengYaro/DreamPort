@@ -228,7 +228,22 @@ public class AvatarRenderService {
     }
 
     private SkinData downloadSkin(String url) throws Exception {
-        HttpResponse<byte[]> resp = http.send(HttpRequest.newBuilder(URI.create(url))
+        // 修复审计 H1(SSRF)：Mojang 材质 payload 未验签，SKIN.url 可能被指向内网/云元数据地址。
+        // 仅放行 https 且主机属于 Minecraft 官方纹理域名，其余一律降级默认脸。
+        URI uri;
+        try {
+            uri = URI.create(url);
+        } catch (Exception e) {
+            return null;
+        }
+        if (!"https".equalsIgnoreCase(uri.getScheme())) {
+            return null;
+        }
+        String host = uri.getHost() == null ? "" : uri.getHost().toLowerCase();
+        if (!host.equals("textures.minecraft.net") && !host.endsWith(".minecraft.net")) {
+            return null;
+        }
+        HttpResponse<byte[]> resp = http.send(HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(10)).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
         if (resp.statusCode() != 200) return null;
         return skinFromBytes(resp.body());

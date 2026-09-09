@@ -31,10 +31,7 @@ public class AccessLogFilter extends OncePerRequestFilter {
         } finally {
             String uri = request.getRequestURI();
             if (uri.startsWith("/api/") || uri.startsWith("/internal/")) {
-                String ip = request.getHeader("X-Forwarded-For");
-                if (ip == null || ip.isBlank()) {
-                    ip = request.getRemoteAddr();
-                }
+                String ip = ClientIp.realIp(request);
                 String who = String.valueOf(request.getAttribute("wl.username"));
                 log.info("[访问] {} {} {} {}ms {}{}",
                         request.getMethod(), uri, response.getStatus(),

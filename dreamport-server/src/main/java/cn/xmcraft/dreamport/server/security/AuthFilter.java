@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -13,8 +14,10 @@ import java.io.IOException;
 /**
  * Bearer JWT 解析过滤器：解析成功后把身份写入请求属性。
  * 不在此处拒绝请求（公开端点天然放行），由控制器用 {@link AuthUtil} 做授权判定。
+ * @Order(0) 保证先于访问日志过滤器执行，使日志能带出当前用户（审计发现：默认最低序导致 @who 恒空）。
  */
 @Component
+@Order(0)
 public class AuthFilter extends OncePerRequestFilter {
 
     private final TokenService tokenService;
@@ -39,8 +42,8 @@ public class AuthFilter extends OncePerRequestFilter {
             Claims claims = tokenService.parse(token);
             if (claims != null) {
                 request.setAttribute(AuthUtil.ATTR_USERNAME, claims.getSubject());
-                request.setAttribute(AuthUtil.ATTR_ROLE,
-                        String.valueOf(claims.get("role", String.class)));
+                Object role = claims.get("role");
+                request.setAttribute(AuthUtil.ATTR_ROLE, role == null ? null : String.valueOf(role));
             }
         }
         chain.doFilter(request, response);

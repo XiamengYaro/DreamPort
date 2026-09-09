@@ -94,8 +94,24 @@ public class ChatController {
     }
 
     @PostMapping("/save")
-    public ResponseEntity<Object> save(@RequestBody Map<String, String> body) {
-        chatService.appendHistory(body.getOrDefault("player", "网页"), body.getOrDefault("message", ""));
+    public ResponseEntity<Object> save(@RequestBody Map<String, String> body, HttpServletRequest request) {
+        // 修复审计 H2：/save 此前无鉴权可伪造任意玩家消息注入公共历史
+        String me = AuthUtil.currentUser(request);
+        if (me == null) {
+            return ResponseEntity.status(401).body(ApiResponse.failure("未登录"));
+        }
+        String player = body.getOrDefault("player", me);
+        if (!player.equalsIgnoreCase(me)) {
+            return ResponseEntity.status(403).body(ApiResponse.failure("不能冒用他人身份发言"));
+        }
+        String message = body.getOrDefault("message", "");
+        if (message.isBlank() || message.length() > 256) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("消息为空或过长"));
+        }
+        if (!rateLimiter.allow("chat:" + me, 10, 60_000)) {
+            return ResponseEntity.status(429).body(ApiResponse.failure("发言太快,稍后再试"));
+        }
+        chatService.appendHistory(me, chatService.filterSensitive(message));
         return ResponseEntity.ok(ApiResponse.success("已保存"));
     }
 }

@@ -105,6 +105,23 @@ public class TaskService {
         evaluate(username, "full_attendance", null);
     }
 
+    /**
+     * 会话时长落库(修复审计 H4):按账号+日期 upsert dp_daily_activity,
+     * 这是 playtime 任务/在线成就/满勤连击的数据源,此前全库无写入导致功能永不推进。
+     */
+    public void recordActivity(String username, long sessionSeconds, int loginCount) {
+        if (username == null || username.isBlank()) {
+            return;
+        }
+        String date = LocalDate.now().toString();
+        jdbcTemplate.update(
+                "INSERT INTO dp_daily_activity (username, activity_date, playtime_seconds, login_count) "
+                        + "VALUES (?, ?, ?, ?) "
+                        + "ON DUPLICATE KEY UPDATE playtime_seconds = playtime_seconds + VALUES(playtime_seconds), "
+                        + "login_count = login_count + VALUES(login_count)",
+                username, date, Math.max(0, sessionSeconds), Math.max(0, loginCount));
+    }
+
     /** 全量评估(center 拉取兜底) */
     public void evaluateAll(String username) {
         evaluate(username, "signin", null);

@@ -21,13 +21,16 @@ public class InviteService {
     private final UserRepository userRepository;
     private final NotificationRepository notificationRepository;
     private final SystemSettingsService systemSettings;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
     public InviteService(InviteRepository inviteRepository, UserRepository userRepository,
-                         NotificationRepository notificationRepository, SystemSettingsService systemSettings) {
+                         NotificationRepository notificationRepository, SystemSettingsService systemSettings,
+                         org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.inviteRepository = inviteRepository;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
         this.systemSettings = systemSettings;
+        this.jdbc = jdbc;
     }
 
     public record Result(boolean success, String message, String code) {
@@ -104,7 +107,15 @@ public class InviteService {
         if (username.equalsIgnoreCase(invite.inviterUsername())) {
             return Result.fail("不能使用自己的邀请码");
         }
-        inviteRepository.save(invite.withInvitee(username, "used", System.currentTimeMillis()));
+        // 修复审计 M7：原子消费——仅 active 且未过期才置 used，杜绝并发双人同时用一码
+        long now = System.currentTimeMillis();
+        int updated = jdbc.update(
+                "UPDATE dp_invite SET status = 'used', invitee_username = ?, used_at = ? "
+                        + "WHERE code = ? AND status = 'active' AND expires_at > ?",
+                username, now, code == null ? "" : code.trim(), now);
+        if (updated == 0) {
+            return Result.fail("邀请码无效或已过期");
+        }
         userRepository.save(withStatus(userOpt.get(), "invited_pending", username));
         notifyUser(invite.inviterUsername(), "invite_received", "收到玩家申请",
                 username + " 使用了你的邀请码，请确认是否认识该玩家", username);
@@ -118,7 +129,15 @@ public class InviteService {
             return Result.fail("邀请码无效或已过期");
         }
         InviteRecord invite = inviteOpt.get();
-        inviteRepository.save(invite.withInvitee(username, "used", System.currentTimeMillis()));
+        // 修复审计 M7：原子消费
+        long now = System.currentTimeMillis();
+        int updated = jdbc.update(
+                "UPDATE dp_invite SET status = 'used', invitee_username = ?, used_at = ? "
+                        + "WHERE code = ? AND status = 'active' AND expires_at > ?",
+                username, now, code == null ? "" : code.trim(), now);
+        if (updated == 0) {
+            return Result.fail("邀请码无效或已过期");
+        }
         Optional<UserRecord> userOpt = userRepository.findByUsernameIgnoreCase(username);
         userOpt.ifPresent(u -> userRepository.save(withStatus(u, "invited_pending", invite.inviterUsername())));
         notifyUser(invite.inviterUsername(), "invite_received", "邀请注册",

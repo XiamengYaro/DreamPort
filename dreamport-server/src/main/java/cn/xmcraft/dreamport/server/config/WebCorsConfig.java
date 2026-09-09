@@ -25,10 +25,7 @@ public class WebCorsConfig implements WebMvcConfigurer {
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .maxAge(3600);
-        registry.addMapping("/internal/**")
-                .allowedOriginPatterns(origins.split(","))
-                .allowedMethods("GET", "POST", "OPTIONS")
-                .allowedHeaders("*")
-                .maxAge(3600);
+        // 修复审计 H1：/internal/** 是服务器间通道，不应允许浏览器跨域调用
+        //（此前开 CORS，配合未鉴权端点可被恶意网页跨站触发）
     }
 }

@@ -142,11 +142,15 @@ public class QuestionnaireService {
                     reason = lengthReason(answer);
                 }
             } else {
-                // 客观题：选项文本精确匹配计分（多选累加），clamp 到 [0, maxScore]
+                // 客观题：按选项 id 精确匹配计分（多选累加），clamp 到 [0, maxScore]
+                // 修复审计 H3：改按选项 id 匹配（此前按文本 contains，攻击者可拼接全部选项文本刷满分）
                 int gained = 0;
+                Object selectedRaw = answers.get(String.valueOf(q.id()));
+                List<String> selected = selectedRaw instanceof List<?> l
+                        ? l.stream().map(String::valueOf).toList()
+                        : (selectedRaw == null ? List.of() : List.of(String.valueOf(selectedRaw)));
                 for (QuestionnaireRecords.QuestionOption opt : options(q.id())) {
-                    String text = "en".equals(lang) && opt.textEn() != null ? opt.textEn() : opt.textZh();
-                    if (answer.contains(text)) {
+                    if (selected.contains(String.valueOf(opt.id()))) {
                         gained += opt.score();
                     }
                 }
@@ -194,9 +198,12 @@ public class QuestionnaireService {
                 }
                 if (!"text".equals(q.type()) && !"essay".equals(q.type())) {
                     int gained = 0;
+                    Object selectedRaw = answers.get(String.valueOf(q.id()));
+                    List<String> selected = selectedRaw instanceof List<?> l
+                            ? l.stream().map(String::valueOf).toList()
+                            : (selectedRaw == null ? List.of() : List.of(String.valueOf(selectedRaw)));
                     for (QuestionnaireRecords.QuestionOption opt : options(q.id())) {
-                        String text = "en".equals(lang) && opt.textEn() != null ? opt.textEn() : opt.textZh();
-                        if (answer.contains(text)) {
+                        if (selected.contains(String.valueOf(opt.id()))) {
                             gained += opt.score();
                         }
                     }
@@ -281,8 +288,16 @@ public class QuestionnaireService {
             return;
         }
         UserRecord user = userOpt.get();
+        // 修复审计 H5：状态机——已通过/封禁用户重答只更新分数与答案，不改白名单状态
+        //（此前无条件覆盖为 pending_review/rejected，已进服玩家手滑重答即被踢出）
+        String newStatus;
+        if ("approved".equals(user.status()) || "banned".equals(user.status())) {
+            newStatus = user.status();
+        } else {
+            newStatus = passed ? "pending_review" : "rejected";
+        }
         UserRecord updated = new UserRecord(user.id(), user.username(), user.email(),
-                passed ? "pending_review" : "rejected",
+                newStatus,
                 user.passwordAlgo(), user.passwordHash(), user.regTime(), user.discordId(),
                 user.qqNumber(), user.qqBoundAt(), total, passed, overall,
                 System.currentTimeMillis(), reasonsJson(results), safeJson(answers),

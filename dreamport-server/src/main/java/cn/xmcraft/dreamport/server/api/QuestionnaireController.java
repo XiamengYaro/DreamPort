@@ -39,6 +39,10 @@ public class QuestionnaireController {
     private final cn.xmcraft.dreamport.server.user.UserRepository userRepository;
     private final cn.xmcraft.dreamport.server.audit.AuditService auditService;
 
+    /** 修复审计 M6：SSE 流式评分改有界线程池（此前每次请求裸 new Thread 可被耗尽） */
+    private final java.util.concurrent.ExecutorService streamPool =
+            java.util.concurrent.Executors.newFixedThreadPool(8);
+
     public QuestionnaireController(QuestionnaireService questionnaireService,
                                    QuestionnaireRepository questionnaireRepository,
                                    QuestionRepository questionRepository,
@@ -108,9 +112,11 @@ public class QuestionnaireController {
             List<Map<String, Object>> options = new ArrayList<>();
             for (QuestionnaireRecords.QuestionOption o : questionnaireService.options(q.id())) {
                 Map<String, Object> om = new LinkedHashMap<>();
+                // 修复审计 H3：不下发选项分值，防止拼接选项文本刷满分；
+                // 下发选项 id，前端按 id 提交、服务端按 id 精确计分
+                om.put("id", o.id());
                 om.put("text_zh", o.textZh());
                 om.put("text_en", o.textEn());
-                om.put("score", o.score());
                 om.put("text", o.textZh());
                 options.add(om);
             }
@@ -162,10 +168,20 @@ public class QuestionnaireController {
             emitter.complete();
             return emitter;
         }
-        String username = body.username() != null && !body.username().isBlank() ? body.username() : me;
+        // 修复审计 C2：stream 必须与 submit 一致——只允许本人答题，禁止代他人提交改写状态
+        if (body.username() != null && !body.username().isBlank()
+                && !body.username().equalsIgnoreCase(me)) {
+            try {
+                emitter.send(SseEmitter.event().data(Map.of("type", "error", "message", "不能替他人答题")));
+            } catch (Exception ignored) {
+            }
+            emitter.complete();
+            return emitter;
+        }
+        String username = me;
         var questionnaire = questionnaireService.activeQuestionnaire();
         var questions = questionnaireService.questions(questionnaire.id());
-        new Thread(() -> {
+        streamPool.execute(() -> {
             int total = 0;
             int maxTotal = 0;
             Map<String, Object> answers = body.answers();
@@ -201,7 +217,7 @@ public class QuestionnaireController {
                 log("stream 完成事件发送失败: {}", e.getMessage());
             }
             emitter.complete();
-        }, "questionnaire-stream").start();
+        });
         return emitter;
     }
 

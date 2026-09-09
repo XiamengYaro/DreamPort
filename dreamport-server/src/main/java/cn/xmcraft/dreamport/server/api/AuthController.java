@@ -169,7 +169,11 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.failure("用户名或密码错误"));
         }
-        // P4：接入 ops.json/管理员名单双重校验（对齐旧版 OpsManager.isOp + admins 列表）
+        // 修复审计 C1：管理员登录必须命中 admins 名单，否则任意已通过玩家即可提权为 admin
+        if (!inAdminsList(user.get().username())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(ApiResponse.failure("该账号不在管理员名单内"));
+        }
         String token = tokenService.issue(user.get().username(), TokenService.ROLE_ADMIN);
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("token", token);
@@ -197,10 +201,6 @@ public class AuthController {
     }
 
     private String clientIp(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+        return cn.xmcraft.dreamport.server.web.ClientIp.realIp(request);
     }
 }

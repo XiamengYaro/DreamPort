@@ -50,7 +50,8 @@ public class SettingService {
     public void set(String key, Object value) {
         try {
             String json = value == null ? null : mapper.writeValueAsString(value);
-            jdbc.execute("DELETE FROM dp_setting WHERE skey = '" + key.replace("'", "''") + "'");
+            // 修复审计 M5：删除改参数化（此前手工转义拼接，key 一旦用户可控即成注入点）
+            jdbc.update("DELETE FROM dp_setting WHERE skey = ?", key);
             jdbc.update("INSERT INTO dp_setting (skey, svalue, updated_at, updated_by) VALUES (?, ?, ?, ?)",
                     key, json, System.currentTimeMillis(), "system");
         } catch (Exception e) {
