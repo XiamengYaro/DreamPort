@@ -5,9 +5,14 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
-## [Unreleased]
+## [1.4.0] - 2026-09-09
 
-2026-09-09 全仓库深度审计(服务端/插件/前端)修复——5 个 CRITICAL 安全漏洞与全量 HIGH/MEDIUM 项。
+**守则门强制阅读 · 积分任务系统 · 称号系统全量上线(游戏内 PAPI 显示 + /titles GUI + 网页展示佩戴 + 游戏内颜色可定义)· 奖励礼包发放 · 全仓库安全审计修复 · playertitle 旧称号数据迁移**。
+
+### Added(守则门 · 积分任务 · 称号系统)
+- **守则门**(67976d1):注册后验证前强制阅读服务器守则——后台可配置守则文档与强制阅读秒数,内置默认守则,服务端 set/verify 双守卫校验(dp_rules_consent 表)
+- **积分任务系统 P1**(a30320c):积分账本/任务中心/兑换邮件(游戏内 GUI)/后台可视化配置;任务按类型/周期/渠道定义,达标自动发放积分并支持兑换
+- **称号系统**(V9 三表 + 引擎 + 后台 CRUD):游戏内称号显示切换(PlaceholderAPI 变量 `%dreamport_title%` / `_raw` / `_code`,由外部聊天/Tab 插件消费);`/titles` 佩戴 GUI(点击佩戴/脱下,拦截拖拽);后台称号/成就管理(定义 CRUD + 成就指标/门槛/奖励称号 + 手动授予/撤销);成就引擎按 4 种指标(累计在线/注册天数/成功邀请/累计积分)定时评估自动授予并站内通知
 
 ### Added（奖励礼包）
 - **礼包化奖励发放(端到端)**:管理后台新增「奖励发放」页——① 奖励礼包卡:Web 创建礼包模板 → 服内管理员把物品放进背包执行 `/xmw kit save <礼包名>` 采集上传(Paper ItemStack#serializeAsBytes 序列化 Base64,自带数据版本号,MC 升级自动迁移)→ 状态变「可发放」,列表展示内容概要/采集人;每个礼包可配附加指令(与物品混合发放);② 发放奖励卡:单人/全员(已通过白名单)发放,来源选礼包或手填指令包,发放时把物品+指令**快照**进游戏内邮件(dp_mail 新增 items MEDIUMTEXT 列)
@@ -43,6 +48,15 @@
 - 决策缓存上限；心跳上报显式 server-name；称号拉取补日志；GUI 拦截拖拽
 - **默认 server-token 清空**（原 dev-internal-token 与后端默认一致，漏配等于无鉴权）
 - Velocity：login-check 响应改 Gson 解析、超时收紧、缓存上限、默认 token 清空
+
+### Fixed(称号 · 配置)
+- **修复称号/成就/任务/商店配置从未生效的重大 bug**：定义存 JSON 对象，`get(key, String.class)` 反序列化失败静默返回 null，后台保存的定义(自定义称号、enabled 开关、颜色、任务、兑换商店)运行时永远回退默认——改 `getRaw` 取原始 JSON(影响 titles.config / achievements.config / tasks.config / shop.config)
+- **游戏内称号颜色可定义**：称号定义新增独立「游戏内颜色」，聊天/Tab/GUI 显示优先用它、留空跟随网页色；内部端点(插件 active/mine)下发生效色，网页展示仍用网页色
+- **玩家网页称号配置入口**：PlayerProfile「我的称号与成就」面板(已拥有佩戴/脱下、未解锁、成就进度)+ 用户菜单「我的称号」入口直达(?titles=1 自动滚动)
+- 服务端健壮性：撤销参数/用户/拥有校验、定义保存结构校验(畸形 400 不再静默回退默认)、成就奖励引用校验、已禁用称号全局隐形(enabled 口径统一)；公开玩家资料页返回当前佩戴称号(title 字段)
+
+### Migration
+- **playertitle 旧称号数据迁移**(2026-09-09)：旧称号插件 title 库 3 种称号映射迁移至 DreamPort——屠龙者→`dragon_slayer`(#FFAA00)/弑龙者→`dragon_killer`(#AA00AA)/管理组→`admin_team`(#FF5555)；写入 dp_setting.titles.config(仅 3 个新称号，不含默认，默认称号由用户后台自行维护)；导入 dp_user_titles 11 条拥有记录与 dp_title_equipped 6 条佩戴记录；旧插件 title_coin/reward_log/buff/particle 无对应概念不迁移
 
 ## [1.3.0] - 2026-09-08
 
