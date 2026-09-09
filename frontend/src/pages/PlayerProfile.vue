@@ -22,8 +22,8 @@
         <!-- 头部信息 -->
         <div class="card p-6 mb-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-start gap-4 sm:gap-6">
-            <img :src="`/api/avatar/${encodeURIComponent(profile.username || profile.uuid)}?size=128`" 
-              :alt="profile.username"
+            <img :src="`/api/avatar/${encodeURIComponent(profile.minecraftName || profile.username || profile.uuid)}?size=128`"
+              :alt="profile.minecraftName || profile.username"
               class="w-32 h-32 rounded-2xl border-4 border-orange-500/30 shadow-xl"
               @error="handleAvatarError" />
             <div class="flex-1">
