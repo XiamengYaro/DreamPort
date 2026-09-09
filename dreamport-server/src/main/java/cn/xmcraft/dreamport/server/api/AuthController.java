@@ -228,13 +228,12 @@ public class AuthController {
 
     // ---------- 2FA 登录中间态(challenge 凭据非会话,不授予任何用户端点权限) ----------
 
-    /** 需要进入 2FA 中间态?返回状态名,否则 null */
+    /** 需要进入 2FA 中间态?返回状态名,否则 null(绑定中(pending)也拦,防"开始绑定即绕过强制"半途状态) */
     private String twoFaGate(String username, boolean admin) {
         if (twoFaService.isEnabled(username)) {
             return "needs_2fa";
         }
-        if (admin && admin2faRequired() && !twoFaService.isEnabled(username)
-                && !twoFaService.isPending(username)) {
+        if (admin && admin2faRequired()) {
             return "needs_2fa_setup";
         }
         return null;

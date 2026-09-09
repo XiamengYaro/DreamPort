@@ -1,5 +1,6 @@
 package cn.xmcraft.dreamport.server.infra;
 
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -44,7 +45,8 @@ public class SimpleRateLimiter {
         }
     }
 
-    /** 惰性清理:过期窗口与昨日日桶(社区写入频率低,由调用方松散触发即可) */
+    /** 惰性清理:过期窗口与昨日日桶(每小时,防长期运行内存膨胀) */
+    @Scheduled(fixedRate = 3_600_000, initialDelay = 120_000)
     public void cleanup() {
         long cutoff = System.currentTimeMillis() - 24L * 3600_000;
         windows.entrySet().removeIf(e -> {

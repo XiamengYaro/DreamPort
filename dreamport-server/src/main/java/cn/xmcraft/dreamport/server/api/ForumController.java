@@ -193,12 +193,20 @@ public class ForumController {
         boolean moderation = forumConfig().getOrDefault("moderation", Boolean.FALSE) instanceof Boolean b && b;
         long now = System.currentTimeMillis();
         String status = moderation ? "pending" : "published";
-        jdbc.update("INSERT INTO dp_forum_thread (section_id, username, title, content, status, created_at) "
-                        + "VALUES (?, ?, ?, ?, ?, ?)",
-                body.sectionId(), me, sensitiveWordFilter.filter(body.title().trim()),
-                sensitiveWordFilter.filter(body.content().trim()), status, now);
-        Long id = jdbc.queryForObject("SELECT id FROM dp_forum_thread WHERE username = ? AND created_at = ? ORDER BY id DESC LIMIT 1",
-                Long.class, me, now);
+        var keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement(
+                    "INSERT INTO dp_forum_thread (section_id, username, title, content, status, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS);
+            ps.setLong(1, body.sectionId());
+            ps.setString(2, me);
+            ps.setString(3, sensitiveWordFilter.filter(body.title().trim()));
+            ps.setString(4, sensitiveWordFilter.filter(body.content().trim()));
+            ps.setString(5, status);
+            ps.setLong(6, now);
+            return ps;
+        }, keyHolder);
+        Long id = keyHolder.getKey() == null ? -1L : keyHolder.getKey().longValue();
         notifyMentions(body.content(), me, "帖子「" + body.title().trim() + "」中提到了你", id, 0);
         auditService.log("forum_thread_submit", me, "#" + id,
                 status + " | " + body.title().trim());

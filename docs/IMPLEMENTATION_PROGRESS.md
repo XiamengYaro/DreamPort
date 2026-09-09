@@ -183,3 +183,11 @@
 ## v1.4.1 批次(2026-09-09)
 
 - [x] 守则门死锁热修:控制台与验证页补守则同意入口
+
+## v1.5.0 批次(2026-09-10,差距评估驱动的三阶段功能补强)
+
+- [x] 阶段 A 监控与多服:心跳指标(TPS/内存/CPU)+ dp_server_metrics + 资源看板;修复假 TPS 20.0;TPS 低阈值告警;按服 token(dp_server.token_hash 启用)+ 后台「服务器管理」Tab;地图条目结构化(BlueMap/Dynmap 可选)+ /api/map/live 代理 + 地图页在线位置侧栏
+- [x] 阶段 B 社区与内容:一级「社区」页(论坛/投票/反馈工单);论坛进阶版(游客可读/点赞/@提及/编辑留痕/先发后审可切);投票(结果可见性逐场可配);反馈工单多轮对话(管理员回复=铃铛+邮件);通用事件 Webhook(HMAC-SHA256 签名);村谱/机器审核补齐缺失审计;SensitiveWordFilter/SimpleRateLimiter 抽出共用
+- [x] 阶段 C 2FA:TOTP(RFC 6238 原创实现)+ 8 个一次性恢复码 + 邮箱备用验证码;登录流 needs_2fa 中间态(challenge 非会话凭据);管理员强制 2FA 开关;防爆破锁定
+- [x] 用户反馈两 bug 修复:成就定义删不掉(空列表复活默认+悬空奖励 400 卡保存);「我的称号」导航路径 /players→/player 错误
+- [x] 代码审计修复:SimpleRateLimiter 清理定时化(防内存膨胀);2FA 强制门收紧(绑定中不豁免);反馈/投票/发帖建单 ID 查询竞态改 GeneratedKeyHolder;移除死代码

@@ -129,6 +129,18 @@ frontend/          Vue 3 SPA（18 页面，见进度表 P6）
 | `dp_server` | 注册服务器实例（id/角色/token 哈希/心跳） | 旧版 Bridge 内存态 |
 | `dp_questionnaire` / `dp_question` / `dp_question_option` | 问卷题库（带 YAML 导入导出） | 旧版 questionnaire.yml |
 
+**v1.5 新增表**（V11–V13，全部 Flyway 自动迁移）：
+
+| 表 | 用途 |
+|----|------|
+| `dp_server_metrics`（V11） | 各服心跳采集的 TPS/内存/CPU 时序（60s 一条，7 天保留） |
+| `dp_feedback` / `dp_feedback_message`（V12） | 反馈工单（会话 + 多轮消息） |
+| `dp_poll` / `dp_poll_option` / `dp_poll_vote`（V12） | 投票（单/多选，uk: poll_id+username+option_id） |
+| `dp_forum_section` / `dp_forum_thread` / `dp_forum_reply` / `dp_forum_like`（V12） | 论坛（板块/帖子/回复/点赞） |
+| `dp_user_2fa`（V13） | 两步验证（Base32 密钥 + bcrypt 恢复码哈希） |
+
+**v1.5 新增 dp_setting 键**：`security.config`（tokenMode/admin2faRequired）、`metrics.config`（TPS 告警阈值）、`forum.config`（moderation/likeEnabled）、`webhook.config`（urls/events）。
+
 **时间戳一律 BIGINT 毫秒 epoch**（与旧版一致，保证前端零适配）。
 
 ### 4.2 用户状态机（与旧版兼容）

@@ -88,11 +88,22 @@ public class FeedbackController {
             return badRequest("今天提交已达上限(" + DAILY_LIMIT + " 条),请明天再来");
         }
         long now = System.currentTimeMillis();
-        jdbc.update("INSERT INTO dp_feedback (username, category, title, status, created_at, updated_at) "
-                        + "VALUES (?, ?, ?, 'open', ?, ?)",
-                me, category, sensitiveWordFilter.filter(body.title().trim()), now, now);
-        Long id = jdbc.queryForObject("SELECT id FROM dp_feedback WHERE username = ? AND created_at = ? "
-                + "ORDER BY id DESC LIMIT 1", Long.class, me, now);
+        var keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement(
+                    "INSERT INTO dp_feedback (username, category, title, status, created_at, updated_at) VALUES (?, ?, ?, 'open', ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, me);
+            ps.setString(2, category);
+            ps.setString(3, sensitiveWordFilter.filter(body.title().trim()));
+            ps.setLong(4, now);
+            ps.setLong(5, now);
+            return ps;
+        }, keyHolder);
+        Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+        if (id == null) {
+            return ResponseEntity.internalServerError().body(ApiResponse.failure("工单创建失败"));
+        }
         jdbc.update("INSERT INTO dp_feedback_message (feedback_id, sender_role, sender, content, created_at) "
                         + "VALUES (?, 'player', ?, ?, ?)",
                 id, me, sensitiveWordFilter.filter(body.content().trim()), now);

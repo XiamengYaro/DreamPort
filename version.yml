@@ -1,20 +1,38 @@
-version: 1.4.1
+version: 1.5.0
 release_notes: |
-  # DreamPort · 夏日小镇 · 梦港 v1.4.1
+  # DreamPort · 夏日小镇 · 梦港 v1.5.0
 
   ## 简体中文
 
-  v1.4.1 为守则门死锁热修：修复玩家在控制台/验证页无法确认服务器守则，导致 ID 验证、绑定、改 ID 卡住的问题。
+  v1.5.0 为功能版本：**监控与多服 · 社区 · 两步验证** 三大板块（差距评估驱动的三阶段功能补强）。
 
-  - 验证页守则卡片不再被「已验证」状态隐藏——只要未同意守则即显示
-  - 控制台(Dashboard)Minecraft 账户信息卡新增「服务器守则」同意区块
+  **监控与多服**：插件心跳附带真实 TPS/内存/CPU（修复玩家页假 TPS 20.0），后台资源看板（24h/7 天曲线）+ TPS 低阈值告警；按服 token 签发/轮换/启停（后台「服务器管理」，可 shared/per_server 切换）；地图条目支持 BlueMap/Dynmap 类型可选，地图页新增「在线位置」侧栏。
 
-  v1.4.0 主要功能：守则门 · 积分任务系统 · 称号系统(游戏内 PAPI + /titles GUI + 网页展示佩戴 + 游戏内颜色可定义) · 奖励礼包发放 · 全仓库安全审计修复 · playertitle 旧称号数据迁移。
+  **社区**：一级「社区」页——论坛（游客可读、点赞、@提及、先发后审可切）、投票（单/多选，结果可见性逐场可配）、反馈工单（多轮对话，回复带邮件通知）；通用事件 Webhook（HMAC-SHA256 签名，可对接 QQ 机器人/自建系统）。
+
+  **两步验证**：验证器 App 扫码绑定 TOTP，8 个一次性恢复码 + 邮箱备用验证码；登录需二次验证；管理员可强制开启。
+
+  修复：成就定义删不掉（空配置复活默认 + 悬空奖励卡保存）、「我的称号」导航路径错误。
+
+  升级提示：V11–V13 迁移自动执行；**资源指标需各游戏服更新 Paper 插件**（旧插件兼容，不上报指标）；新增开关（per_server token / 2FA / 先审后发 / 管理员强制 2FA）默认关闭，上线无行为突变。
 
   ## English
 
-  v1.4.1 hotfix for the rules-gate deadlock: players could not accept server rules on the dashboard/verify page,
-  which blocked ID verification, binding and ID change.
+  v1.5.0 feature release: **monitoring & multi-server · community · two-factor authentication**.
 
-  v1.4.0 added: rules gate, points & tasks, title system (in-game PAPI + /titles GUI + web equip + configurable
-  in-game color), reward kits, full security audit fixes, and playertitle data migration.
+  **Monitoring & multi-server**: heartbeats now carry real TPS/memory/CPU (fixes fake TPS 20.0 on the player
+  dashboard), admin resource dashboard (24h/7d curves) with low-TPS alerting; per-server tokens (issue/rotate/
+  disable) with shared/per_server modes; map entries support BlueMap/Dynmap with a live-players sidebar.
+
+  **Community**: a top-level "Community" page — forum (guest-readable, likes, @mentions, optional
+  post-moderation), polls (single/multiple choice, per-poll result visibility), feedback tickets (multi-turn
+  conversation with email notifications), and generic event webhooks (HMAC-SHA256 signed).
+
+  **2FA**: TOTP via authenticator apps, 8 one-time recovery codes + email backup codes; login requires a second
+  factor; admins can enforce enrollment.
+
+  Fixes: achievements could not be deleted (defaults resurrected + dangling reward blocking saves); "My titles"
+  navigation pointed to a non-existent route.
+
+  Upgrade notes: V11–V13 migrate automatically; **update the Paper plugin on each game server for metrics**
+  (old plugins keep working, just without metrics); all new toggles default to off.

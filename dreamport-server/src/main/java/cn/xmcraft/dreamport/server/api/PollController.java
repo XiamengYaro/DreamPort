@@ -123,14 +123,29 @@ public class PollController {
             return badRequest("标题与至少 2 个选项必填");
         }
         long now = System.currentTimeMillis();
-        jdbc.update("INSERT INTO dp_poll (title, description, multiple, result_visibility, status, ends_at, created_by, created_at) "
-                        + "VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)",
-                body.title().trim(), body.description() == null ? "" : body.description().trim(),
-                Boolean.TRUE.equals(body.multiple()) ? 1 : 0,
-                "ended".equals(body.resultVisibility()) ? "ended" : "open",
-                body.endsAt(), me, now);
-        Long id = jdbc.queryForObject("SELECT id FROM dp_poll WHERE created_by = ? AND created_at = ? ORDER BY id DESC LIMIT 1",
-                Long.class, me, now);
+        var keyHolder = new org.springframework.jdbc.support.GeneratedKeyHolder();
+        jdbc.update(con -> {
+            var ps = con.prepareStatement(
+                    "INSERT INTO dp_poll (title, description, multiple, result_visibility, status, ends_at, created_by, created_at) "
+                            + "VALUES (?, ?, ?, ?, 'draft', ?, ?, ?)",
+                    java.sql.Statement.RETURN_GENERATED_KEYS);
+            ps.setString(1, body.title().trim());
+            ps.setString(2, body.description() == null ? "" : body.description().trim());
+            ps.setInt(3, Boolean.TRUE.equals(body.multiple()) ? 1 : 0);
+            ps.setString(4, "ended".equals(body.resultVisibility()) ? "ended" : "open");
+            if (body.endsAt() == null) {
+                ps.setNull(5, java.sql.Types.BIGINT);
+            } else {
+                ps.setLong(5, body.endsAt());
+            }
+            ps.setString(6, me);
+            ps.setLong(7, now);
+            return ps;
+        }, keyHolder);
+        Long id = keyHolder.getKey() == null ? null : keyHolder.getKey().longValue();
+        if (id == null) {
+            return ResponseEntity.internalServerError().body(ApiResponse.failure("投票创建失败"));
+        }
         saveOptions(id, body.options());
         auditService.log("poll_create", me, "#" + id, body.title());
         return ResponseEntity.ok(ApiResponse.success("投票已创建(草稿)", Map.of("id", id)));

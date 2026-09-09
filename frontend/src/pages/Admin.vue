@@ -1317,12 +1317,6 @@ const downloadsJson = ref('{}')
 const questCfg = ref<any>({ enabled: true, passScore: 60 })
 const securityCfg = ref<any>({ admin2faRequired: false })
 
-const loadSecurity = async () => {
-  try {
-    const r: any = await api.getSecurityConfig()
-    if (r.success) securityCfg.value = { admin2faRequired: !!r.data?.admin2faRequired }
-  } catch (e) { console.error(e) }
-}
 const saveSecurity = async () => {
   try {
     const r: any = await api.saveSecurityConfig(securityCfg.value.admin2faRequired)

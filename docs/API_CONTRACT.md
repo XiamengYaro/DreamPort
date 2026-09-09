@@ -159,3 +159,55 @@
 
 - `GET /api/admin/export/questionnaires?format=csv|json`:问卷导出
 - `GET /api/review/status`:响应补 regTime/questionnaireScoredAt/verifiedAt 时间戳(时间线)
+
+## 9. v1.5 新增端点 🆕（监控与多服 · 社区 · 2FA）
+
+### 9.1 监控与多服
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/server/metrics?serverId=&hours=24\|168` | 公开 | 资源指标历史 `{list:[{time,tps1m,tps5m,tps15m,avgTickMs,memUsedMb,memMaxMb,cpuLoad}]}`(dp_server_metrics,7 天) |
+| `GET /api/server/status` | 公开 | `tps` 字段改为主服真实 TPS(此前硬编码 20.0,无指标为 null);分服附 tps1m/memUsedMb/memMaxMb/cpuLoad |
+| `GET /api/map/live?i={下标}` | 公开 | 后端代理 BlueMap/Dynmap 玩家位置 `{type,mapId,players:[{name,world,x,y,z}]}`;URL 只取 portal.config 已配置条目(防 SSRF) |
+| `GET /api/admin/servers` | 管理员 | 服务器注册表 `{mode, servers:[{serverId,name,role,onlinePlayers,lastHeartbeat,live,enabled,hasToken}]}` |
+| `POST /api/admin/servers/{id}/issue-token` | 管理员 | 签发/轮换按服令牌(明文仅本次返回,库中存 SHA-256) |
+| `PUT /api/admin/servers/{id}/enabled` | 管理员 | 启停该服 internal 通道(per_server 模式生效) |
+| `GET/PUT /api/admin/servers/token-mode` | 管理员 | `security.config.tokenMode`: shared(默认) \| per_server |
+| HeartbeatRequest 协议 | — | 心跳新增可空字段 `tps1m/tps5m/tps15m/avgTickMs/memUsedMb/memMaxMb/cpuLoad/uptimeSeconds`(旧插件兼容) |
+
+### 9.2 论坛（游客可读，发帖/回帖/点赞 JWT）
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/forum/sections`、`GET /threads?sectionId=&page=`、`GET /thread/{id}?page=` | 公开 | 帖子/回复列表详情;游客仅见 published,作者可见自己 pending |
+| `POST /api/forum/thread`、`POST /thread/{id}/reply`、`POST /thread/{id}/edit`、`POST /like/{thread\|reply}/{id}` | JWT | 发帖 3/天·回帖 10/天·30s 限频;编辑限发布 10 分钟内(留痕);@提及解析通知 |
+| `GET/PUT /api/forum/admin/config` | 管理员 | `{moderation(先审后发,默认 false), likeEnabled(默认 true)}` |
+| `GET /api/forum/admin/pending`、`POST /admin/thread/{id}/{action}`、`POST /admin/reply/{id}/{action}` | 管理员 | 审核(approve/reject/delete)+置顶/精华/锁定;动作审计+通知+WS `forum_moderate` |
+| `POST /api/forum/admin/section`、`DELETE /admin/section/{id}` | 管理员 | 板块 CRUD(板块下有帖不可删) |
+
+### 9.3 投票与反馈工单
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/polls`、`POST /{id}/vote` | 公开/JWT | 列表含我的选择与结果(结果可见性逐场可配 result_visibility: open=实时 / ended=投完或结束后);投票先删后插(uk: poll_id+username+option_id) |
+| `POST /api/polls/admin`、`POST /{id}/admin/{open\|close\|delete}`、`POST /{id}/admin/update`、`GET /admin/list` | 管理员 | 生命周期管理;open 全员铃铛;update 改选项清空选票 |
+| `POST /api/feedback`、`GET /mine`、`GET /{id}`、`POST /{id}/reply`、`POST /{id}/close` | JWT | 多轮对话工单(3 条/天);关闭后不可追问 |
+| `GET /api/feedback/admin/list?status=`、`POST /{id}/admin/reply`、`POST /{id}/close` | 管理员 | 回复=铃铛+邮件(feedback_reply 模板) |
+
+### 9.4 2FA（TOTP + 恢复码 + 邮箱备用）
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `POST /api/login` / `/admin/login` | 公开 | 密码通过且已启用 2FA → `{status:"needs_2fa", challengeId}`;管理员强制开关未绑定 → `{status:"needs_2fa_setup"}`(challenge 为服务端 5 分钟内存凭据,非 JWT,无会话权限) |
+| `POST /api/login/2fa {challengeId, code}` | challenge | 验证码依次尝试 TOTP→恢复码→邮箱码;连错 5 次锁 15 分钟;成功签发正式 JWT |
+| `POST /api/login/2fa/email {challengeId}` | challenge | 邮箱备用码(内存态 5 分钟,3 次/5 分钟) |
+| `POST /api/login/2fa/setup` / `login/2fa/enable` | challenge | 仅 needs_2fa_setup 状态:强制绑定(返回 otpauth secret/确认并返回恢复码+正式 token) |
+| `GET /api/user/2fa/status`、`POST setup\|enable\|disable` | JWT | 自助绑定/启用(返回一次性恢复码)/停用(需密码+验证码) |
+
+### 9.5 Webhook 与安全配置
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET/PUT /api/admin/webhook/config`、`POST /admin/webhook/test` | 管理员 | `{enabled, urls:[{url,secret}], events[]}`;POST JSON 带 `X-DP-Signature: sha256=HMAC(secret, timestamp.body)` + `X-DP-Timestamp`;事件源挂审计骨架(review.*/feedback.*/forum.*/poll.*/questionnaire.submitted/reward.sent/community.*/server.*),异步+2 次退避重试 |
+| `GET/PUT /api/admin/security/config` | 管理员 | `{admin2faRequired, tokenMode}`;强制开关默认关 |
+| WS :18899 事件扩展 | — | 新增 `forum_moderate` / `feedback_new` 管理端推送 |
