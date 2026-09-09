@@ -166,14 +166,23 @@ public final class BackendClient {
         }
     }
 
-    public void heartbeat(int online, int max, String version, java.util.List<String> players) {
+    public void heartbeat(int online, int max, String version, java.util.List<String> players,
+                          MetricsCollector.Snapshot metrics) {
         var cfg = plugin.pluginConfig();
         long start = System.currentTimeMillis();
         plugin.getServer().getAsyncScheduler().runNow(plugin, task -> {
             try {
                 // 修复审计：显示名用显式 server-name(缺省回退 server-id),不再把 serverId 当名字上报
                 String body = post(Protocol.HEARTBEAT, new cn.xmcraft.dreamport.common.HeartbeatRequest(
-                        cfg.serverId(), cfg.displayName(), cfg.role(), online, max, version, players));
+                        cfg.serverId(), cfg.displayName(), cfg.role(), online, max, version, players,
+                        metrics == null ? null : metrics.tps1m(),
+                        metrics == null ? null : metrics.tps5m(),
+                        metrics == null ? null : metrics.tps15m(),
+                        metrics == null ? null : metrics.avgTickMs(),
+                        metrics == null ? null : metrics.memUsedMb(),
+                        metrics == null ? null : metrics.memMaxMb(),
+                        metrics == null ? null : metrics.cpuLoad(),
+                        metrics == null ? null : metrics.uptimeSeconds()));
                 long latency = System.currentTimeMillis() - start;
                 lastLatencyMs = latency;
                 reportConnection(body != null && body.contains("\"ok\":true"),

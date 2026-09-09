@@ -138,7 +138,9 @@ public class InternalController {
         }
         statsService.heartbeat(new ServerStatsService.Heartbeat(sid, req.serverName(),
                 req.role(), req.onlinePlayers(), req.maxPlayers(), req.version(),
-                req.players() == null ? java.util.List.of() : req.players(), now));
+                req.players() == null ? java.util.List.of() : req.players(), now,
+                req.tps1m(), req.tps5m(), req.tps15m(), req.avgTickMs(),
+                req.memUsedMb(), req.memMaxMb(), req.cpuLoad(), req.uptimeSeconds()));
         if (now - (prev == null ? now : prev) >= 300_000) {
             // 每 5 分钟一条常规心跳摘要
             LOG.info("[心跳] {} 在线 {} / {}（玩家 {}）", sid, req.onlinePlayers(),
@@ -539,13 +541,65 @@ public class InternalController {
         return ResponseEntity.ok(userService.userInfo(username));
     }
 
+    /**
+     * 服务器通道鉴权：
+     * - shared 模式（默认）：全局 wl.internal.server-token 单令牌
+     * - per_server 模式：按 X-Server-Id 查 dp_server.token_hash（SHA-256）比对且 enabled=TRUE；
+     *   全局令牌保留为应急通道（break-glass，命中记 warn 便于审计）
+     */
     private ResponseEntity<Object> requireServerToken(HttpServletRequest request) {
         String token = request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN);
-        if (token == null || !props.internal().serverToken().equals(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("code", ErrorCode.TOKEN_MISSING.code(), "message", "服务器认证失败"));
+        if (token == null || token.isBlank()) {
+            return unauthorized();
+        }
+        String global = props.internal().serverToken();
+        if (global != null && !global.isBlank() && global.equals(token)) {
+            if ("per_server".equals(tokenMode())) {
+                LOG.warn("[鉴权] {} 使用全局共享令牌（per_server 模式应急通道）",
+                        request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID));
+            }
+            return null;
+        }
+        if (!"per_server".equals(tokenMode())) {
+            return unauthorized();
+        }
+        String serverId = request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID);
+        if (serverId == null || serverId.isBlank()) {
+            return unauthorized();
+        }
+        String expected = statsService.tokenHashOf(serverId);
+        if (expected == null || !sha256Matches(token, expected)) {
+            return unauthorized();
         }
         return null;
+    }
+
+    private String tokenMode() {
+        var cfg = settingService.get(SettingService.KEY_SECURITY_CONFIG, java.util.Map.class);
+        Object mode = cfg == null ? null : cfg.get("tokenMode");
+        return mode == null ? "shared" : String.valueOf(mode);
+    }
+
+    /** 恒时比较 SHA-256(令牌) 与库中哈希 */
+    private static boolean sha256Matches(String token, String expectedHex) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit(b & 0xF, 16));
+            }
+            return java.security.MessageDigest.isEqual(
+                    hex.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8),
+                    expectedHex.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private ResponseEntity<Object> unauthorized() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("code", ErrorCode.TOKEN_MISSING.code(), "message", "服务器认证失败"));
     }
 
     private ResponseEntity<Object> badRequest(String message) {

@@ -27,6 +27,7 @@ features:
   report-join-quit: true        # 进退服上报(群播报/官网展示)
   receive-chat: true            # 接收网页/QQ 消息并游戏内广播
   message-poll-seconds: 2       # 收件箱轮询间隔(≥1)
+  report-metrics: true          # 心跳附带 TPS/内存/CPU 指标(后台资源看板数据源)
 economy:
   report: auto                  # auto=仅主服上报 | on=始终 | off
 web-register-url: "http://localhost:18898"  # 被踢提示中的注册地址

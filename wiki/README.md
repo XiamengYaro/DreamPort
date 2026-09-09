@@ -39,10 +39,11 @@
 | [架构与技术栈](admin/backend/introduction.md) | 模块、鉴权体系、端口 |
 | [部署与初始化](admin/backend/installation.md) | JAR 部署、config.yml、/setup 向导、systemd、升级备份 |
 | [配置详解](admin/backend/configuration.md) | config.yml / application.yml 全键 |
-| [管理后台](admin/backend/admin-panel.md) | 13 个功能页逐页说明 |
+| [管理后台](admin/backend/admin-panel.md) | 14 个功能页逐页说明 |
 | [API 参考](admin/backend/api-reference.md) | REST API 分组与契约 |
 | [数据库与定时任务](admin/backend/database-and-tasks.md) | 数据表、Flyway、7 个定时任务、邮件模板 |
 | [头像渲染服务](admin/backend/avatar-service.md) | 双层皮肤大头照、皮肤来源分流、两级缓存 |
+| [监控与多服令牌](admin/backend/monitoring-and-servers.md) | 资源看板/TPS 告警、按服 token、地图在线玩家 |
 
 **插件**
 

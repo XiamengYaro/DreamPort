@@ -349,10 +349,26 @@ public class DreamPortProxyPlugin {
                     players.append('"').append(p.getUsername()).append('"');
                 }
                 players.append(']');
+                // 代理无 tick 循环不报 TPS;内存/CPU 供后台资源看板(字段缺省后端按 null 处理)
+                Runtime rt = Runtime.getRuntime();
+                int memUsedMb = (int) ((rt.totalMemory() - rt.freeMemory()) / 1024 / 1024);
+                int memMaxMb = (int) (rt.maxMemory() / 1024 / 1024);
+                String metrics = ",\"memUsedMb\":" + memUsedMb + ",\"memMaxMb\":" + memMaxMb;
+                try {
+                    var os = java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+                    if (os instanceof com.sun.management.OperatingSystemMXBean sun) {
+                        double load = sun.getProcessCpuLoad();
+                        if (load >= 0) {
+                            metrics += ",\"cpuLoad\":" + Math.round(load * 100.0) / 100.0;
+                        }
+                    }
+                    metrics += ",\"uptimeSeconds\":" + (java.lang.management.ManagementFactory.getRuntimeMXBean().getUptime() / 1000);
+                } catch (Throwable ignored) {
+                }
                 String body = "{\"serverId\":\"" + escape(serverId) + "\",\"serverName\":\"Velocity 代理\","
                         + "\"role\":\"proxy\",\"onlinePlayers\":" + totalOnline
                         + ",\"maxPlayers\":" + totalMax
-                        + ",\"version\":\"Velocity\",\"players\":" + players + "}";
+                        + ",\"version\":\"Velocity\",\"players\":" + players + metrics + "}";
                 HttpRequest request = HttpRequest.newBuilder()
                         .uri(URI.create(backendUrl + "/internal/v1/heartbeat"))
                         .timeout(Duration.ofSeconds(3))

@@ -39,6 +39,10 @@ public class SettingService {
     public static final String KEY_TITLES_CONFIG = "titles.config";
     public static final String KEY_ACHIEVEMENTS_CONFIG = "achievements.config";
     public static final String KEY_SHOP_CONFIG = "shop.config";
+    /** 鉴权配置:{tokenMode: shared|per_server, admin2faRequired: bool}(阶段 C 补 admin2faRequired) */
+    public static final String KEY_SECURITY_CONFIG = "security.config";
+    /** 资源监控配置:{tpsAlertEnabled: bool, tpsThreshold: number} */
+    public static final String KEY_METRICS_CONFIG = "metrics.config";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

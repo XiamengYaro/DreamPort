@@ -39,7 +39,8 @@ public class ServerStatusController {
         data.put("totalOnline", statsService.totalOnline());
         data.put("totalServers", statsService.totalServers());
         data.put("version", statsService.version());
-        data.put("tps", 20.0);
+        // 主服真实 TPS(心跳采集;无指标数据时为 null,前端展示为未知)
+        data.put("tps", statsService.primaryTps1m());
 
         List<Map<String, Object>> servers = new ArrayList<>();
         if (stale) {
@@ -68,10 +69,37 @@ public class ServerStatusController {
                         s.put("maxPlayers", hb.maxPlayers());
                         s.put("lastSeen", hb.receivedAt());
                         s.put("players", hb.players());
+                        s.put("tps1m", hb.tps1m());
+                        s.put("memUsedMb", hb.memUsedMb());
+                        s.put("memMaxMb", hb.memMaxMb());
+                        s.put("cpuLoad", hb.cpuLoad());
                         servers.add(s);
                     });
         }
         data.put("servers", servers);
+        body.put("data", data);
+        return body;
+    }
+
+    /** 资源指标历史:?serverId= 必填,?hours= 默认 24 上限 168(7 天);数据源 dp_server_metrics */
+    @GetMapping("/metrics")
+    public Map<String, Object> metrics(HttpServletRequest request) {
+        String serverId = request.getParameter("serverId");
+        int hours = 24;
+        try {
+            String raw = request.getParameter("hours");
+            if (raw != null && !raw.isBlank()) {
+                hours = Integer.parseInt(raw);
+            }
+        } catch (NumberFormatException ignored) {
+        }
+        Map<String, Object> data = new LinkedHashMap<>();
+        data.put("serverId", serverId);
+        data.put("hours", Math.max(1, Math.min(hours, 168)));
+        data.put("list", serverId == null || serverId.isBlank()
+                ? List.of() : statsService.metricsHistory(serverId, hours));
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("success", true);
         body.put("data", data);
         return body;
     }

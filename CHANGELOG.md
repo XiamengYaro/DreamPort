@@ -7,6 +7,14 @@
 
 ## [未发布]
 
+### Added（监控与多服 · 阶段 A）
+- **服务器资源监控**：插件心跳附带 TPS(1/5/15 分钟)/平均 tick 耗时/JVM 内存/进程 CPU/运行时长（`features.report-metrics` 开关，默认开；Velocity 代理报内存/CPU 无 TPS）；新表 `dp_server_metrics`（V11，7 天保留）；`GET /api/server/metrics?serverId=&hours=24|168` 公开查询
+- **修复假 TPS**：`/api/server/status` 的 `tps` 此前硬编码 20.0，现返回主服真实 TPS（无指标数据为 null，前端显示"—"）；分服心跳附带 `tps1m/memUsedMb/memMaxMb/cpuLoad`
+- **TPS 低阈值告警**：默认 <15 连续 3 次心跳触发管理员铃铛+通知邮箱（1 小时冷却），`metrics.config` 可调阈值/关闭
+- **按服 token 粒度管理**：启用 `dp_server.token_hash`；后台「服务器管理」Tab（新）——分服心跳状态/签发·轮换令牌(明文仅显示一次,库中只存 SHA-256)/按服启停；`security.config.tokenMode = shared(默认)|per_server`，per_server 模式下 `/internal/v1/**` 按 `X-Server-Id` 校验该服令牌且停用即拒，全局令牌保留为应急通道(命中记 warn 审计)
+- **地图集成升级**：门户地图条目结构化 `map_items[{name,url,type: bluemap|dynmap|generic}]`（后台动态行编辑器，兼容旧 `map_url` 竖线格式）；新公开端点 `GET /api/map/live?i=` 由后端代理 BlueMap/Dynmap 玩家位置 JSON（URL 只取后台已配置条目，杜绝 SSRF）；地图页新增「在线位置」侧栏（头像+世界+坐标，15s 刷新，点击深链定位），iframe 嵌入不变
+- 后端审计码新增：`server_token_issue`/`server_token_mode`/`server_enable`/`server_disable`
+
 ### Fixed（前端动画/过渡）
 - **修复卡片 hover 上浮全站失效**：移除全局 `.card` 入场动画（0.4s + `:nth-child` 交错延迟）——其 `animation-fill-mode: both` 在动画结束后永久锁定 transform（级联优先级高于普通声明），压住 `.card-hover` 的 hover 位移；且任何列表过滤/翻页/弹窗开关引发的卡片重挂载都会整批重播入场动画（后台管理页尤甚）
 - 页面入场收敛为**路由挂载时整页一次性上浮淡入**（`main > *` + `backwards` fill）：只动页面根节点，页面内部再渲染不再重播；nth-child 位置式交错延迟一并移除

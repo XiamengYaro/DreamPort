@@ -28,6 +28,7 @@ features:
   report-join-quit: true
   receive-chat: true            # 接收网页/QQ 消息并游戏内广播（docs/ASTRBOT_PLAN.md §5.3）
   message-poll-seconds: 2       # 游戏收件箱轮询间隔（秒）
+  report-metrics: true          # 心跳附带 TPS/内存/CPU 指标上报（后台资源看板数据源）
 
 # 群组服玩家数据(经济/时长)上报策略:
 #   auto = 仅主服(role: primary)上报(推荐,群组服指定主服推送,避免多服快照互相覆盖)

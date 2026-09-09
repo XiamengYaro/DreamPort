@@ -73,7 +73,7 @@
           <div class="grid grid-cols-2 gap-3">
             <StatCard :value="serverStatus.onlinePlayers || 0" label="在线玩家" />
             <StatCard :value="serverStatus.maxPlayers || 0" label="最大人数" />
-            <StatCard :value="serverStatus.tps?.toFixed(1) || '0.0'" label="TPS" />
+            <StatCard :value="serverStatus.tps != null ? Number(serverStatus.tps).toFixed(1) : '—'" label="TPS" />
             <StatCard :value="serverStatus.minecraftVersion || '-'" label="版本" />
           </div>
         </div>

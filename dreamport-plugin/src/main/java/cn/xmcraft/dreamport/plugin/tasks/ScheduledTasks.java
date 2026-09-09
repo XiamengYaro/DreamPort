@@ -31,7 +31,10 @@ public final class ScheduledTasks {
             java.util.List<String> players = plugin.getServer().getOnlinePlayers().stream()
                     .map(p -> p.getName()).toList();
             plugin.backendClient().heartbeat(online, max,
-                    plugin.getServer().getBukkitVersion(), players);
+                    plugin.getServer().getBukkitVersion(), players,
+                    cfg.reportMetrics()
+                            ? cn.xmcraft.dreamport.plugin.internal.MetricsCollector.collect()
+                            : null);
         });
 
         // whitelist 指令队列(tasks.whitelist-poll-interval,默认 30s,bukkit 白名单模式)

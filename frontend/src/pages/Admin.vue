@@ -141,9 +141,21 @@
               <label class="block text-sm text-stone-300 mb-1">服务器端口</label>
               <input v-model.number="portalData.server_port" type="number" class="input" />
             </div>
-            <div>
-              <label class="block text-sm text-stone-300 mb-1">地图地址（多个用 | 分隔）</label>
-              <input v-model="portalData.map_url" class="input" placeholder="http://mc.example.com:8123" />
+            <div class="md:col-span-2">
+              <label class="block text-sm text-stone-300 mb-1">地图（名称 / 地址 / 类型，类型用于地图页在线玩家侧栏）</label>
+              <div v-for="(m, i) in portalData.map_items" :key="i" class="flex flex-wrap gap-2 mb-2">
+                <input v-model="m.name" class="input w-36" placeholder="名称" />
+                <input v-model="m.url" class="input flex-1 min-w-[220px]" placeholder="http://mc.example.com:8123" />
+                <select v-model="m.type" class="input w-32">
+                  <option value="bluemap">BlueMap</option>
+                  <option value="dynmap">Dynmap</option>
+                  <option value="generic">通用网页</option>
+                </select>
+                <button type="button" @click="portalData.map_items.splice(i, 1)"
+                  class="text-rose-400 hover:text-rose-300 text-sm px-2">删除</button>
+              </div>
+              <button type="button" @click="portalData.map_items.push({ name: '', url: '', type: 'bluemap' })"
+                class="btn-secondary text-xs py-1.5 px-3">+ 添加地图</button>
             </div>
             <div>
               <label class="block text-sm text-stone-300 mb-1">Wiki 链接</label>
@@ -927,6 +939,14 @@
             <StatCard :value="(statsOverview.questionnairePassed || 0) + (statsOverview.questionnaireFailed || 0)" label="总提交数" />
           </div>
         </div>
+
+        <!-- 服务器资源监控 -->
+        <ServerMetricsPanel />
+      </div>
+
+      <!-- 服务器管理 Tab -->
+      <div v-if="activeTab === 'servers' && !loading">
+        <ServerManageTab />
       </div>
 
       <!-- 操作日志 Tab -->
@@ -1221,6 +1241,8 @@ import AppPagination from '@/components/ui/AppPagination.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
+import ServerManageTab from '@/components/admin/ServerManageTab.vue'
+import ServerMetricsPanel from '@/components/admin/ServerMetricsPanel.vue'
 import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 import { renderMarkdown } from '@/lib/markdown'
@@ -1239,6 +1261,7 @@ const menuItems = [
   { key: 'review', icon: 'clipboard-check', label: '审核管理' },
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
+  { key: 'servers', icon: 'server-stack', label: '服务器管理' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
   { key: 'rewards', icon: 'sparkles', label: '奖励发放' },
   { key: 'titles', icon: 'shield-check', label: '称号与成就' },
@@ -1619,6 +1642,7 @@ const portalData = ref({
   logo: '/logo.png',
   icp: '',
   map_url: '',
+  map_items: [] as any[],
   social: { wiki: '' },
   carousel: [] as any[],
   team: [] as any[],
@@ -1647,6 +1671,8 @@ const auditActionLabels: Record<string, string> = {
   settings_game: '游戏设置', settings_downloads: '下载中心设置',
   settings_astrbot: 'QQ 互通设置', settings_announcements: '公告设置',
   settings_tasks: '任务配置', settings_shop: '兑换商店',
+  server_token_issue: '签发按服令牌', server_token_mode: '切换鉴权模式',
+  server_enable: '启用服务器通道', server_disable: '停用服务器通道',
 }
 const auditActionLabel = (a: string) => {
   if (auditActionLabels[a]) return auditActionLabels[a]
@@ -1950,6 +1976,10 @@ const loadPortalConfig = async () => {
         logo: p.logo || '/logo.png',
         icp: p.icp || '',
         map_url: p.map_url || '',
+        map_items: Array.isArray(p.map_items) && p.map_items.length
+          ? p.map_items.map((m: any) => ({ name: m.name || '', url: m.url || '', type: m.type || 'generic' }))
+          : (p.map_url || '').split('|').map((u: string) => u.trim()).filter(Boolean)
+              .map((u: string) => ({ name: '地图', url: u, type: 'generic' })),
         social: p.social || { wiki: '' },
         carousel: Array.isArray(p.carousel) ? p.carousel : [],
         team: Array.isArray(p.team) ? p.team : [],
@@ -2076,7 +2106,12 @@ const removeTimelineEvent = (i: number) => { portalData.value.timeline.splice(i,
 
 const savePortalConfig = async () => {
   saving.value = true
-  try { await api.updatePortalConfig(portalData.value); notify?.success('保存成功') } catch (e: any) { notify?.error(e.message) }
+  try {
+    // map_items 为权威数据;map_url 派生保留(旧版本/外部消费兼容)
+    const validItems = portalData.value.map_items.filter((m: any) => (m.url || '').trim())
+    portalData.value.map_items = validItems
+    portalData.value.map_url = validItems.map((m: any) => m.url.trim()).join('|')
+    await api.updatePortalConfig(portalData.value); notify?.success('保存成功') } catch (e: any) { notify?.error(e.message) }
   saving.value = false
 }
 

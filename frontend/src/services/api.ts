@@ -741,6 +741,42 @@ class ApiService {
     return this.request(`/server/player-history${days ? `?days=${days}` : ''}`)
   }
 
+  // 服务器资源指标(心跳采集,公开读)
+  async getServerMetrics(serverId: string, hours: number) {
+    return this.request(`/server/metrics?serverId=${encodeURIComponent(serverId)}&hours=${hours}`)
+  }
+
+  // 地图在线玩家(公开,按 portal.config 地图下标)
+  async getMapLive(index: number) {
+    return this.request(`/map/live?i=${index}`)
+  }
+
+  // 服务器管理(后台:注册表/按服令牌/启停/鉴权模式)
+  async getAdminServers() {
+    return this.request('/admin/servers')
+  }
+
+  async issueServerToken(serverId: string) {
+    return this.request(`/admin/servers/${encodeURIComponent(serverId)}/issue-token`, {
+      method: 'POST',
+      body: '{}'
+    })
+  }
+
+  async setServerEnabled(serverId: string, enabled: boolean) {
+    return this.request(`/admin/servers/${encodeURIComponent(serverId)}/enabled`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled })
+    })
+  }
+
+  async setTokenMode(mode: string) {
+    return this.request('/admin/servers/token-mode', {
+      method: 'PUT',
+      body: JSON.stringify({ mode })
+    })
+  }
+
   // Player Profile
   async getPlayerList() {
     return this.request('/players/list')
