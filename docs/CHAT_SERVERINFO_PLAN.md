@@ -1,6 +1,6 @@
 # 网页消息历史 7 天 + 服务器信息落库 方案
 
-> 状态:**已定稿**(v1.1,2026-09-06;§6 决策点已由作者确认)
+> 状态:**已交付**(v1.1.0,2026-09-06 合入并发布;M6 聊天历史落库 / M7 服务器信息落库 / M8 收尾全部完成)
 > 分支:`dev` · 前置:M1–M5(AstrBot 互通)已合入 dev
 > 需求(作者提出):①网页 web 端与服内消息互通 ②网页端可查看服务器内历史消息 ③插件采集服务器信息实时保存到数据库 ④网页端可查看近 7 天消息
 
@@ -64,7 +64,7 @@ CREATE TABLE dp_online_history (
 
 | 端点 | 变化 |
 |------|------|
-| `GET /api/chat/history` | **兼容保留**,数据源换 `dp_chat_message`:默认返回最近 200 条 `{history:[{player, message, timestamp, origin, server_id}]}`(新增字段向后兼容);500 条上限取消 |
+| `GET /api/chat/history` | **兼容保留**,数据源换 `dp_chat_message`:默认返回最近 200 条 `{history:[{player, message, timestamp, origin, server_id}]}`(新增字段向后兼容);500 条上限取消。**交付注记**:实际契约为 `{success, data:{history, nextBefore}}`、`?limit=` 上限 500、`?origin=` 过滤,以 API_CONTRACT/CHANGELOG 为准 |
 | `GET /api/chat/history?before={id}&limit=200` | **新增**向前分页(取 id < before 的前 limit 条);`?origin=` 可过滤(如只看游戏聊天);一律限 7 天窗口 |
 | `GET /api/server/player-history` | **兼容保留**默认近 24h;新增 `?days=7`(上限 7)→ `data.list` 按采样点返回 `{time, players}` 结构不变,另加 `data.servers:[{serverId, points}]` 分服曲线 |
 | `GET /api/server/status` | 数据源增强:重启后心跳未到时从 `dp_server` 读最后快照(标 `stale: true`),不再返回空白 |
@@ -75,9 +75,9 @@ CREATE TABLE dp_online_history (
 
 - **ChatBox.vue 历史浏览**:进入加载最近 200 条(时间戳显示精确到时分,跨天显示日期);"加载更早"按钮按 `before` 游标向前翻页(7 天窗口,到底提示);发送/接收逻辑不变;**裸 fetch 全部改走 `services/api.ts`**(修复 Rules §7 违规)。
 - **Dashboard 服务器状态卡**:新增「近 7 天在线」小曲线(复用 `PlayerChart` 组件,数据 `player-history?days=7`,抽稀渲染)。
-- `Status.vue` 为未挂路由的旧"申请状态查询"空壳页——**不启用、不删除**(本次不动,避免范围膨胀)。
+- `Status.vue` 原为未挂路由的旧"申请状态查询"空壳页——**该决定已推翻**:v1.1.0 已启用 `/status` 路由、入导航「更多」菜单并修复契约(见 CHANGELOG 1.1.0)。
 
-## 3. 里程碑(均在 dev 分支)
+## 3. 里程碑(均已交付:2026-09-06 v1.1.0)
 
 | 里程碑 | 内容 | 可独立交付 |
 |--------|------|-----------|

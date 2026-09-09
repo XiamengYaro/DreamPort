@@ -1,33 +1,20 @@
-version: 1.1.0
+version: 1.4.1
 release_notes: |
-  # DreamPort · 夏日小镇 · 梦港 v1.1.0
+  # DreamPort · 夏日小镇 · 梦港 v1.4.1
 
   ## 简体中文
 
-  本版本包含 API 破坏性变更（机器人端点契约 v1.1，免验证绑定端点移除）。
+  v1.4.1 为守则门死锁热修：修复玩家在控制台/验证页无法确认服务器守则，导致 ID 验证、绑定、改 ID 卡住的问题。
 
-  ### QQ 互通（AstrBot）
-  - QQ 验证绑定：群内 /dp 绑定 → 私聊验证码 → 网页个人中心或游戏内 /xmw qq bind 确认，单 QQ 单账号
-  - 群服消息互通：绑定群消息进游戏与网页，游戏聊天/进出服/网页聊天实时发群（SSE），防回环
-  - 自研 AstrBot 插件 astrbot_plugin_dreamport v1.0.1（部署见 astrbot-plugin/README.md）
-  - 管理后台「QQ 互通」卡：总开关、API 令牌生成、群绑定编辑，全部热生效
+  - 验证页守则卡片不再被「已验证」状态隐藏——只要未同意守则即显示
+  - 控制台(Dashboard)Minecraft 账户信息卡新增「服务器守则」同意区块
 
-  ### 消息历史与服务器信息
-  - 聊天消息落库（dp_chat_message，四源 origin 标记），网页聊天室可翻页查看近 7 天
-  - 服务器心跳快照与在线采样落库（dp_server / dp_online_history），重启不丢
-  - Dashboard 在线趋势支持近 7 天；服务器状态在重启后以快照兜底（stale 标记）
-
-  ### 架构与修复
-  - Flyway V3：dp_chat_message / dp_server 补列 / dp_online_history
-  - 修复 lookup 端点参数绑定、插件 GET 鉴权头缺失、/status 页契约消费等存量 bug
-  - 插件配置 items.* 心跳间隔可调；孤儿 UI 清理（ChatBox 挂载 /status 注册）
+  v1.4.0 主要功能：守则门 · 积分任务系统 · 称号系统(游戏内 PAPI + /titles GUI + 网页展示佩戴 + 游戏内颜色可定义) · 奖励礼包发放 · 全仓库安全审计修复 · playertitle 旧称号数据迁移。
 
   ## English
 
-  Includes breaking API changes (bot endpoints contract v1.1; unverified bind endpoint removed).
+  v1.4.1 hotfix for the rules-gate deadlock: players could not accept server rules on the dashboard/verify page,
+  which blocked ID verification, binding and ID change.
 
-  - QQ verification binding: one-time code via bot DM, confirmed on web dashboard or in-game (/xmw qq bind)
-  - Group-server message bridge via custom AstrBot plugin (astrbot_plugin_dreamport) with SSE downlink
-  - Chat history persisted 7 days (dp_chat_message) with paginated web browsing; server heartbeat snapshots
-    and online samples persisted (dp_server / dp_online_history), stale fallback after restart
-  - Flyway V3 migrations; admin UI group-binding editor; several long-standing bugs fixed
+  v1.4.0 added: rules gate, points & tasks, title system (in-game PAPI + /titles GUI + web equip + configurable
+  in-game color), reward kits, full security audit fixes, and playertitle data migration.

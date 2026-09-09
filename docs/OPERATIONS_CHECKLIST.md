@@ -1,6 +1,6 @@
 # DreamPort 部署与运维检查清单
 
-> 供生产部署与日常运维逐项核对。适用版本 v1.2.0+
+> 供生产部署与日常运维逐项核对。适用版本 v1.4.0+
 
 ---
 
@@ -15,13 +15,13 @@
 - [ ] 确认仅主服日志出现"经济快照已上报"（子服应为"经济快照上报已跳过"）
 - [ ] 如需后端硬保险：后端 config.yml 加 `wl.economy.accept-from: <主服serverId>`
 
-### 后端（dreamport-server-1.2.0.jar）
+### 后端（dreamport-server-1.4.1.jar）
 - [ ] 首次启动生成 `config.yml`，完成全部 `[必改]` 项：
   - [ ] `spring.datasource`：MySQL 连接
   - [ ] `wl.security.jwt-secret`：`openssl rand -base64 48` 生成
   - [ ] `wl.internal.server-token`：与插件 `backend.server-token` 一致
 - [ ] `wl.cors.allowed-origins` 从 `*` 改为实际站点域名
-- [ ] `wl.seed-demo` 保持 `false`
+- [ ] 已通过 `/setup` 初始化向导创建管理员（演示播种已由向导取代）
 - [ ] `wl.mail.*` 填入 SMTP（不填则验证码仅打印日志）
 - [ ] `wl.web-register-url` 填实际站点地址（邮件 logo/链接依赖此值）
 - [ ] 启动后完成 `/setup` 初始化向导（管理员账号 + 全新部署/导入旧库）
@@ -40,7 +40,7 @@
 ### 上线前安全
 - [ ] 管理后台「系统配置」核对管理员名单与通知邮箱
 - [ ] 邮件 logo 为 PNG/JPG（Outlook 不支持 webp）
-- [ ] 数据库定时备份任务已配置（mysqldump + `static/uploads/` + `docs/` + `email/`）
+- [ ] 数据库定时备份任务已配置（mysqldump + `static/uploads/` + `data/avatar-cache/`(头像磁盘缓存) + `docs/` + `email/`）
 
 ---
 
@@ -61,7 +61,7 @@
 - 回滚：`legacy_*_backup` 表改回原名 + 换回旧版 JAR
 
 ### 版本升级
-1. 备份数据库与 `static/uploads/`、`docs/`、`email/` 三个目录
+1. 备份数据库与 `static/uploads/`、`data/avatar-cache/`、`docs/`、`email/` 目录
 2. 替换 JAR → 重启 → 查看「启动记录」确认版本与数据完整
 3. 前端有更新时浏览器强制刷新一次（之后 HTML no-store 自动生效）
 

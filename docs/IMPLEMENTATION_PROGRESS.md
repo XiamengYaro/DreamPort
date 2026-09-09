@@ -4,7 +4,7 @@
 > **更新规则**：每完成一项，将状态改为 ✅ 并在提交信息中注明；每个阶段（P*）全部 ✅ 后在 CHANGELOG 记录并推送。
 > **参考列**：指向 `../XMWhitelist-Legacy/`（旧版归档）中的行为参考实现。
 
-**总体进度**：P0–P8 ✅ 全部完成（功能主体 + 实测验收；可选增强项：Microsoft OAuth、Vitest 组件测试）
+**总体进度**：P0–P8 ✅ 全部完成（功能主体 + 实测验收；可选增强项：Vitest 组件测试；Microsoft OAuth 已明确排除——2026-09-08 移除，产品收口纯正版账号）
 
 ---
 
@@ -17,7 +17,7 @@
 | 0-3 | AGENTS.md + Rules.md 工程规则 | ✅ | — |
 | 0-4 | 旧项目比对报告（谱系 + 功能差距） | ✅ | — |
 | 0-5 | `dreamport-common` 协议 DTO 定义（login-check/heartbeat/事件/错误码） | ✅ | Legacy BridgeClient/ApiRouter |
-| 0-6 | 新 Schema DDL 定稿（V1 核心四表已建；其余表随域阶段 V2+ 迁移） | 🚧 | Legacy db/*Dao.java |
+| 0-6 | 新 Schema DDL 定稿（V1–V10 全表已建：聊天/守则/积分/称号/礼包等） | ✅ | Legacy db/*Dao.java |
 | 0-7 | API 契约表落档（docs/API_CONTRACT.md，全部端点逐字冻结） | ✅ | Legacy ApiRouter + api.ts |
 
 ## P1 服务骨架（dreamport-server）
@@ -63,7 +63,7 @@
 | 3-8 | 资料管理（profile/avatar 上传 2MB/换绑邮箱带验证码/改密） | ✅ | Legacy UserProfileHandler |
 | 3-9 | Minecraft ID 绑定验证（pending_logins 比对，3 分钟窗口） | ✅ | Legacy UserMinecraftHandler |
 | 3-10 | 基岩版 ID 绑定验证（Geyser 前缀） | ✅ | Legacy UserBedrockHandler |
-| 3-11 | Microsoft 正版 OAuth 链（MS→Xbox→XSTS→Minecraft）+ Mojang 查询 | ⬜ Microsoft OAuth 链（P7 后补）| Legacy MicrosoftOAuthService/MojangApiService |
+| 3-11 | ~~Microsoft 正版 OAuth 链（MS→Xbox→XSTS→Minecraft）~~ | ➖ 2026-09-08 已移除（产品收口纯正版账号，链路从未接线） | Legacy MicrosoftOAuthService/MojangApiService |
 | 3-12 | 问卷题库（dp_question 入库 + YAML 导入导出，双语题目） | ✅ | Legacy QuestionnaireService/questionnaire.yml |
 | 3-13 | 客观题计分（单选/多选，clamp 规则） | ✅ | Legacy 同上 |
 | 3-14 | LLM 评分（OpenAI 兼容 + 熔断/重试/并发控制） | ✅ | Legacy OpenAICompatibleScoringProvider |
@@ -98,7 +98,7 @@
 
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
-| 5-1 | 插件骨架（Paper 1.20 + Folia 双调度） | 🚧 骨架已建，监听器待 P5 | Legacy XMWhitelist.java |
+| 5-1 | 插件骨架（Paper 1.20 + Folia 双调度） | ✅ | Legacy XMWhitelist.java |
 | 5-2 | 进服校验（login-check + Caffeine 缓存 60s + fail_policy cache/allow/deny） | ✅ | Legacy PlayerLoginListener（重设计） |
 | 5-3 | 状态分支踢出文案（i18n 键与旧版一致） | ✅ | Legacy i18n login.* |
 | 5-4 | 登录记录上报（pending login，供网页 ID 验证） | ✅ | Legacy MysqlPendingLoginDao |
@@ -108,7 +108,7 @@
 | 5-8 | `/xmw` 命令：reload/status/link + approve/reject/ban/unban/list/info | ✅ | Legacy XmwCommandExecutor |
 | 5-9 | 游戏内 delete 命令（删用户+移出白名单） | ✅ | 命令设计 |
 | 5-10 | secondary 角色：子服状态心跳/玩家列表上报（合并 Bridge） | ✅ | Legacy XMWhitelist-Bridge |
-| 5-11 | **proxy 角色：Velocity/BungeeCord 代理端统一拦截** | 🚧 role=proxy 配置就绪；Velocity 独立模块待建| 参考设计 |
+| 5-11 | **proxy 角色：Velocity 代理端统一拦截** | ✅ dreamport-plugin-proxy 独立模块已建并随 v1.4.x 发布 | 参考设计 |
 | 5-12 | bStats 匿名统计（插件侧，可关） | ✅（官方库 org.bstats） | 官方 bStats 库 |
 
 ## P6 前端（frontend/）
@@ -118,7 +118,7 @@
 | 6-1 | 旧前端基线导入 + Vite/Pinia/严格 TS 升级 | ✅ 基线导入+构建通过 | Legacy frontend/ |
 | 6-2 | 18 个页面迁移与契约回归（Portal/Docs/Whitelist/登录族/Verify/Questionnaire/Dashboard/Leaderboard/Village/Machines/Players/Map/Admin…） | ✅ 18 页面随基线继承 | Legacy src/pages |
 | 6-3 | 语言切换组件（zh/en 即时切换 + 持久化） | ✅ | 组件设计 |
-| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…） | 🚧 语言切换已加；完整组件库渐进抽取| 参考设计 |
+| 6-4 | ui 基础组件库（Button/Card/Dialog/Pagination/SearchBar/ConfirmDialog/Tabs…） | ✅ AppAvatar/AppModal/AppPagination/EmptyState/StatCard 已抽取 | 参考设计 |
 | 6-5 | 组件/组合式函数测试（Vitest） | ⬜ Vitest 组件测试待补| 参考设计 |
 | 6-6 | 管理后台统一审核管理（注册/申诉/村民/机器 四子标签） | ✅ 随基线继承 | Legacy Admin.vue |
 | 6-7 | Status.vue 审核状态查询修复（query 参数） | ✅（FIX(legacy) 已实现） | Legacy（已知缺陷） |
@@ -142,11 +142,11 @@
 | # | 功能项 | 状态 | 参考 |
 |---|--------|------|------|
 | 8-1 | 全功能验收：逐项对照本表 + Legacy 行为清单 | ✅ 真实数据全链路验收通过（进服决策矩阵/审计/门户/玩家目录/问卷保留）| — |
-| 8-2 | 迁移演练：真实旧库副本 + file 模式样本 + 旧密码登录抽查 | ⬜ 需真实旧库演练| — |
+| 8-2 | 迁移演练：真实旧库副本 + file 模式样本 + 旧密码登录抽查 | ✅ v0.2.1 真实 xmc 库 dump 演练通过（1778 行 1.6s 导入） | — |
 | 8-3 | 性能压测（wrk 对比旧版，虚拟线程/连接池收益报告） | ⬜ 压测待执行| — |
 | 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明） | ✅（.gitea/workflows/build.yml） | CI 设计 |
 | 8-5 | 部署物：可执行 jar + systemd unit + Dockerfile + 插件 jar | ✅（Dockerfile + systemd unit） | — |
-| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ⬜ 待数据迁移演练通过| — |
+| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ✅ v1.0.0 已于 2026-09-06 发布（当前 v1.4.1） | — |
 
 ---
 
@@ -159,8 +159,27 @@
 - [x] 皮肤站互通全套:OAuth2 Provider(authorize/token/userinfo)+ 自写 BS 插件 dreamport-oauth v1.1.0(SSO/注册一键开通/账号同步/纯 SSO)+ 注册玩家类型分型（**2026-09-08 已整体移除,产品收口纯正版账号**）
 - [x] 封禁体系:公开名单页 /bans + 临时封禁(ban_until/天数/每小时自动解封)+ 封禁/解封邮件
 - [x] 功能补全七批次:改密码 UI/申诉入口/管理员名单/通知补全/UGC 风控(限频+敏感词+先审后发)/问卷导出/状态时间线/公告草稿定时/离线告警
-- [x] Microsoft 正版绑定链路(待 Azure 联调)
+- [x] Microsoft 正版绑定链路(**2026-09-08 已整体移除,产品收口纯正版账号**)
 - [x] 门户:公告页/聊天广场/封禁页;后台:左侧菜单+文档管理+公告管理+照片墙审核
 - [x] 前端两期视觉升级:公共组件抽取+液态玻璃;导航重构+用户区改版+通知中心
 - [x] 全插件文档库 wiki/(31 篇,玩家册+服主册)
 - [x] GitHub Wiki 一键发布脚本 scripts/publish-github-wiki.sh
+
+## v1.3.0 批次(2026-09-08)
+
+- [x] 收口纯正版:移除 BS 皮肤站互通与微软绑定(上表 3-11 标 ➖)
+- [x] 头像本地双层渲染(名字正版匹配 Mojang→默认脸)+ 按 UUID 同步新 ID
+- [x] 全局移动端适配 + 深色玻璃小字对比度提亮
+
+## v1.4.0 批次(2026-09-09)
+
+- [x] 守则门:注册后强制阅读服务器守则(dp_rules_consent)
+- [x] 积分任务系统 P1:账本/任务中心/兑换邮件/后台可视化配置
+- [x] 称号系统:游戏内 PAPI(%dreamport_title%)+ /titles GUI + 后台 CRUD + 网页展示佩戴 + 游戏内颜色可定义
+- [x] 奖励礼包:服内采集 + 单人/全员发放 + 邮件物品直发
+- [x] 全仓库安全审计修复(5 CRITICAL + 全量 HIGH/MEDIUM)
+- [x] 修复称号/成就/任务/商店配置从未生效的重大 bug(getRaw)
+
+## v1.4.1 批次(2026-09-09)
+
+- [x] 守则门死锁热修:控制台与验证页补守则同意入口

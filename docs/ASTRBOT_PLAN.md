@@ -1,7 +1,7 @@
 # AstrBot 重构方案 —— QQ 验证绑定 + 群服消息互通
 
-> 状态:**已定稿**(v1.1,2026-09-06;§9 决策点已由作者确认)
-> **实施进度:M1–M5 已全部完成并合入 dev 分支**(2026-09-06);真机联调(NapCat + AstrBot 环境)待部署后按 `astrbot-plugin/README.md` 清单执行。
+> 状态:**已交付**(v1.1.0,2026-09-06 合入并发布;§9 决策点已由作者确认)
+> **实施进度:M1–M5 已全部完成并随 v1.1.0 发布**;真机联调(NapCat + AstrBot 环境)待部署后按 `astrbot-plugin/README.md` 清单执行。
 > 分支:`dev` · 适用版本:v1.0.1 之后的新功能开发线
 > 结论先行:现有 AstrBot 集成**不可用**(详见 §1),本方案将其重构为「AstrBot 插件 ⇄ 后端 REST/SSE」的双向架构。
 
@@ -165,7 +165,7 @@
 | `/api/astrbot/stream` | GET(SSE) | X-API-Token 请求头 → `{seq, group, text}` 事件流 | **新增** |
 | `/api/astrbot/messages` | GET | `?since=seq` → `{messages:[...]}` | **新增**(轮询 fallback) |
 
-用户侧新增(JWT):`POST /api/user/qq/bind {code}`、`POST /api/user/qq/unbind`、`GET /api/user/qq/status → {bound, qq_masked, bound_at}`。游戏内通道新增(服务器间鉴权):`POST /internal/v1/qq/bind {player, code}`。实现后同步更新 `docs/API_CONTRACT.md`。
+用户侧新增(JWT):`POST /api/user/qq/bind {code}`、`POST /api/user/qq/unbind`、`GET /api/user/qq/status → {bound, qq_masked, bound_at}`。游戏内通道新增(服务器间鉴权):`POST /internal/v1/qq/bind {player, code}`。已随 v1.1.0 同步更新 `docs/API_CONTRACT.md`。
 
 ### 5.5 astrbot_plugin_dreamport(自研 AstrBot 插件)
 

@@ -10,7 +10,6 @@ wl:
     server-token: <必填>      # 服务器间通信令牌；插件 backend.server-token 需一致
   cors:
     allowed-origins: "*"     # 生产必须收敛为站点域名
-  seed-demo: false           # 是否播种演示账号（生产必须 false）
   web-register-url: https://… # 注册页地址（进服踢出提示/邮件链接用）
   admin-notify-email: ""     # 管理员通知邮箱（问卷通过提醒；修复旧版硬编码）
   mail:

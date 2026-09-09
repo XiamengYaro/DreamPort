@@ -56,6 +56,11 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 📰 **公告中心** | 资讯中心 + 更新日志双栏目，支持草稿/定时发布 |
 | 🔔 **通知中心** | 审核/封禁/公告等重要消息铃铛推送，配合邮件通知 |
 | 🚫 **封禁公示** | 公开封禁名单页，临时封禁到期自动解封 |
+| 📜 **守则门** | 注册后 ID 验证前强制阅读服务器守则（可配文档与阅读秒数），控制台/验证页均可确认 |
+| 🎯 **任务中心** | 签到/日常任务赚积分，兑换商店换取游戏内奖励（游戏内 `/tasks` 与网页同步） |
+| 🏆 **称号系统** | 成就/管理员授予称号，游戏内 `/titles` 佩戴、PAPI 变量 `%dreamport_title%` 显示，网页「我的称号」管理 |
+| 📦 **奖励礼包** | 服内采集背包为礼包模板，后台单人/全员发放（物品+指令直发游戏内邮件） |
+| ✉️ **游戏内邮件** | 网页/后台奖励下发进服，`/mail` 领取（支持物品直发） |
 
 ### 管理侧
 
@@ -72,7 +77,10 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 📈 **服务器信息落库** | 心跳快照与在线采样持久化，重启不丢；在线趋势支持近 7 天曲线 |
 | 📄 **文档管理** | 官网文档库 Markdown 编辑 + 实时预览 |
 | 🛡 **临时封禁** | 按天数封禁、到期自动解封、全程邮件+铃铛通知 |
-| 🤖 **Microsoft 绑定** | 正版账号 OAuth 绑定(需配置 Azure 应用) |
+| 📜 **注册守则** | 守则文档与强制阅读秒数可视化配置，热生效 |
+| 🎯 **任务与兑换** | 任务规则（类型/周期/渠道/积分）与兑换商店定义 CRUD |
+| 🏆 **称号与成就** | 称号/成就定义 CRUD、手动授予/撤销、游戏内颜色可配 |
+| 📦 **奖励发放** | 礼包模板管理 + 单人/全员发放 |
 
 ## 🚀 快速开始
 
@@ -85,11 +93,11 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 首次启动 → 自动生成 config.yml
-java -jar dreamport-server-1.2.0.jar
+java -jar dreamport-server-1.4.1.jar
 # （数据库未配置时启动失败属预期，文件已生成）
 
 # 编辑 config.yml 后再次启动
-nano config.yml && java -jar dreamport-server-1.2.0.jar
+nano config.yml && java -jar dreamport-server-1.4.1.jar
 ```
 
 `config.yml` 中 `[必改]` 项：**数据库连接**、**jwt-secret**、**server-token**（生成随机串：`openssl rand -base64 48`）。所有部署配置集中在这一个文件，无需环境变量。
@@ -109,8 +117,8 @@ nano config.yml && java -jar dreamport-server-1.2.0.jar
 
 | 服务器 | 安装文件 | 说明 |
 |--------|----------|------|
-| **Paper/Folia 子服** | `dreamport-plugin-1.2.0.jar` | 进服拦截、聊天互通、经济采集 |
-| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.2.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
+| **Paper/Folia 子服** | `dreamport-plugin-1.4.1.jar` | 进服拦截、聊天互通、经济采集 |
+| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.4.1.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
 
 插件首次启动自动生成配置，把 `server-token` 改成与后端一致、`backend.url` 指向后端即可。启动控制台会打印**同款字符画 Banner + 中文启动记录**（角色/后端连通/拦截状态一目了然）。
 
@@ -170,6 +178,12 @@ mysqldump -uroot xmc > xmc-backup.sql
 /xmw ban|unban <玩家> [原因]     封禁/解封
 /xmw delete <玩家>              删除用户
 /xmw reload                     重载配置
+/xmw signin                     游戏内每日签到(得积分)
+/xmw qq bind <验证码>            QQ 绑定游戏内确认
+/xmw kit save <礼包名>          采集背包为奖励礼包模板(管理员)
+/xmw kit list                   查看礼包模板(管理员)
+/mail                           打开奖励邮箱(领取邮件/物品)
+/titles                         打开称号佩戴 GUI
 ```
 
 ## ❓ 常见问题
@@ -213,9 +227,9 @@ mysqldump -uroot xmc > xmc-backup.sql
 ```bash
 ./scripts/build.sh        # 前端 + 后端 + 两个插件一次构建
 # 产物:
-#   dreamport-server/target/dreamport-server-1.2.0.jar
-#   dreamport-plugin/target/dreamport-plugin-1.2.0.jar
-#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.2.0.jar
+#   dreamport-server/target/dreamport-server-1.4.1.jar
+#   dreamport-plugin/target/dreamport-plugin-1.4.1.jar
+#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.4.1.jar
 ```
 
 ## 🗺️ 路线图

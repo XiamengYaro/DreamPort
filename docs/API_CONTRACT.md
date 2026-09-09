@@ -1,6 +1,6 @@
-# DreamPort API 契约（P0 冻结稿）
+# DreamPort API 契约
 
-> 本表从旧版 `ApiRouter.java`（80+ context）与 `api.ts`（80+ 方法）逐字冻结，是 `/api/**` 契约的权威清单。
+> 本表从旧版 `ApiRouter.java`（80+ context）与 `api.ts`（80+ 方法）逐字冻结（P0 基础），并持续补充 v1.1–v1.4 新增端点，是 `/api/**` 契约的权威清单。
 > 规则（Rules.md §3）：路径/方法/请求响应结构与旧版**逐字保持**；有意修复标 `FIX(legacy)`。
 > 鉴权图例：🌐 公开 ｜ 🔒 Bearer 用户 ｜ 👑 Bearer 管理员 ｜ 🖥 X-Server-Token ｜ 🤖 X-API-Token ｜ ⚡ 限流
 > "落位"= 实现阶段（对应 IMPLEMENTATION_PROGRESS.md）。
@@ -25,14 +25,17 @@
 | `/api/server/status` | GET | 服务器状态（多服聚合） | P4 |
 | `/api/server/player-history` | GET | 在线人数历史（24h/5min 粒度） | P4 |
 | `/api/downloads` | GET | 下载中心 | P7 |
-| `/api/chat/history`、`/api/chat/save` | GET/POST | 聊天室历史 | P4 |
+| `/api/chat/history` | GET | 聊天室历史（近 7 天，游标翻页） | ✅ P4 |
+| `/api/chat/save` 🔒 | POST | 聊天保存（JWT+本人+限流+敏感词，v1.4 审计修复后非公开） | ✅ P4 |
+| `/api/chat/stream-ticket` 🔒 | POST | 聊天 SSE 一次性流票据（v1.4，JWT 不进 URL） | ✅ P4 |
 | `/api/auth/forgot-password` ⚡ | POST | 忘记密码（防枚举） | P3 |
 | `/api/auth/reset-password` | POST | 重置密码（令牌 1h） | P3 |
 | `/api/auth/validate` 🔒 | GET/POST | Token 校验 | ✅ P1 |
 | `/api/cmi/stats[/extended]`、`/api/cmi/wealth`、`/api/cmi/playtime`、`/api/cmi/activedays`、`/api/cmi/online`、`/api/cmi/banned`、`/api/cmi/player/:name` | GET | 经济/时长/在线统计（**FIX(legacy)**：真实统计，移除估算值） | P4 |
 | `/api/village/list` | GET | 村民族谱（仅 approved） | P4 |
 | `/api/machine/list` | GET | 公共机器（仅 approved） | P4 |
-| `/api/players/list`、`/api/players/profile/:name` | GET | 玩家目录/档案 | P4 |
+| `/api/players/list`、`/api/players/profile/:name` | GET | 玩家目录/档案（含当前佩戴称号 title 字段） | P4 |
+| `/api/avatar/{name}?size=` | GET | 公开大头照（本地双层渲染，v1.3） | ✅ P4 |
 
 ## 2. 用户端点 🔒
 
@@ -48,6 +51,11 @@
 | `/api/village/submit` | POST | 村谱提交 | P4 |
 | `/api/machine/{submit,upload}` | POST | 机器提交/截图上传（multipart ≤5MB） | P4 |
 | `/api/chat/send`、`/api/chat/stream` | POST/GET | 聊天发送 / SSE 订阅 | P4 |
+| `/api/user/rules/accept` | POST | 同意服务器守则（幂等，v1.4；set/verify 前置） | ✅ P3 |
+| `/api/user/minecraft/sync-by-uuid` | POST | 按 UUID 同步新 ID（v1.3，仅官方 v4 UUID） | ✅ P3 |
+| `/api/user/qq/{status,bind,unbind}` | GET/POST | QQ 绑定（v1.1，验证码强绑定） | ✅ P4 |
+| `/api/points/{center,signin,claim,shop,redeem}` | GET/POST | 积分任务（v1.4，签到/任务/兑换） | ✅ P4 |
+| `/api/titles/{mine,equip,unequip}` | GET/POST | 称号（v1.4；mine 返回 owned/locked/equipped/achievements） | ✅ P4 |
 
 ## 3. 管理端点 👑
 
@@ -65,8 +73,12 @@
 | `/api/admin/{background,portal,portal/team,portal/carousel,portal/features,portal/timeline,server-config,system-config}` | GET/POST | 站点配置（写 dp_setting） | P7 |
 | `/api/admin/upload` | POST | 图片上传（multipart ≤5MB，魔数校验） | P7 |
 | `/api/admin/maintenance` | GET/POST | 维护模式（持久化） | P4 |
-| `/api/admin/sync` | POST | bukkit 白名单同步 | P5 |
 | `/api/admin/export/{users,audits}` | GET | 导出（CSV/JSON） | P7 |
+| `/api/admin/settings/{rules,tasksconfig,shopconfig}` | GET/PUT | 守则/任务/兑换商店配置（v1.4） | ✅ P4 |
+| `/api/admin/settings/{titlesconfig,achievementsconfig}` | PUT | 称号/成就定义（裸数组，v1.4） | ✅ P4 |
+| `/api/admin/titles/{overview,grant,revoke}` | GET/POST | 称号管理（v1.4，grant/revoke 有校验） | ✅ P4 |
+| `/api/admin/rewards/{kits,send}`、`/api/admin/rewards/kits/{id}` | GET/POST/PUT/DELETE | 奖励礼包（v1.4，单人/全员发放） | ✅ P4 |
+| `/api/admin/migration/{upload,report}` | POST/GET | 数据迁移（v0.4+） | ✅ P7 |
 | `/api/admin/docs/{create,delete,update,category/create,category/delete,reorder}` | POST | 文档管理 | P7 |
 | `/api/village/admin/{pending,approve/:id,reject/:id}` | GET/POST | 村谱审核 | P4 |
 | `/api/machine/admin/{pending,approve/:id,reject/:id}` | GET/POST | 机器审核 | P4 |
@@ -81,6 +93,12 @@
 | `/internal/v1/events` | POST | join/quit/chat 事件上报 | P5 |
 | `/internal/v1/economy/snapshot` | POST | 经济快照上传（Vault/Essentials 采集） | P5 |
 | `/internal/v1/commands/whitelist` | GET | whitelist 指令队列（bukkit 模式） | P5 |
+| `/internal/v1/activity` | POST | 会话时长上报（v1.4，在线时长任务/成就数据源） | ✅ P5 |
+| `/internal/v1/signin` | POST | 游戏内每日签到（v1.4） | ✅ P5 |
+| `/internal/v1/mail/pending`、`/internal/v1/mail/claimed` | GET/POST | 奖励邮件（v1.4） | ✅ P5 |
+| `/internal/v1/title/active|mine`、`/internal/v1/title/equip` | GET/POST | 称号（v1.4，active 供 PAPI） | ✅ P5 |
+| `/internal/v1/kit/save`、`/internal/v1/kit/list` | POST/GET | 礼包采集（v1.4） | ✅ P5 |
+| `/internal/v1/admin-ops/{action}`、`/internal/v1/admin-ops/{list,info/{username}}` | POST/GET | `/xmw` 管理通道（审核/封禁/删除） | ✅ P5 |
 
 ## 5. 机器人端点 🤖（X-API-Token + astrbot.enabled 门禁，v1.1）
 
@@ -124,7 +142,7 @@
 | 端点 | 鉴权 | 说明 |
 |------|------|------|
 | `GET /api/bans` | 公开 | 封禁公示列表(username/avatar/reason/banTime/banUntil) |
-| `POST /api/admin/ban`(ReviewAdmin BanBody) | 管理员 | days 可选:临时封禁,到期每小时自动解封 |
+| `POST /api/admin/user/ban`(UsernameBody) | 管理员 | days 可选:临时封禁,到期每小时自动解封 |
 | `GET /api/announcements` | 公开 | `{news, changelog}`,仅 status=published 且到发布时间的条目 |
 
 ### 8.2 照片墙留言与通知

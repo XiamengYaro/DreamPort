@@ -1,7 +1,7 @@
 # DreamPort 使用文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 适用版本：v1.2.0+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
+> 适用版本：v1.4.1+ ｜ 面向读者：服主/运维（§1–5、§7–9）与玩家/管理员（§6）
 
 ---
 
@@ -30,10 +30,10 @@
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 1. 首次启动 —— 自动在工作目录生成 config.yml（数据库需先在 config.yml 填好）
-java -jar dreamport-server-1.2.0.jar
+java -jar dreamport-server-1.4.1.jar
 
 # 2. 编辑 config.yml：填 MySQL 连接（[必改]），改 jwt-secret / server-token，重启
-nano config.yml && java -jar dreamport-server-1.2.0.jar
+nano config.yml && java -jar dreamport-server-1.4.1.jar
 
 # 3. 浏览器打开 http://localhost:18898/setup 进入初始化向导：
 #    ① 创建管理员账号  ② 选择「全新部署」或「上传旧库 .sql 导入」
@@ -65,13 +65,13 @@ open http://localhost:18898/setup
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # ② 首次启动 —— 自动生成 config.yml（数据库未就绪时本次启动失败属预期，文件已生成）
-java -jar dreamport-server-1.2.0.jar
+java -jar dreamport-server-1.4.1.jar
 
 # ③ 编辑 config.yml（[必改]：spring.datasource 数据库、jwt-secret、server-token、SMTP）
 nano config.yml
 
 # ④ 再次启动 → 打开 http://域名:18898/setup 完成初始化向导
-java -jar dreamport-server-1.2.0.jar
+java -jar dreamport-server-1.4.1.jar
 ```
 
 向导完成两件事：**创建管理员账号**（写入管理员名单）+ **选择部署方式**（全新部署 / 上传旧库 .sql 导入）。
@@ -84,7 +84,7 @@ java -jar dreamport-server-1.2.0.jar
 **systemd（推荐）**：`deploy/dreamport-server.service` 无需环境变量，只需确认路径：
 
 ```bash
-sudo cp dreamport-server-1.2.0.jar /opt/dreamport/
+sudo cp dreamport-server-1.4.1.jar /opt/dreamport/
 sudo cp deploy/dreamport-server.service /etc/systemd/system/
 sudo systemctl enable --now dreamport-server
 ```
@@ -146,6 +146,7 @@ wl:
 ```yaml
 # plugins/DreamPort/config.yml
 role: primary
+server-name: "主服"                 # 心跳上报的服务器名(后台/状态页展示)
 backend:
   url: "http://127.0.0.1:18898"     # 后端与主服同机则 localhost；异机填内网 IP
   server-id: "main"
@@ -157,6 +158,13 @@ features:
   enforce-whitelist: true           # 进服白名单拦截
   forward-chat: true                # 游戏聊天 → 网页聊天室
   report-join-quit: true            # 进出服播报
+  receive-chat: true                # 接收网页/QQ 消息进服广播
+  message-poll-seconds: 2           # 收件箱轮询间隔(网页/QQ 消息下行)
+economy:
+  report: auto                      # auto=仅主服上报 | on | off
+tasks:
+  heartbeat-interval: 60            # 心跳上报间隔(秒,≥10)
+  whitelist-poll-interval: 10       # 白名单指令队列轮询(秒,≥5)
 web-register-url: "https://你的域名"
 ```
 
@@ -168,7 +176,7 @@ web-register-url: "https://你的域名"
 
 ### proxy（Velocity 代理端）
 
-Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-1.2.0.jar`（不是 Paper 版！二者不可混装）。
+Velocity 代理上安装**专用插件** `dreamport-plugin-proxy-1.4.1.jar`（不是 Paper 版！二者不可混装）。
 首次启动自动生成 `plugins/dreamport-proxy/config.properties`：
 
 ```properties
@@ -180,7 +188,7 @@ check.fail-policy=cache
 ```
 
 功能：代理端统一白名单拦截（后端 login-check）+ 60 秒决策缓存 + fail_policy 兜底 + 心跳上报。
-Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
+Paper 子服从装 `dreamport-plugin-1.4.1.jar` 并设 `role: secondary`（本地不再拦截，由代理统一校验）。
 
 ### 校验连通
 
@@ -193,7 +201,7 @@ Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本�
 如果服务器此前使用旧版 XMWhitelist（MySQL 存储在某个库里），**接入即迁移**：
 
 1. 把 DreamPort 的 MySQL 指向**旧版所在的同一个库**（例如旧库 `xmc`）
-2. 启动后端（`--spring.profiles.active=mysql`）
+2. 启动后端（数据源默认直连工作目录 `config.yml` 配置的 MySQL，无需额外参数）
 3. 启动时自动执行：
    - Flyway 建 `dp_*` 新表（自动 baseline，不影响旧表）
    - 检测到 `xmwhitelist_*` 旧表 → 改名 `legacy_<表>_backup`（原地备份，零拷贝）并按列映射导入
@@ -217,13 +225,17 @@ Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本�
 |------|------|------|
 | 注册 | 首页 → 白名单 | 用户名（3-16 位字母数字`_-`）+ 邮箱验证码 + 图形验证码；或使用邀请码免验证码注册 |
 | 入服问卷 | 注册后引导 | 15 题中英双语；客观题自动计分，文本题 AI 评分；通过线 60 分（后台可调）；**低置信度答案自动转人工复核** |
-| MC ID 验证 | 控制台 → ID 验证 | 绑定游戏 ID → 3 分钟内用该 ID 进服一次 → 回网页点"验证"完成绑定（基岩版同理，自动加 `.` 前缀） |
+| MC ID 验证 | 控制台 → ID 验证 | 绑定游戏 ID → 3 分钟内用该 ID 进服一次 → 回网页点"验证"完成绑定（基岩版同理，自动加 `.` 前缀）；**需先阅读并同意服务器守则** |
+| 守则确认 | 控制台/验证页 | 注册后 ID 验证前强制阅读服务器守则（后台可配文档与阅读秒数），同意后记录于服务端 |
+| 任务中心 | `/tasks` | 签到/日常任务赚积分，兑换商店换游戏内奖励 |
+| 我的称号 | 用户菜单 → 我的称号 | 已拥有称号佩戴/脱下、未解锁称号、成就进度；游戏内 `/titles` 同步 |
 | 邀请码 | 控制台 → 邀请管理 | approved 玩家可生成（默认每人 3 个活跃码、7 天有效）；被邀请人申请 → 邀请人确认 → 进入审核 |
 | 个人中心 | `/dashboard` | 状态/资料/头像/换绑邮箱；游戏内余额与时长展示（需插件经济快照） |
 | 排行榜 | `/leaderboard` | 财富 / 在线时长 / 活跃天数 |
 | 村民族谱 | `/village` | 提交村民交易站坐标（世界/坐标/产出/价格），审核通过后公开展示 |
 | 公共机器 | `/machines` | 提交机器（类型/坐标/用途/截图 ≤5MB），审核通过后公开展示 |
-| 网页聊天 | 右上角聊天框 | 网页 ↔ 游戏实时互通（SSE），历史保留 500 条 |
+| 网页聊天 | 右上角聊天框 | 网页 ↔ 游戏实时互通（SSE），近 7 天历史可翻页查看（游标加载更早） |
+| 游戏内邮件 | `/mail` | 网页/后台奖励下发进服，游戏内领取（支持物品直发） |
 | 忘记密码 | 登录页 | 邮箱重置链接，1 小时有效 |
 
 ### 6.2 管理员侧（/admin 后台）
@@ -239,7 +251,12 @@ Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本�
 | 统计 | 注册趋势/问卷统计/审计日志（导出 CSV/JSON） |
 | 维护模式 | 一键开关，**持久化**（重启不丢），开启后非 OP 进服被踢 |
 | 系统配置 | 管理员名单、通知邮箱、AstrBot 令牌等 |
-| 白名单同步 | `bukkit` 白名单模式时一键把 approved 同步进服务器原生白名单 |
+| 注册守则 | 守则文档（指定文档库路径）+ 强制阅读秒数配置，热生效 |
+| 任务与兑换 | 任务规则（类型/周期/渠道/积分）与兑换商店定义 CRUD |
+| 称号与成就 | 称号/成就定义 CRUD、手动授予/撤销、游戏内颜色可配 |
+| 奖励发放 | 奖励礼包模板管理（服内采集上传）+ 单人/全员发放（物品+指令进游戏内邮件） |
+
+> 白名单同步不再由后台一键触发：插件按周期轮询 `/internal/v1/commands/whitelist` 指令队列自动把 approved 玩家写进服务器原生白名单。
 
 ### 6.3 QQ 机器人（AstrBot）对接
 
@@ -249,10 +266,13 @@ Paper 子服从装 `dreamport-plugin-1.2.0.jar` 并设 `role: secondary`（本�
 ```
 GET  /api/astrbot/status              服务器状态
 GET  /api/astrbot/players             在线玩家
-POST /api/astrbot/bind                QQ↔MC 绑定   {"qq":"123","minecraftName":"x"}
+POST /api/astrbot/bind/request        QQ↔MC 绑定申请(生成 6 位验证码)
 POST /api/astrbot/unbind              解绑
-GET  /api/astrbot/lookup/qq/{qq}      查绑定
+GET  /api/astrbot/lookup/qq/{qq}      按 QQ 查绑定
+GET  /api/astrbot/lookup/mc/{mc}      按 MC 名查绑定
 POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","message":"..."}
+GET  /api/astrbot/stream              SSE 下行(群→服消息推送)
+GET  /api/astrbot/messages?since=     轮询 fallback
 ```
 
 ---
@@ -263,6 +283,18 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 - **封禁公示页** `/bans`：临时封禁到期自动解封，封禁/解封有邮件
 - **聊天广场** `/chat`：独立聊天页 + 在线玩家列表
 - **通知中心**：网页右上角铃铛，审核/封禁/公告推送
+
+### 6.5 v1.3 新增门户功能
+
+- **头像本地双层渲染**：全站头像由后端出图，名字在 Mojang 官方库存在即取官方皮肤，兜底程序绘制默认脸（不再依赖任何第三方头像服务）
+- **按 UUID 同步新 ID**：正版改名后控制台一键向 Mojang 查询该 UUID 当前名并更新
+
+### 6.6 v1.4 新增门户功能
+
+- **守则门**：注册后 ID 验证前强制阅读服务器守则（入口：验证页/控制台卡片）
+- **任务中心** `/tasks`：签到/任务赚积分 + 兑换商店
+- **我的称号**：用户菜单入口，个人资料页管理佩戴与成就进度；游戏内 `/titles` 同步
+- **游戏内邮件 `/mail`**：网页/后台奖励下发进服，支持物品直发
 
 ## 7. 命令与权限
 
@@ -278,6 +310,12 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 | `/xmw delete <玩家>` | dreamport.admin | 删除用户（含移出白名单） |
 | `/xmw info <玩家>` | dreamport.admin | 查询用户详情 |
 | `/xmw version` | dreamport.use | 版本信息 |
+| `/xmw signin` | dreamport.use | 游戏内每日签到(得积分) |
+| `/xmw qq bind <验证码>` | dreamport.use | QQ 绑定游戏内确认 |
+| `/xmw kit save <礼包名>` | dreamport.admin | 采集背包为奖励礼包模板 |
+| `/xmw kit list` | dreamport.admin | 查看礼包模板 |
+| `/mail` | dreamport.use | 打开奖励邮箱(领取邮件/物品) |
+| `/titles` | dreamport.use | 打开称号佩戴 GUI |
 
 权限默认：`dreamport.use` 所有人；`dreamport.admin` OP。所有操作经服务器令牌调用后端并写审计日志。
 
@@ -315,7 +353,7 @@ POST /api/astrbot/chat                QQ 消息进服广播 {"sender":"...","mes
 
 - [ ] `WL_JWT_SECRET` 已换成强随机值（不是默认 dev 值）
 - [ ] `WL_SERVER_TOKEN` 已更换且与所有插件一致
-- [ ] `wl.seed-demo: false`（生产关闭演示账号）
+- [ ] 已通过 `/setup` 初始化向导创建管理员（演示播种已由向导取代，`seed-demo` 配置已删除）
 - [ ] `wl.cors.allowed-origins` 收敛为站点域名（不用 `*`）
 - [ ] SMTP 密码只存在于环境变量
 - [ ] 18899 WebSocket 未暴露公网（或已用反代加鉴权）

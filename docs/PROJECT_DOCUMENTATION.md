@@ -1,7 +1,7 @@
 # DreamPort 完整项目文档
 
 > **DreamPort · 夏日小镇 · 梦港** —— Minecraft 服务器门户与玩家管理系统
-> 版本 `1.2.0` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
+> 版本 `1.4.1` ｜ 协议 MIT ｜ 仓库 `http://10.0.0.6:11488/Xiameng/DreamPort.git`
 > 实时进度：[IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md)
 
 ---
@@ -76,7 +76,7 @@ DreamPort 为独立架构重写：Java 代码全部原创（旧版仅作行为�
 | 数据库 | MySQL 8（utf8mb4）；dev profile 用 H2(MySQL 模式) | 免依赖快速启动 |
 | 鉴权 | JJWT（HS256，role claim，7 天）+ bcrypt(+legacy SHA 兼容) | 见第 5 节 |
 | 实时 | WebSocket（审核推送）+ SSE（问卷评分/聊天） | 端口 18899 与 /api 路径同旧版 |
-| 外部 | DeepSeek/OpenAI 兼容 LLM、SMTP(jakarta.mail)、Microsoft OAuth、Vault/Essentials、AstrBot | |
+| 外部 | DeepSeek/OpenAI 兼容 LLM、SMTP(jakarta.mail)、Mojang 头像 API、PlaceholderAPI、Vault/Essentials、AstrBot | |
 | 插件 | Paper API 1.20（api-version 1.20，folia-supported）、java.net.http + Caffeine | |
 | 前端 | Vue 3 + Vite + Pinia + vue-i18n + TailwindCSS + marked/DOMPurify | 继承旧版 18 页面 |
 
@@ -181,11 +181,11 @@ rejected（可申诉→pending_review；可重答题）
 
 | 分组 | 代表端点 |
 |------|----------|
-| 公开 | `/api/config`、`/api/captcha/generate`、`/api/verify/send`、`/api/register`、`/api/login`、`/api/review/status`、`/api/questionnaire/{config,submit,stream}`、`/api/version`、`/api/server/status`、`/api/docs`、`/api/downloads`、`/api/cmii`（经济榜单）、`/api/village/list`、`/api/machine/list`、`/api/players/*`、`/api/auth/{forgot-password,reset-password,validate}` |
-| 用户 🔒 | `/api/user/{status,profile,password,email/update,avatar/upload}`、`/api/user/{minecraft,bedrock}/*`、`/api/verify/{check,status}`、`/api/invite/*`、`/api/notifications*`、`/api/questionnaire/appeal`、`/api/village/submit`、`/api/machine/{submit,upload}`、`/api/chat/{send,stream}` |
-| 管理员 👑 | `/api/admin/login`、`/api/admin/users`、`/api/admin/user/*`（含 batch-*）、`/api/admin/questionnaire/*`、`/api/admin/appeals*`、`/api/admin/docs/*`、`/api/admin/{portal,background,server-config,system-config,upload,maintenance,sync,audits,stats/*,export/*}` |
-| 服务器 | `/internal/v1/{login-check,login-record,events/*,economy/snapshot,commands/whitelist,heartbeat}` |
-| 机器人 | `/api/astrbot/{status,players,bind,unbind,chat,lookup/{qq,mc}/*}` |
+| 公开 | `/api/config`、`/api/captcha/generate`、`/api/verify/send`、`/api/register`、`/api/login`、`/api/review/status`、`/api/questionnaire/{config,submit,stream}`、`/api/version`、`/api/server/status`、`/api/docs`、`/api/downloads`、`/api/cmi`（经济榜单）、`/api/village/list`、`/api/machine/list`、`/api/players/*`、`/api/avatar/{name}`、`/api/auth/{forgot-password,reset-password,validate}` |
+| 用户 🔒 | `/api/user/{status,profile,password,email/update,avatar/upload}`、`/api/user/{minecraft,bedrock}/*`、`/api/user/rules/accept`、`/api/user/qq/{status,bind,unbind}`、`/api/verify/{check,status}`、`/api/invite/*`、`/api/notifications*`、`/api/questionnaire/appeal`、`/api/village/submit`、`/api/machine/{submit,upload}`、`/api/chat/{send,stream}`、`/api/points/*`、`/api/titles/*` |
+| 管理员 👑 | `/api/admin/login`、`/api/admin/users`、`/api/admin/user/*`（含 batch-*）、`/api/admin/questionnaire/*`、`/api/admin/appeals*`、`/api/admin/docs/*`、`/api/admin/{portal,background,server-config,system-config,upload,maintenance,audits,stats/*,export/*}`、`/api/admin/settings/{rules,tasksconfig,shopconfig,titlesconfig,achievementsconfig}`、`/api/admin/titles/*`、`/api/admin/rewards/*` |
+| 服务器 | `/internal/v1/{login-check,login-record,events/*,economy/snapshot,commands/whitelist,heartbeat,activity,signin,mail/*,title/*,kit/*,admin-ops/*}` |
+| 机器人 | `/api/astrbot/{status,players,bind/request,unbind,chat,stream,messages,lookup/{qq,mc}/*}` |
 | 实时 | `ws://:18899`（审核推送）、`GET /api/chat/stream`（SSE）、`GET /api/questionnaire/stream`（SSE） |
 
 ---
@@ -197,8 +197,7 @@ rejected（可申诉→pending_review；可重答题）
 ```yaml
 server.port: 18898          # REST + SPA
 wl.ws-port: 18899           # WebSocket
-spring.profiles: dev(H2) / mysql
-spring.datasource.*         # MySQL 连接
+spring.datasource.*         # MySQL 连接(工作目录 config.yml 直连,无 profile 区分)
 wl.security.jwt-secret      # 生产必须由环境变量注入
 wl.internal.server-token    # 服务器间凭据引导值
 wl.llm.*                    # provider/api_base/api_key/model/熔断参数
@@ -244,13 +243,15 @@ mvn clean package                                   # 后端 + 插件
 cd frontend && npm ci && npm run build              # 前端 → dreamport-server 托管
 
 # 运行（首次启动自动执行旧库迁移）
-java -jar dreamport-server/target/dreamport-server-1.2.0.jar --spring.profiles.active=mysql
+java -jar dreamport-server/target/dreamport-server-1.4.1.jar
 
 # 插件
-cp dreamport-plugin/target/dreamport-plugin-1.2.0.jar <服务器>/plugins/
+cp dreamport-plugin/target/dreamport-plugin-1.4.1.jar <服务器>/plugins/
+# Velocity 代理
+cp dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.4.1.jar <代理>/plugins/
 ```
 
-交付物规划（P8）：systemd unit、Dockerfile、插件 jar、迁移演练报告、压测报告。
+交付物（已交付）：systemd unit（deploy/dreamport-server.service）、Dockerfile、插件 jar、迁移演练报告（v0.2.1 真实库）；压测报告为可选待办。
 
 ## 10. 文档索引
 
@@ -259,6 +260,11 @@ cp dreamport-plugin/target/dreamport-plugin-1.2.0.jar <服务器>/plugins/
 | [README.md](../README.md) | 项目简介、架构图、SemVer 规范、路线图 |
 | [USER_GUIDE.md](USER_GUIDE.md) | **使用文档**（部署/配置/插件/迁移/玩家与管理员指南/FAQ） |
 | [IMPLEMENTATION_PROGRESS.md](IMPLEMENTATION_PROGRESS.md) | **128 项功能实现进度总表（实时更新）** |
+| [API_CONTRACT.md](API_CONTRACT.md) | API 契约权威清单（P0 基础 + v1.1–v1.4 新增） |
+| [OPERATIONS_CHECKLIST.md](OPERATIONS_CHECKLIST.md) | 部署与日常运维检查清单 |
+| [TITLES_GUIDE.md](TITLES_GUIDE.md) | 称号系统指南（玩法/配置/测试/迁移） |
+| [CHAT_SERVERINFO_PLAN.md](CHAT_SERVERINFO_PLAN.md) | 聊天历史/服务器信息落库方案（已交付 v1.1） |
+| [ASTRBOT_PLAN.md](ASTRBOT_PLAN.md) | QQ 互通方案（已交付 v1.1） |
 | [AGENTS.md](../AGENTS.md) | AI 协作操作指南 |
 | [Rules.md](../Rules.md) | 工程硬规则 |
 | [CHANGELOG.md](../CHANGELOG.md) | 变更日志 |

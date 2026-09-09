@@ -10,7 +10,6 @@ wl:
     server-token: <必填>      # server-to-server token; must match plugin backend.server-token
   cors:
     allowed-origins: "*"     # restrict to site domains in production
-  seed-demo: false           # seed demo accounts (must be false in production)
   web-register-url: https://… # register page URL (kick message / email links)
   admin-notify-email: ""     # admin notify email (questionnaire alerts; fixes legacy hardcode)
   mail:
