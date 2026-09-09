@@ -90,6 +90,7 @@ class ApiService {
     verifyCode?: string
     captchaToken?: string
     captchaAnswer?: string
+    rulesAccepted?: boolean
   }) {
     return this.request('/register', {
       method: 'POST',
