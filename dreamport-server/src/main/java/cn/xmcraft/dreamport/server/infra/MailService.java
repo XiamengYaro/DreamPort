@@ -184,6 +184,17 @@ public class MailService {
         send(to, "夏日小镇 · 新问卷通过提醒", content);
     }
 
+    /** 反馈工单管理员回复通知(铃铛之外的邮件通道) */
+    public void sendFeedbackReply(String username, String to, String feedbackTitle, String replyPreview, String lang) {
+        if (to == null || to.isBlank()) {
+            return;
+        }
+        String l = lang(lang);
+        send(to, "zh".equals(l) ? "你的反馈有了新回复" : "New reply to your feedback",
+                render("feedback_reply", l,
+                        "username", username, "feedback_title", feedbackTitle, "reply_preview", replyPreview));
+    }
+
     /** SMTP 配置（wl.mail.*） */
     public record MailProps(String host, int port, String username, String password,
                             String from, boolean ssl, String subjectOverride) {

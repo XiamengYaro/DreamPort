@@ -475,6 +475,8 @@
             placeholder='{"client": {"title": "客户端", "url": "..."}}'></textarea>
           <button @click="saveDownloads" class="btn-primary text-sm">保存下载中心</button>
         </div>
+
+        <WebhookSettingsCard />
       </div>
 
       <!-- 公告管理 Tab -->
@@ -949,6 +951,21 @@
         <ServerManageTab />
       </div>
 
+      <!-- 论坛管理 Tab -->
+      <div v-if="activeTab === 'forum' && !loading">
+        <ForumManageTab />
+      </div>
+
+      <!-- 投票管理 Tab -->
+      <div v-if="activeTab === 'polls' && !loading">
+        <PollManageTab />
+      </div>
+
+      <!-- 反馈工单 Tab -->
+      <div v-if="activeTab === 'feedback' && !loading">
+        <FeedbackManageTab />
+      </div>
+
       <!-- 操作日志 Tab -->
       <div v-if="activeTab === 'audits' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">操作日志</h3>
@@ -1243,6 +1260,10 @@ import StatCard from '@/components/ui/StatCard.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import ServerManageTab from '@/components/admin/ServerManageTab.vue'
 import ServerMetricsPanel from '@/components/admin/ServerMetricsPanel.vue'
+import ForumManageTab from '@/components/admin/ForumManageTab.vue'
+import PollManageTab from '@/components/admin/PollManageTab.vue'
+import FeedbackManageTab from '@/components/admin/FeedbackManageTab.vue'
+import WebhookSettingsCard from '@/components/admin/WebhookSettingsCard.vue'
 import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 import { renderMarkdown } from '@/lib/markdown'
@@ -1262,6 +1283,9 @@ const menuItems = [
   { key: 'players', icon: 'users', label: '玩家管理' },
   { key: 'stats', icon: 'chart-bar', label: '数据统计' },
   { key: 'servers', icon: 'server-stack', label: '服务器管理' },
+  { key: 'forum', icon: 'chat-bubble', label: '论坛管理' },
+  { key: 'polls', icon: 'dot-circle', label: '投票管理' },
+  { key: 'feedback', icon: 'envelope', label: '反馈工单' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
   { key: 'rewards', icon: 'sparkles', label: '奖励发放' },
   { key: 'titles', icon: 'shield-check', label: '称号与成就' },
@@ -1673,6 +1697,11 @@ const auditActionLabels: Record<string, string> = {
   settings_tasks: '任务配置', settings_shop: '兑换商店',
   server_token_issue: '签发按服令牌', server_token_mode: '切换鉴权模式',
   server_enable: '启用服务器通道', server_disable: '停用服务器通道',
+  feedback_create: '提交反馈', feedback_reply: '回复工单', feedback_close: '关闭工单',
+  poll_create: '创建投票', poll_open: '开启投票', poll_close: '关闭投票', poll_update: '更新投票',
+  webhook_test: 'Webhook 测试', settings_webhook: 'Webhook 设置',
+  forum_section_create: '创建板块', forum_section_update: '更新板块', forum_section_delete: '删除板块',
+  forum_thread_edit: '编辑帖子',
 }
 const auditActionLabel = (a: string) => {
   if (auditActionLabels[a]) return auditActionLabels[a]

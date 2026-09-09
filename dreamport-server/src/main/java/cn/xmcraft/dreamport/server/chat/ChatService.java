@@ -34,12 +34,15 @@ public class ChatService {
 
     private final JdbcTemplate jdbc;
     private final SettingService settingService;
+    private final cn.xmcraft.dreamport.server.infra.SensitiveWordFilter sensitiveWordFilter;
     private final ObjectMapper mapper = new ObjectMapper();
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    public ChatService(SettingService settingService, JdbcTemplate jdbc) {
+    public ChatService(SettingService settingService, JdbcTemplate jdbc,
+                       cn.xmcraft.dreamport.server.infra.SensitiveWordFilter sensitiveWordFilter) {
         this.settingService = settingService;
         this.jdbc = jdbc;
+        this.sensitiveWordFilter = sensitiveWordFilter;
     }
 
     public SseEmitter subscribe() {
@@ -59,17 +62,9 @@ public class ChatService {
         return emitter;
     }
 
-    /** 敏感词过滤(dp_setting sensitive.words 逗号分隔,命中替换 ***) */
+    /** 敏感词过滤(委托共享过滤器,聊天与论坛/反馈等 UGC 统一口径) */
     public String filterSensitive(String text) {
-        String words = settingService == null ? "" : settingService.getRaw("sensitive.words");
-        if (words == null || words.isBlank()) return text;
-        for (String w : words.split("[,，]")) {
-            String word = w.trim();
-            if (word.length() >= 2 && text.contains(word)) {
-                text = text.replace(word, "*".repeat(word.length()));
-            }
-        }
-        return text;
+        return sensitiveWordFilter.filter(text);
     }
 
     /** 游戏聊天（插件上报）或网页聊天广播 + 落库（旧签名，等价 web 源） */

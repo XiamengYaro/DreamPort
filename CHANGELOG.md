@@ -7,6 +7,14 @@
 
 ## [未发布]
 
+### Added（社区与内容 · 阶段 B）
+- **一级导航「社区」聚合页**(/community):论坛 / 投票 / 反馈工单三个 tab
+- **论坛(进阶版)**:板块 CRUD、游客可读、发帖 3/天·回帖 10/天·30s 限频、置顶/精华/锁定、帖子与回复点赞、@提及通知、10 分钟内编辑留痕、Markdown+DOMPurify 渲染;**审核模式可切换**(默认先发后审+敏感词兜底,可切先审后发,审核动作通知作者);后台「论坛管理」Tab(设置+待审队列+板块管理)
+- **投票**:单选/多选、草稿→开启(全员铃铛)→关闭、截止时间、**结果可见性逐场可配**(实时公开=默认/结束后公开);后台「投票管理」Tab
+- **反馈工单(多轮对话式)**:玩家提交(3 条/天)→管理员回复(**铃铛+邮件**,新模板 feedback_reply_*)→追问→关闭;后台「反馈工单」Tab 会话式处理
+- **通用事件 Webhook**:多个目标 URL+独立 HMAC-SHA256 签名(X-DP-Signature/X-DP-Timestamp)、事件过滤、异步+2 次退避重试、测试按钮;事件源挂审计骨架(review/appeal/questionnaire/reward/feedback/forum/poll/community/server),村谱/机器审核**补齐此前缺失的审计**
+- 基建:V12 迁移(10 张 dp_ 表)、SensitiveWordFilter 从 ChatService 抽出共用、SimpleRateLimiter 滑窗+日配额限频器、新增 CommunityInfraTest 单测(共 30 测试全绿)
+
 ### Added（监控与多服 · 阶段 A）
 - **服务器资源监控**：插件心跳附带 TPS(1/5/15 分钟)/平均 tick 耗时/JVM 内存/进程 CPU/运行时长（`features.report-metrics` 开关，默认开；Velocity 代理报内存/CPU 无 TPS）；新表 `dp_server_metrics`（V11，7 天保留）；`GET /api/server/metrics?serverId=&hours=24|168` 公开查询
 - **修复假 TPS**：`/api/server/status` 的 `tps` 此前硬编码 20.0，现返回主服真实 TPS（无指标数据为 null，前端显示"—"）；分服心跳附带 `tps1m/memUsedMb/memMaxMb/cpuLoad`

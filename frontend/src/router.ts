@@ -117,6 +117,11 @@ const routes = [
     component: () => import('./pages/Chat.vue')
   },
   {
+    path: '/community',
+    name: 'Community',
+    component: () => import('./pages/Community.vue')
+  },
+  {
     path: '/machines',
     name: 'PublicMachines',
     component: () => import('./pages/PublicMachines.vue')

@@ -61,6 +61,7 @@ public class CommunityController {
     private final ReviewService reviewService;
     private final WlProps props;
     private final SettingService settingService;
+    private final cn.xmcraft.dreamport.server.audit.AuditService auditService;
 
     private final EconomyService economyService;
 
@@ -72,7 +73,8 @@ public class CommunityController {
                                NotificationRepository notificationRepository,
                                AppealRepository appealRepository, UserRepository userRepository,
                                ReviewService reviewService, WlProps props, SettingService settingService,
-                               EconomyService economyService, TitleService titleService) {
+                               EconomyService economyService, TitleService titleService,
+                               cn.xmcraft.dreamport.server.audit.AuditService auditService) {
         this.villageRepository = villageRepository;
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
@@ -85,6 +87,7 @@ public class CommunityController {
         this.economyService = economyService;
         this.settingService = settingService;
         this.titleService = titleService;
+        this.auditService = auditService;
     }
 
     // ---------- 村民族谱 ----------
@@ -148,6 +151,9 @@ public class CommunityController {
                 null, t.playerName(), "village_" + action,
                 "村民族谱投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
                 "你的村民族谱投稿已" + ("approve".equals(action) ? "通过审核,已展示在村谱页" : "被拒绝"), null, null, null));
+        // 补审计缺口(此前村谱审核不落审计日志,Webhook 事件源需要)
+        auditService.log("village_" + action, AuthUtil.currentUser(request), t.playerName(),
+                "村谱投稿审核 " + t.world() + " " + t.x() + "," + t.y() + "," + t.z());
         return ResponseEntity.ok(ApiResponse.success("已" + ("approve".equals(action) ? "通过" : "拒绝")));
     }
 
@@ -278,6 +284,9 @@ public class CommunityController {
                 "公共机器投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
                 "你提交的公共机器「" + m.name() + "」已" + ("approve".equals(action) ? "通过审核,已展示在公共机器页" : "被拒绝"),
                 null, null, null));
+        // 补审计缺口(同村谱审核)
+        auditService.log("machine_" + action, AuthUtil.currentUser(request), m.builder(),
+                "公共机器审核: " + m.name());
         return ResponseEntity.ok(ApiResponse.success("已处理"));
     }
 

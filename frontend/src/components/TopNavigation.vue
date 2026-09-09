@@ -21,6 +21,7 @@
           <router-link to="/players" class="nav-item" :class="{ active: $route.path === '/players' }"><AppIcon name="users" class="w-4 h-4" />玩家</router-link>
           <router-link to="/bans" class="nav-item" :class="{ active: $route.path === '/bans' }"><AppIcon name="no-symbol" class="w-4 h-4" />封禁</router-link>
           <router-link to="/chat" class="nav-item" :class="{ active: $route.path === '/chat' }"><AppIcon name="chat-bubble" class="w-4 h-4" />聊天</router-link>
+          <router-link to="/community" class="nav-item" :class="{ active: $route.path.startsWith('/community') }"><AppIcon name="users" class="w-4 h-4" />社区</router-link>
 
           <!-- 更多下拉菜单（样式与其余导航项一致） -->
           <div class="relative group">
@@ -99,6 +100,7 @@
         <router-link to="/players" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="users" class="w-4 h-4" />玩家</router-link>
         <router-link to="/bans" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="no-symbol" class="w-4 h-4" />封禁名单</router-link>
         <router-link to="/chat" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="chat-bubble" class="w-4 h-4" />聊天广场</router-link>
+        <router-link to="/community" class="mobile-nav-item flex items-center gap-2" @click="mobileMenuOpen = false"><AppIcon name="users" class="w-4 h-4" />社区</router-link>
 
         <!-- 更多分组 -->
         <button @click="moreGroupOpen = !moreGroupOpen" class="w-full flex items-center justify-between px-4 py-3 text-stone-300 hover:text-white hover:bg-white/10 rounded-xl transition-colors">

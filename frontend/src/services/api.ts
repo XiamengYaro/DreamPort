@@ -777,6 +777,167 @@ class ApiService {
     })
   }
 
+  // ===== 论坛(游客可读,发帖/回帖/点赞需登录) =====
+  async getForumSections() {
+    return this.request('/forum/sections')
+  }
+
+  async getForumThreads(sectionId: number | null, page = 1) {
+    const q = sectionId ? `?sectionId=${sectionId}&page=${page}` : `?page=${page}`
+    return this.request('/forum/threads' + q)
+  }
+
+  async getForumThread(id: number, page = 1) {
+    return this.request(`/forum/thread/${id}?page=${page}`)
+  }
+
+  async createForumThread(sectionId: number, title: string, content: string) {
+    return this.request('/forum/thread', {
+      method: 'POST',
+      body: JSON.stringify({ sectionId, title, content })
+    })
+  }
+
+  async editForumThread(id: number, title: string, content: string) {
+    return this.request(`/forum/thread/${id}/edit`, {
+      method: 'POST',
+      body: JSON.stringify({ title, content })
+    })
+  }
+
+  async replyForumThread(id: number, content: string) {
+    return this.request(`/forum/thread/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    })
+  }
+
+  async likeForumTarget(type: 'thread' | 'reply', id: number) {
+    return this.request(`/forum/like/${type}/${id}`, { method: 'POST', body: '{}' })
+  }
+
+  async getForumAdminPending() {
+    return this.request('/forum/admin/pending')
+  }
+
+  async moderateForumThread(id: number, action: string) {
+    return this.request(`/forum/admin/thread/${id}/${action}`, { method: 'POST', body: '{}' })
+  }
+
+  async moderateForumReply(id: number, action: string) {
+    return this.request(`/forum/admin/reply/${id}/${action}`, { method: 'POST', body: '{}' })
+  }
+
+  async saveForumSection(body: { id?: number | null; name: string; description?: string; sort?: number; locked?: boolean }) {
+    return this.request('/forum/admin/section', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    })
+  }
+
+  async deleteForumSection(id: number) {
+    return this.request(`/forum/admin/section/${id}`, { method: 'DELETE' })
+  }
+
+  async getForumConfig() {
+    return this.request('/forum/admin/config')
+  }
+
+  async saveForumConfig(moderation: boolean, likeEnabled: boolean) {
+    return this.request('/forum/admin/config', {
+      method: 'PUT',
+      body: JSON.stringify({ moderation, likeEnabled })
+    })
+  }
+
+  // ===== 投票 =====
+  async getPolls() {
+    return this.request('/polls')
+  }
+
+  async votePoll(pollId: number, optionIds: number[]) {
+    return this.request(`/polls/${pollId}/vote`, {
+      method: 'POST',
+      body: JSON.stringify({ optionIds })
+    })
+  }
+
+  async getPollsAdmin() {
+    return this.request('/polls/admin/list')
+  }
+
+  async createPoll(body: { title: string; description?: string; multiple?: boolean; resultVisibility?: string; endsAt?: number | null; options: string[] }) {
+    return this.request('/polls/admin', {
+      method: 'POST',
+      body: JSON.stringify(body)
+    })
+  }
+
+  async updatePoll(id: number, body: { title?: string; description?: string; options?: string[] }) {
+    return this.request(`/polls/${id}/admin/update`, {
+      method: 'POST',
+      body: JSON.stringify(body)
+    })
+  }
+
+  async moderatePoll(id: number, action: 'open' | 'close' | 'delete') {
+    return this.request(`/polls/${id}/admin/${action}`, { method: 'POST', body: '{}' })
+  }
+
+  // ===== 反馈工单(多轮对话) =====
+  async createFeedback(category: string, title: string, content: string) {
+    return this.request('/feedback', {
+      method: 'POST',
+      body: JSON.stringify({ category, title, content })
+    })
+  }
+
+  async getMyFeedback() {
+    return this.request('/feedback/mine')
+  }
+
+  async getFeedbackDetail(id: number) {
+    return this.request(`/feedback/${id}`)
+  }
+
+  async replyFeedback(id: number, content: string) {
+    return this.request(`/feedback/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    })
+  }
+
+  async closeFeedback(id: number) {
+    return this.request(`/feedback/${id}/close`, { method: 'POST', body: '{}' })
+  }
+
+  async getFeedbackAdmin(status: string) {
+    return this.request(`/feedback/admin/list${status ? `?status=${status}` : ''}`)
+  }
+
+  async adminReplyFeedback(id: number, content: string) {
+    return this.request(`/feedback/${id}/admin/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    })
+  }
+
+  // ===== Webhook(后台) =====
+  async getWebhookConfig() {
+    return this.request('/admin/webhook/config')
+  }
+
+  async saveWebhookConfig(body: { enabled: boolean; urls: Array<{ url: string; secret?: string }>; events: string[] }) {
+    return this.request('/admin/webhook/config', {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    })
+  }
+
+  async testWebhook() {
+    return this.request('/admin/webhook/test', { method: 'POST', body: '{}' })
+  }
+
   // Player Profile
   async getPlayerList() {
     return this.request('/players/list')

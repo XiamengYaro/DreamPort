@@ -44,6 +44,7 @@
 | [数据库与定时任务](admin/backend/database-and-tasks.md) | 数据表、Flyway、7 个定时任务、邮件模板 |
 | [头像渲染服务](admin/backend/avatar-service.md) | 双层皮肤大头照、皮肤来源分流、两级缓存 |
 | [监控与多服令牌](admin/backend/monitoring-and-servers.md) | 资源看板/TPS 告警、按服 token、地图在线玩家 |
+| [社区功能](admin/backend/community.md) | 论坛/投票/反馈工单/Webhook 事件推送 |
 
 **插件**
 
