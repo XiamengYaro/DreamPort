@@ -56,6 +56,7 @@ public class InternalController {
     private final cn.xmcraft.dreamport.server.points.TaskService taskService;
     private final cn.xmcraft.dreamport.server.points.MailService rewardMailService;
     private final cn.xmcraft.dreamport.server.titles.TitleService titleService;
+    private final cn.xmcraft.dreamport.server.reward.RewardKitService rewardKitService;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -72,7 +73,8 @@ public class InternalController {
                               QqBridgeService qqBridge,
                               cn.xmcraft.dreamport.server.points.TaskService taskService,
                               cn.xmcraft.dreamport.server.points.MailService rewardMailService,
-                              cn.xmcraft.dreamport.server.titles.TitleService titleService) {
+                              cn.xmcraft.dreamport.server.titles.TitleService titleService,
+                              cn.xmcraft.dreamport.server.reward.RewardKitService rewardKitService) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -90,6 +92,7 @@ public class InternalController {
         this.taskService = taskService;
         this.rewardMailService = rewardMailService;
         this.titleService = titleService;
+        this.rewardKitService = rewardKitService;
     }
 
     @PostMapping("/login-check")
@@ -341,7 +344,7 @@ public class InternalController {
         return ResponseEntity.ok(java.util.Map.of("success", ok));
     }
 
-    /** 当前佩戴称号(插件 PAPI 变量 %dreamport_title% 用) */
+    /** 当前佩戴称号(插件 PAPI 变量 %dreamport_title% 用);相对路径对应 Protocol.TITLE_ACTIVE */
     @org.springframework.web.bind.annotation.GetMapping("/title/active")
     public ResponseEntity<Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username,
                                               HttpServletRequest request) {
@@ -359,7 +362,7 @@ public class InternalController {
                 "color", t == null ? "" : t.color()));
     }
 
-    /** 玩家已拥有称号(/titles GUI 用) */
+    /** 玩家已拥有称号(/titles GUI 用);相对路径对应 Protocol.TITLE_MINE */
     @org.springframework.web.bind.annotation.GetMapping("/title/mine")
     public ResponseEntity<Object> titleMine(@org.springframework.web.bind.annotation.RequestParam String username,
                                             HttpServletRequest request) {
@@ -383,7 +386,7 @@ public class InternalController {
                 "active", active == null ? "" : active, "titles", titles));
     }
 
-    /** 游戏内佩戴/脱下(code 为空 = 脱下) */
+    /** 游戏内佩戴/脱下(code 为空 = 脱下);相对路径对应 Protocol.TITLE_EQUIP */
     @org.springframework.web.bind.annotation.PostMapping("/title/equip")
     public ResponseEntity<Object> titleEquip(@org.springframework.web.bind.annotation.RequestBody TitleEquipBody body,
                                              HttpServletRequest request) {
@@ -404,6 +407,40 @@ public class InternalController {
         } catch (IllegalStateException e) {
             return ResponseEntity.ok(java.util.Map.of("success", false, "message", e.getMessage()));
         }
+    }
+
+    // ---------- 奖励礼包(服内采集,server-token) ----------
+
+    public record KitSaveBody(String kitName, String player, String items, String summary) {
+    }
+
+    /** 服内管理员采集背包上传(/xmw kit save):存为礼包模板内容,状态置 ready */
+    @org.springframework.web.bind.annotation.PostMapping("/kit/save")
+    public ResponseEntity<Object> kitSave(@org.springframework.web.bind.annotation.RequestBody KitSaveBody body,
+                                          HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        if (body == null || body.kitName() == null || body.kitName().isBlank()
+                || body.player() == null || body.player().isBlank()) {
+            return badRequest("kitName/player 必填");
+        }
+        var result = rewardKitService.saveCapture(body.kitName().trim(), body.player(),
+                body.items(), body.summary());
+        return result.success()
+                ? ResponseEntity.ok(java.util.Map.of("success", true, "message", result.message()))
+                : ResponseEntity.ok(java.util.Map.of("success", false, "message", result.message()));
+    }
+
+    /** 礼包模板列表(/xmw kit list 用) */
+    @org.springframework.web.bind.annotation.GetMapping("/kit/list")
+    public ResponseEntity<Object> kitList(HttpServletRequest request) {
+        ResponseEntity<Object> auth = requireServerToken(request);
+        if (auth != null) {
+            return auth;
+        }
+        return ResponseEntity.ok(java.util.Map.of("success", true, "kits", rewardKitService.list()));
     }
 
     public record TitleEquipBody(String username, String code) {

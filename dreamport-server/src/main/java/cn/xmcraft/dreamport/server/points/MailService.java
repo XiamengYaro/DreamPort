@@ -20,14 +20,19 @@ public class MailService {
     }
 
     public void enqueue(String username, String title, String commandsJson, String note) {
+        enqueue(username, title, commandsJson, note, null);
+    }
+
+    /** 带物品快照的入队(礼包奖励):items 为 JSON 字符串 [{"s":"<base64>","n":"展示名","c":数量}],为空走纯指令逻辑 */
+    public void enqueue(String username, String title, String commandsJson, String note, String itemsJson) {
         jdbcTemplate.update(
-                "INSERT INTO dp_mail (username, title, commands, note, status, created_at) VALUES (?,?,?,?,'pending',?)",
-                username, title, commandsJson, note, System.currentTimeMillis());
+                "INSERT INTO dp_mail (username, title, commands, items, note, status, created_at) VALUES (?,?,?,?,?,'pending',?)",
+                username, title, commandsJson, itemsJson, note, System.currentTimeMillis());
     }
 
     public List<Map<String, Object>> pending(String username) {
         return jdbcTemplate.queryForList(
-                "SELECT id, title, commands, note, created_at FROM dp_mail "
+                "SELECT id, title, commands, items, note, created_at FROM dp_mail "
                         + "WHERE username = ? AND status = 'pending' ORDER BY created_at",
                 username);
     }

@@ -30,6 +30,16 @@ public final class Protocol {
     public static final String SIGNIN = "/internal/v1/signin";
     public static final String MAIL_PENDING = "/internal/v1/mail/pending";
     public static final String MAIL_CLAIMED = "/internal/v1/mail/claimed";
+    /** 礼包采集上传(/xmw kit save,管理员服内采集背包存为礼包模板) */
+    public static final String KIT_SAVE = "/internal/v1/kit/save";
+    /** 礼包模板列表(/xmw kit list) */
+    public static final String KIT_LIST = "/internal/v1/kit/list";
+    /** 当前佩戴称号(插件 PAPI 变量 %dreamport_title% 用) */
+    public static final String TITLE_ACTIVE = "/internal/v1/title/active";
+    /** 玩家已拥有称号(/titles GUI 用) */
+    public static final String TITLE_MINE = "/internal/v1/title/mine";
+    /** 游戏内佩戴/脱下(code 为空 = 脱下) */
+    public static final String TITLE_EQUIP = "/internal/v1/title/equip";
 
     /** 校验放行 */
     public static final String DECISION_ALLOW = "allow";
