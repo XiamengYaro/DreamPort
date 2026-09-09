@@ -86,7 +86,7 @@ class AvatarRenderServiceTest {
     }
 
     @Test
-    void 按名查档_命中与未命中都走缓存() {
+    void 按名查档_命中与未命中都走缓存() throws Exception {
         var calls = new java.util.concurrent.atomic.AtomicInteger();
         var svc = stubService(calls);
         assertEquals("069a79f444e94726a5befca90e38aaf5", svc.officialUuidByName("Notch"));
@@ -99,7 +99,7 @@ class AvatarRenderServiceTest {
     }
 
     @Test
-    void 按名查档_过期后重新查档() {
+    void 按名查档_过期后重新查档() throws Exception {
         var calls = new java.util.concurrent.atomic.AtomicInteger();
         var svc = stubService(calls);
         assertEquals("069a79f444e94726a5befca90e38aaf5", svc.officialUuidByName("Notch"));
@@ -111,7 +111,7 @@ class AvatarRenderServiceTest {
     }
 
     @Test
-    void 查档未命中_降级默认脸() {
+    void 查档未命中_降级默认脸() throws Exception {
         var svc = stubService(new java.util.concurrent.atomic.AtomicInteger());
         var skin = svc.resolveSkin("Nobody");
         assertTrue(skin.etag().equals("default-steve") || skin.etag().equals("default-alex"));

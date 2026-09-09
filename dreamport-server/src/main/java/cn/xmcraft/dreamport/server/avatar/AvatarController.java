@@ -39,15 +39,18 @@ public class AvatarController {
         }
         AvatarRenderService.AvatarImage img = renderService.render(name, px);
         String etag = "\"" + img.etag() + "\"";
+        // 默认脸(etag=default-*)只短缓存 60s:瞬时故障降级的默认脸不把浏览器钉住 1 小时
+        boolean isDefault = img.etag().startsWith("default-");
+        String cacheControl = isDefault ? "public, max-age=60" : "public, max-age=3600";
         String inm = request.getHeader(HttpHeaders.IF_NONE_MATCH);
         if (etag.equals(inm)) {
             return ResponseEntity.status(304)
                     .header(HttpHeaders.ETAG, etag)
-                    .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                    .header(HttpHeaders.CACHE_CONTROL, cacheControl)
                     .build();
         }
         return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=3600")
+                .header(HttpHeaders.CACHE_CONTROL, cacheControl)
                 .header(HttpHeaders.ETAG, etag)
                 .contentType(MediaType.IMAGE_PNG)
                 .body(img.png());

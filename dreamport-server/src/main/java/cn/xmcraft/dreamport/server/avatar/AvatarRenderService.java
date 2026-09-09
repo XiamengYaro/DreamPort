@@ -38,11 +38,13 @@ import java.util.concurrent.Executors;
  * 2. 兜底 → 程序绘制默认脸(Steve/Alex 按名字 hash)
  *
  * 缓存三级:
- * - 浏览器 Cache-Control+ETag(1h,304 复验)
+ * - 浏览器 Cache-Control+ETag(真皮肤 1h;默认脸 60s——瞬时失败不把默认脸钉在浏览器)
  * - 服务端内存 LRU(皮肤图 TTL 1h、官方 UUID 见上)
  * - 服务端磁盘持久化 data/avatar-cache/(官方皮肤 PNG,重启不丢):
  *   命中磁盘立即返回;文件超过 1h 由后台单线程静默刷新(显示永不等网络)
  * 冷缓存解析在锁外并发执行,批量头像不再逐个串行等待。
+ * **瞬时失败不缓存**:Mojang 查档/皮肤下载的超时、429、5xx 属瞬时故障,本次降级默认脸
+ * 但不写皮肤缓存(仅 30s 重试节流),下次请求自动重试——官方皮肤一旦落盘即永不等网络。
  */
 @Service
 public class AvatarRenderService {
@@ -51,6 +53,8 @@ public class AvatarRenderService {
     private static final long SKIN_TTL_MS = 3_600_000L;
     private static final long UUID_HIT_TTL_MS = 86_400_000L;
     private static final long UUID_MISS_TTL_MS = 3_600_000L;
+    /** 瞬时失败重试节流窗口:期间直接渲染默认脸,不再打 Mojang */
+    private static final long TRANSIENT_RETRY_MS = 30_000L;
     private static final int CACHE_CAP = 2000;
     private static final int UUID_CACHE_CAP = 4096;
     private static final String MOJANG_PROFILE = "https://sessionserver.mojang.com/session/minecraft/profile/";
@@ -73,8 +77,8 @@ public class AvatarRenderService {
     /** 包内可见(单测缓存断言使用);uuid=null 表示"官方库无此名"的未命中缓存 */
     record UuidCacheEntry(String uuid, long at) {}
 
-    /** 皮肤内存 LRU(访问序,上限 2000,TTL 1h)——仅 在 synchronized(skinCache) 内读写 */
-    private final Map<String, CacheEntry> skinCache =
+    /** 皮肤内存 LRU(访问序,上限 2000,TTL 1h)——仅 在 synchronized(skinCache) 内读写;包内可见(单测断言用) */
+    final Map<String, CacheEntry> skinCache =
             new LinkedHashMap<>(128, 0.75f, true) {
                 @Override
                 protected boolean removeEldestEntry(Map.Entry<String, CacheEntry> eldest) {
@@ -95,6 +99,9 @@ public class AvatarRenderService {
         return t;
     });
     private final Set<String> revalidating = ConcurrentHashMap.newKeySet();
+
+    /** 瞬时失败节流:name → 最近一次瞬时失败时间(30s 内直接默认脸,不重试不打 Mojang) */
+    private final Map<String, Long> transientFailures = new ConcurrentHashMap<>();
 
     /** 渲染大头照;size 已由控制器钳制 */
     public AvatarImage render(String name, int size) throws Exception {
@@ -130,8 +137,19 @@ public class AvatarRenderService {
             return disk;
         }
 
-        // 首次遇到该名字:锁外并发解析(不同名字互不阻塞),成功后写内存+落盘
+        // 冷缓存:先看瞬时失败节流(30s 内直接默认脸,不重试不打 Mojang)
+        Long failedAt = transientFailures.get(name);
+        if (failedAt != null && now - failedAt < TRANSIENT_RETRY_MS) {
+            return defaultFace(name);
+        }
+
+        // 首次遇到该名字:锁外并发解析;瞬时失败(返回 null)只渲染默认脸、不写任何缓存
         SkinData skin = resolveSkin(name);
+        if (skin == null) {
+            transientFailures.put(name, now);
+            return defaultFace(name);
+        }
+        transientFailures.remove(name);
         synchronized (skinCache) {
             skinCache.put(name, new CacheEntry(skin, now));
         }
@@ -157,37 +175,45 @@ public class AvatarRenderService {
         });
     }
 
-    /** 包内可见(单测覆盖降级顺序用) */
+    /**
+     * 包内可见(单测覆盖降级顺序用)。
+     * 返回 null = 上游瞬时失败(查档超时/5xx/429、皮肤下载失败),本次应降级默认脸且**不缓存**;
+     * 非 null = 终态结果(官方皮肤,或官方库无此名/无材质的默认脸),可缓存。
+     */
     SkinData resolveSkin(String name) {
         // 1. 名字正版匹配 → Mojang 官方皮肤(名字在官方库存在即视为正版身份)
-        String uuid = officialUuidByName(name);
+        String uuid;
+        try {
+            uuid = officialUuidByName(name);
+        } catch (Exception e) {
+            // 查档瞬时失败:officialUuidByName 不缓存,这里也不缓存,下次自动重试
+            log.warn("[头像] Mojang 按名查档瞬时失败(本次降级不缓存) {}: {}", name, e.getMessage());
+            return null;
+        }
         if (uuid != null) {
             try {
                 SkinData s = mojangSkin(uuid);
                 if (s != null) return s;
+                // uuid 存在但 sessionserver 无材质数据 → 官方库确无皮肤,默认脸为终态
+                return defaultFace(name);
             } catch (Exception e) {
-                log.warn("[头像] Mojang 皮肤获取失败 {}: {}", name, e.getMessage());
+                log.warn("[头像] Mojang 皮肤获取瞬时失败(本次降级不缓存) {}: {}", name, e.getMessage());
+                return null;
             }
         }
-        // 2. 兜底:程序绘制默认脸
+        // 2. 兜底:官方库无此名(204/404 已负缓存 1h)→ 程序绘制默认脸
         return defaultFace(name);
     }
 
-    /** 按名查官方 UUID(名字正版匹配);命中 24h/未命中 1h 缓存,网络异常不缓存下次重试 */
-    String officialUuidByName(String name) {
+    /** 按名查官方 UUID(名字正版匹配);命中 24h/未命中 1h 缓存;网络异常向上抛(瞬时,不缓存) */
+    String officialUuidByName(String name) throws Exception {
         UuidCacheEntry hit = uuidCache.get(name);
         long now = System.currentTimeMillis();
         if (hit != null) {
             long ttl = hit.uuid() != null ? UUID_HIT_TTL_MS : UUID_MISS_TTL_MS;
             if (now - hit.at() < ttl) return hit.uuid();
         }
-        String uuid;
-        try {
-            uuid = fetchOfficialUuid(name);
-        } catch (Exception e) {
-            log.warn("[头像] Mojang 按名查档失败 {}: {}", name, e.getMessage());
-            return null;
-        }
+        String uuid = fetchOfficialUuid(name);
         if (uuidCache.size() > UUID_CACHE_CAP) {
             uuidCache.entrySet().removeIf(e -> now - e.getValue().at() > UUID_MISS_TTL_MS);
         }
@@ -208,12 +234,17 @@ public class AvatarRenderService {
         throw new IllegalStateException("Mojang API HTTP " + resp.statusCode());
     }
 
-    /** 官方皮肤(按官方 UUID 取 session server 材质) */
+    /** 官方皮肤(按官方 UUID 取 session server 材质);429/5xx 抛出(瞬时),其它非 200 返回 null(终态:无材质) */
     private SkinData mojangSkin(String uuid) throws Exception {
         HttpRequest req = HttpRequest.newBuilder(URI.create(MOJANG_PROFILE + uuid + "?unsigned=false"))
                 .timeout(Duration.ofSeconds(8)).GET().build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        if (resp.statusCode() != 200) return null;
+        if (resp.statusCode() != 200) {
+            if (resp.statusCode() == 429 || resp.statusCode() >= 500) {
+                throw new IllegalStateException("sessionserver HTTP " + resp.statusCode());
+            }
+            return null;
+        }
         JsonNode textures = null;
         for (JsonNode p : mapper.readTree(resp.body()).path("properties")) {
             if ("textures".equals(p.path("name").asText())) {
@@ -245,7 +276,13 @@ public class AvatarRenderService {
         }
         HttpResponse<byte[]> resp = http.send(HttpRequest.newBuilder(uri)
                 .timeout(Duration.ofSeconds(10)).GET().build(), HttpResponse.BodyHandlers.ofByteArray());
-        if (resp.statusCode() != 200) return null;
+        if (resp.statusCode() != 200) {
+            // 材质 CDN 的 429/5xx 属瞬时故障,向上抛 → 本次降级默认脸不缓存;其它状态视为终态
+            if (resp.statusCode() == 429 || resp.statusCode() >= 500) {
+                throw new IllegalStateException("textures HTTP " + resp.statusCode());
+            }
+            return null;
+        }
         return skinFromBytes(resp.body());
     }
 
