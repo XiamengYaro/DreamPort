@@ -39,7 +39,8 @@ wl:
     jwt-ttl-days: 7
   internal:
     # 服务器间通信令牌；插件 backend.server-token 需一致（生产用 WL_SERVER_TOKEN）
-    server-token: ${WL_SERVER_TOKEN:dev-internal-token}
+    # 修复审计 H1：默认值从 dev-internal-token 改为空串——漏配即失败关闭,而非裸奔可猜凭据
+    server-token: ${WL_SERVER_TOKEN:}
   cors:
     allowed-origins: "*"
   web-register-url: "http://localhost:18898"
