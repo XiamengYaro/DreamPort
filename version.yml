@@ -1,38 +1,31 @@
-version: 1.5.0
+version: 1.5.1
 release_notes: |
-  # DreamPort · 夏日小镇 · 梦港 v1.5.0
+  # DreamPort · 夏日小镇 · 梦港 v1.5.1
 
   ## 简体中文
 
-  v1.5.0 为功能版本：**监控与多服 · 社区 · 两步验证** 三大板块（差距评估驱动的三阶段功能补强）。
+  v1.5.1 为体验热修：修复头像偶发显示默认脸(两类根因)与首页刷新闪烁，并重做时光照片墙视觉。
 
-  **监控与多服**：插件心跳附带真实 TPS/内存/CPU（修复玩家页假 TPS 20.0），后台资源看板（24h/7 天曲线）+ TPS 低阈值告警；按服 token 签发/轮换/启停（后台「服务器管理」，可 shared/per_server 切换）；地图条目支持 BlueMap/Dynmap 类型可选，地图页新增「在线位置」侧栏。
+  - **头像偶发默认脸**：Mojang 瞬时故障(超时/429/5xx)降级的默认脸不再被缓存 1 小时——瞬时失败不写缓存(30s 重试节流)，下次请求自动重试；默认脸浏览器缓存降为 60 秒
+  - **玩家列表/详情头像**：头像改按「绑定 MC 名 → 账号名」解析，改过 ID 的玩家不再显示默认脸
+  - **首页刷新闪烁**：揭幕等待真实背景图解码完成；配置本地缓存，刷新秒出内容不蹦出
+  - **时光照片墙改版「杂志瀑布流」**：原图比例错落排布、衬线刊头/年份水印、kicker 筛选、hover 动效(分类筛选/放大留言/后台配置不变)
 
-  **社区**：一级「社区」页——论坛（游客可读、点赞、@提及、先发后审可切）、投票（单/多选，结果可见性逐场可配）、反馈工单（多轮对话，回复带邮件通知）；通用事件 Webhook（HMAC-SHA256 签名，可对接 QQ 机器人/自建系统）。
-
-  **两步验证**：验证器 App 扫码绑定 TOTP，8 个一次性恢复码 + 邮箱备用验证码；登录需二次验证；管理员可强制开启。
-
-  修复：成就定义删不掉（空配置复活默认 + 悬空奖励卡保存）、「我的称号」导航路径错误。
-
-  升级提示：V11–V13 迁移自动执行；**资源指标需各游戏服更新 Paper 插件**（旧插件兼容，不上报指标）；新增开关（per_server token / 2FA / 先审后发 / 管理员强制 2FA）默认关闭，上线无行为突变。
+  升级提示：替换后端 JAR 即可(无新增迁移)；前端产物已内嵌。
 
   ## English
 
-  v1.5.0 feature release: **monitoring & multi-server · community · two-factor authentication**.
+  v1.5.1 experience hotfix: avatars occasionally showing the default face (two root causes), homepage
+  refresh flash, and a visual rework of the photo wall.
 
-  **Monitoring & multi-server**: heartbeats now carry real TPS/memory/CPU (fixes fake TPS 20.0 on the player
-  dashboard), admin resource dashboard (24h/7d curves) with low-TPS alerting; per-server tokens (issue/rotate/
-  disable) with shared/per_server modes; map entries support BlueMap/Dynmap with a live-players sidebar.
+  - **Avatar default-face flashes**: transient Mojang failures (timeouts/429/5xx) no longer poison the
+    skin cache for an hour — transient failures bypass caching (30s retry throttle); the browser
+    default-face cache drops to 60s
+  - **Players list/profile avatars**: resolved by bound Minecraft name first (then account name),
+    so renamed players no longer show the default face
+  - **Homepage refresh flash**: reveal waits for the actual background image to decode; config is
+    locally cached so content renders instantly
+  - **Photo wall rework "editorial masonry"**: natural aspect ratios, serif year watermarks, kicker
+    filters, hover microinteractions (filters/lightbox/admin config unchanged)
 
-  **Community**: a top-level "Community" page — forum (guest-readable, likes, @mentions, optional
-  post-moderation), polls (single/multiple choice, per-poll result visibility), feedback tickets (multi-turn
-  conversation with email notifications), and generic event webhooks (HMAC-SHA256 signed).
-
-  **2FA**: TOTP via authenticator apps, 8 one-time recovery codes + email backup codes; login requires a second
-  factor; admins can enforce enrollment.
-
-  Fixes: achievements could not be deleted (defaults resurrected + dangling reward blocking saves); "My titles"
-  navigation pointed to a non-existent route.
-
-  Upgrade notes: V11–V13 migrate automatically; **update the Paper plugin on each game server for metrics**
-  (old plugins keep working, just without metrics); all new toggles default to off.
+  Upgrade: replace the backend JAR (no new migrations); frontend assets are embedded.
