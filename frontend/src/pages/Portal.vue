@@ -95,28 +95,42 @@ const portalConfig = ref({
   timeline: []
 })
 
+/** 应用门户配置(种子与拉取共用) */
+const applyPortal = (portal: any) => {
+  portalConfig.value = {
+    ...portalConfig.value,
+    ...portal,
+    social: { ...portalConfig.value.social, ...(portal.social || {}) },
+    team: Array.isArray(portal.team) ? portal.team : portalConfig.value.team,
+    features: Array.isArray(portal.features) ? portal.features : portalConfig.value.features,
+    carousel: Array.isArray(portal.carousel) ? portal.carousel : portalConfig.value.carousel,
+    timeline: Array.isArray(portal.timeline) ? portal.timeline : portalConfig.value.timeline,
+    photo_types: Array.isArray(portal.photo_types)
+      ? portal.photo_types : ['announcement', 'event', 'milestone'],
+  }
+  if (portal.logo) {
+    logoUrl.value = portal.logo
+  }
+}
+
+// SWR 种子:上次会话的配置先行渲染(刷新零等待,消除内容蹦出),下方拉取最新后覆盖
+try {
+  const cached = localStorage.getItem('portal.config.cache')
+  if (cached) {
+    const data = JSON.parse(cached)
+    if (data?.portal) applyPortal(data.portal)
+  }
+} catch { /* 缓存损坏按无缓存处理 */ }
+
 onMounted(async () => {
-  // 直接加载配置
+  // 拉取最新配置并写回 SWR 缓存(App.vue 消费同一份)
   try {
     const configRes = await fetch('/api/config')
     const configData = await configRes.json()
     if (configData.success) {
+      try { localStorage.setItem('portal.config.cache', JSON.stringify(configData.data)) } catch { /* 存储满忽略 */ }
       if (configData.data.portal) {
-        portalConfig.value = {
-          ...portalConfig.value,
-          ...configData.data.portal,
-          social: { ...portalConfig.value.social, ...(configData.data.portal.social || {}) },
-          team: Array.isArray(configData.data.portal.team) ? configData.data.portal.team : portalConfig.value.team,
-          features: Array.isArray(configData.data.portal.features) ? configData.data.portal.features : portalConfig.value.features,
-          carousel: Array.isArray(configData.data.portal.carousel) ? configData.data.portal.carousel : portalConfig.value.carousel,
-          timeline: Array.isArray(configData.data.portal.timeline) ? configData.data.portal.timeline : portalConfig.value.timeline,
-          photo_types: Array.isArray(configData.data.portal.photo_types)
-            ? configData.data.portal.photo_types : ['announcement', 'event', 'milestone'],
-        }
-        // 从 portal.logo 读取 Logo，不使用 logoUrl
-        if (configData.data.portal.logo) {
-          logoUrl.value = configData.data.portal.logo
-        }
+        applyPortal(configData.data.portal)
       }
     }
   } catch (e) {

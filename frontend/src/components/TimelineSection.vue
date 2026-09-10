@@ -1,45 +1,60 @@
 <template>
   <section class="py-16 px-4">
     <div class="max-w-6xl mx-auto">
-      <h2 class="text-3xl font-bold text-white text-center mb-3">时光照片墙 · Moments</h2>
-      <p class="text-center text-stone-400 mb-6">记录服务器的点点滴滴 · 点击照片可放大查看与留言</p>
+      <!-- 刊头:衬线斜体水印 + 杂志式标题 -->
+      <div class="relative text-center mb-10">
+        <span class="hidden md:block absolute left-1/2 -translate-x-1/2 -top-10 text-[7rem] leading-none font-serif italic text-white/5 select-none pointer-events-none" aria-hidden="true">Moments</span>
+        <h2 class="relative text-3xl font-bold text-white mb-3">时光照片墙 · <span class="font-serif italic">Moments</span></h2>
+        <p class="relative text-stone-400 text-sm tracking-wide">记录服务器的点点滴滴 · 点击照片可放大查看与留言</p>
+      </div>
 
-      <!-- 分类筛选 -->
-      <div class="flex gap-2 justify-center mb-8 flex-wrap">
+      <!-- 分类筛选(杂志 kicker 风格:下划线指示器) -->
+      <div class="flex gap-6 justify-center mb-10 flex-wrap">
         <button
           v-for="type in timelineTypes"
           :key="type.value"
           @click="currentType = type.value"
-          :class="currentType === type.value ? 'bg-orange-500/20 border-orange-500 text-orange-400' : 'border-stone-700 text-stone-400 hover:border-stone-600'"
-          class="px-4 py-2 rounded-lg border transition-colors text-sm font-medium"
+          class="pb-2 text-sm tracking-widest uppercase transition-colors border-b-2"
+          :class="currentType === type.value
+            ? 'border-orange-400 text-orange-300'
+            : 'border-transparent text-stone-500 hover:text-stone-300'"
         >
-          {{ type.label }}
-          <span v-if="getCount(type.value) > 0" class="ml-1 px-1.5 py-0.5 bg-orange-500/10 rounded text-xs">{{ getCount(type.value) }}</span>
+          {{ type.label }}<sup v-if="getCount(type.value) > 0" class="ml-0.5 text-[10px] text-stone-500">{{ getCount(type.value) }}</sup>
         </button>
       </div>
 
-      <!-- 照片墙 -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <!-- 杂志瀑布流:保留原图比例,错落排布 -->
+      <div class="columns-1 sm:columns-2 lg:columns-3 gap-6">
         <button v-for="event in filteredTimeline" :key="photoKey(event)" @click="openPhoto(event)"
-          class="card card-hover overflow-hidden text-left group">
-          <div class="aspect-[4/3] bg-stone-800/60 overflow-hidden">
+          class="group block w-full text-left mb-6 break-inside-avoid cursor-pointer">
+          <!-- 照片:原比例 + 悬停微缩放 + 年份衬线水印 -->
+          <div class="relative overflow-hidden rounded-xl ring-1 ring-white/10 group-hover:ring-orange-400/40 transition-all duration-300 group-hover:shadow-[0_24px_48px_-16px_rgba(0,0,0,0.7)]">
             <img v-if="event.image" :src="event.image" :alt="event.title"
-              class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+              class="w-full transition-transform duration-500 group-hover:scale-[1.04]"
               loading="lazy" decoding="async" @error="handleImageError($event)" />
-            <div v-else class="w-full h-full flex items-center justify-center">
-              <AppIcon name="document-text" class="w-10 h-10 text-stone-600" />
+            <div v-else class="aspect-[4/3] w-full flex items-center justify-center bg-stone-900/40">
+              <AppIcon name="document-text" class="w-10 h-10 text-stone-700" />
             </div>
+            <span v-if="yearOf(event.date)"
+              class="absolute bottom-1 right-3 text-5xl font-serif italic text-white/15 group-hover:text-white/30 transition-colors duration-300 select-none pointer-events-none drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
+              aria-hidden="true">{{ yearOf(event.date) }}</span>
           </div>
-          <div class="p-4">
-            <div class="flex items-center gap-2 mb-2">
-              <span class="px-2 py-0.5 rounded text-xs bg-orange-500/15 text-orange-400">{{ getTypeName(event.type) }}</span>
-              <span class="text-stone-500 text-xs">{{ event.date }}</span>
-              <span class="ml-auto text-xs text-stone-500 flex items-center gap-1">
+
+          <!-- 图注:分类/日期 kicker + 标题动效下划线 + 摘要 -->
+          <div class="pt-3 px-1">
+            <div class="flex items-center gap-2 mb-1.5 text-[11px] tracking-[0.18em] uppercase">
+              <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+              <span class="text-orange-300/90">{{ getTypeName(event.type) }}</span>
+              <span v-if="event.date" class="text-stone-500">{{ event.date }}</span>
+              <span class="ml-auto inline-flex items-center gap-1 text-stone-500 tracking-normal">
                 <AppIcon name="chat-bubble" class="w-3.5 h-3.5" />{{ commentCounts[photoKey(event)] || 0 }}
               </span>
             </div>
-            <h3 class="font-semibold text-white group-hover:text-orange-400 transition-colors">{{ event.title }}</h3>
-            <p class="text-stone-400 text-sm mt-1 line-clamp-2">{{ event.description }}</p>
+            <h3 class="relative inline-block font-semibold text-white group-hover:text-orange-300 transition-colors">
+              {{ event.title }}
+              <span class="absolute left-0 -bottom-0.5 h-0.5 w-full bg-orange-400 origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300" aria-hidden="true"></span>
+            </h3>
+            <p class="text-stone-400 text-sm mt-1.5 line-clamp-2">{{ event.description }}</p>
           </div>
         </button>
       </div>
@@ -137,6 +152,9 @@ const timelineTypes = computed(() => [
 ])
 
 const getTypeName = (type?: string) => (type && typeNames[type]) || '其他'
+
+/** 杂志年份水印:从自由格式日期中提取 4 位年份 */
+const yearOf = (date?: string) => (date?.match(/\d{4}/) || [''])[0]
 
 /** 稳定键:条目 id 优先,缺省回退 日期|标题 哈希替代(与后台编辑器自动补 id 配套) */
 const photoKey = (event: TimelineEntry) =>

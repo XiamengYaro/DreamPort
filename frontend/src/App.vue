@@ -78,6 +78,23 @@ onMounted(async () => {
     }
   }) as EventListener)
 
+  // SWR 种子:上次会话的配置先同步渲染(刷新零闪烁),随后 /api/config 刷新覆盖
+  let bgPromise: Promise<void> = Promise.resolve()
+  try {
+    const cached = localStorage.getItem('portal.config.cache')
+    if (cached) {
+      const data = JSON.parse(cached)
+      if (data) {
+        config.value = data
+        applyBrandFromConfig(data.portal || {})
+        if (data.portal?.icp) {
+          icp.value = data.portal.icp
+        }
+        bgPromise = applyBackground({ ...(data || {}), ...((data && data.background) || {}) })
+      }
+    }
+  } catch { /* 缓存损坏按无缓存处理 */ }
+
   // 验证 token 有效性（插件重启后 token 会失效）
   const token = localStorage.getItem('token')
   if (token) {
@@ -106,24 +123,23 @@ onMounted(async () => {
     const data = await response.json()
     if (data.success) {
       config.value = data.data
-      applyBackground({ ...(data.data || {}), ...((data.data && data.data.background) || {}) })
+      try { localStorage.setItem('portal.config.cache', JSON.stringify(data.data)) } catch { /* 存储满忽略 */ }
+      applyBrandFromConfig(data.data.portal || {})
       if (data.data.portal?.icp) {
         icp.value = data.data.portal.icp
       }
-      // 全局品牌:名称/主题色/favicon/页面标题
-      applyBrandFromConfig(data.data.portal || {})
+      // 背景探针 Promise 化:揭幕前确保最终背景图已解码完成
+      bgPromise = applyBackground({ ...(data.data || {}), ...((data.data && data.data.background) || {}) })
     }
   } catch (error) {
     console.error('Failed to load config:', error)
   }
 
-  // 等待背景图加载完成后移除加载画面（最短 0.5 秒）
+  // 揭幕时机 = 真实背景图解码完成(修复刷新闪烁:此前只等默认 bg.webp,自定义背景揭幕后才突然出现),
+  // 最短展示 0.5 秒、5 秒兜底防挂死
   const startTime = Date.now()
   const minDuration = 500
-  let bgLoaded = false
-
-  const hideLoading = () => {
-    if (!bgLoaded) return
+  Promise.race([bgPromise, new Promise<void>(resolve => setTimeout(resolve, 5000))]).then(() => {
     const elapsed = Date.now() - startTime
     const remaining = Math.max(0, minDuration - elapsed)
     setTimeout(() => {
@@ -133,15 +149,10 @@ onMounted(async () => {
         setTimeout(() => el.remove(), 500)
       }
     }, remaining)
-  }
-
-  const bgImg = new Image()
-  bgImg.onload = () => { bgLoaded = true; hideLoading() }
-  bgImg.onerror = () => { bgLoaded = true; hideLoading() }
-  bgImg.src = '/bg.webp'
-  setTimeout(() => { bgLoaded = true; hideLoading() }, 5000)
+  })
 })
 
+/** 应用背景配置;返回 Promise,resolve 于最终背景图加载完成(供启动揭幕等待) */
 const applyBackground = (cfg: any) => {
   const root = document.documentElement
   const imagePath = cfg.image || cfg.backgroundImage
@@ -149,24 +160,35 @@ const applyBackground = (cfg: any) => {
     root.style.setProperty('--bg-opacity', String(cfg.opacity ?? cfg.backgroundOpacity))
   }
   if (cfg.blur !== undefined || cfg.backgroundBlur !== undefined) {
-    root.style.setProperty('--bg-blur', (cfg.blur ?? cfg.backgroundBlur) + 'px')
+    root.style.setProperty('--bg-blur', String(cfg.blur ?? cfg.backgroundBlur) + 'px')
   }
-  if (imagePath && imagePath !== '/bg.webp') {
-    // 自定义背景图：优先尝试 WebP，失败则加载原图
-    const webpPath = imagePath.replace(/\.(png|jpg|jpeg)$/i, '.webp')
-    const webpImg = new Image()
-    webpImg.onload = () => {
-      root.style.setProperty('--bg-image', `url('${webpPath}')`)
-    }
-    webpImg.onerror = () => {
-      const img = new Image()
-      img.onload = () => {
-        root.style.setProperty('--bg-image', `url('${imagePath}')`)
+  return new Promise<void>((resolve) => {
+    if (imagePath && imagePath !== '/bg.webp') {
+      // 自定义背景图：优先尝试 WebP，失败则加载原图
+      const webpPath = imagePath.replace(/\.(png|jpg|jpeg)$/i, '.webp')
+      const webpImg = new Image()
+      webpImg.onload = () => {
+        root.style.setProperty('--bg-image', `url('${webpPath}')`)
+        resolve()
       }
-      img.src = imagePath
+      webpImg.onerror = () => {
+        const img = new Image()
+        img.onload = () => {
+          root.style.setProperty('--bg-image', `url('${imagePath}')`)
+          resolve()
+        }
+        img.onerror = () => resolve()
+        img.src = imagePath
+      }
+      webpImg.src = webpPath
+    } else {
+      // 默认背景(index.css 已引用 /bg.webp),等它解码完再揭幕
+      const img = new Image()
+      img.onload = () => resolve()
+      img.onerror = () => resolve()
+      img.src = '/bg.webp'
     }
-    webpImg.src = webpPath
-  }
+  })
 }
 
 const refreshBackground = async () => {
