@@ -43,6 +43,12 @@
 - **组件规范清理**:Admin 迁移导入手写橙色按钮改 `.btn-primary`;Village 手写表格套 `.table`;Status 失效色阶 `primary-500/accent-500`(不存在的 token)换品牌橙渐变;AppFooter 手写复制的玻璃配方改用全局 `.card` 类;Docs/DocDetail/Tasks 根容器 padding 对齐
 - **骨架屏**:新增 `AppSkeleton` 组件(table/cards/pulse 三变体,交错脉冲),替换 12 处转圈 spinner(保留 Map 刷新按钮与 PlayerChart 内部功能性小转圈)
 
+### Fixed（Webhook 飞书机器人适配 · 用户反馈）
+- **根因**:飞书自定义机器人只接受自己的消息格式(`msg_type`+`content`),此前发送的通用 JSON 会被飞书以 9499 Bad Request 拒绝,且 HTTP 200 被误判为成功——群里永远收不到
+- **飞书自动适配**:URL 含 `open.feishu.cn/open-apis/bot/v2/hook` 的目标自动转为飞书 interactive 卡片(事件类型+字段明细),启用签名校验的机器人按飞书算法在请求体顶层带 `timestamp`/`sign`(HMAC-SHA256,密钥=ts+"\n"+secret,空消息体)
+- **测试按钮改同步投递**:逐 URL 返回真实 HTTP 状态与响应体,失败立即可见;管理端 UI 显示逐 URL 结果
+- 非飞书目标维持原有通用 JSON + X-DP-Signature 头,不受影响
+
 ### Fixed（SPA 路由白名单缺路由 · 存量 bug）
 - `WebStaticConfig` 的 SPA 回退白名单缺 `/tasks`——任务中心页自 v1.4.0 起**刷新/直达一直 404**(侧栏链接能进是因 SPA 内部导航不走回退);`/community`(v1.5 新增)同样遗漏;两条路由已补入白名单
 

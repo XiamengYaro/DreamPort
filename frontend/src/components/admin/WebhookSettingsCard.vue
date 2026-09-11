@@ -25,6 +25,12 @@
       <button @click="save" class="btn-primary text-sm">保存 Webhook 配置</button>
       <button @click="test" class="btn-secondary text-sm" :disabled="!cfg.enabled">发送测试事件</button>
     </div>
+    <div v-if="testResults" class="space-y-1.5">
+      <div v-for="(r, i) in testResults" :key="i" class="text-xs font-mono px-3 py-2 rounded-lg"
+        :class="r.ok ? 'bg-emerald-500/10 text-emerald-300' : 'bg-rose-500/10 text-rose-300'">
+        {{ r.ok ? '✓' : '✗' }} {{ r.url }} — HTTP {{ r.status }} {{ (r.response || '').slice(0, 120) }}
+      </div>
+    </div>
   </div>
 </template>
 
@@ -65,11 +71,15 @@ async function save() {
   } catch (e: any) { notify?.error(e.message || '保存失败') }
 }
 
+const testResults = ref<any[] | null>(null)
+
 async function test() {
   try {
     const r: any = await api.testWebhook()
-    if (r.success) notify?.success(r.message || '测试事件已发送')
-    else notify?.error(r.message || '发送失败')
+    if (r.success) {
+      testResults.value = r.data?.results || []
+      notify?.success(r.message || '测试事件已发送')
+    } else notify?.error(r.message || '发送失败')
   } catch (e: any) { notify?.error(e.message || '发送失败') }
 }
 </script>

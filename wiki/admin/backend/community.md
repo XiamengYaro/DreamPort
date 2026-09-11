@@ -34,6 +34,7 @@
 - 配置多个目标 URL(各带独立可选 secret),事件发生时异步 `POST` JSON:`{event, time, ...数据}`
 - 签名:头 `X-DP-Signature: sha256=<HMAC-SHA256(secret, timestamp + "." + body)>`、`X-DP-Timestamp`(毫秒),供接收端防伪造
 - 事件过滤留空 = 推送全部;支持「发送测试事件」按钮
+- **飞书机器人直连**:目标 URL 填飞书自定义机器人 hook 地址(open.feishu.cn/open-apis/bot/v2/hook/…)即自动转为飞书消息卡片;若机器人启用了签名校验,把密钥填入同条目的 secret 框(自动按飞书算法签名);其他自建系统走通用 JSON+HMAC 头
 - 事件源为审计日志骨架,主要事件类型:
 
 | 事件 | 触发 |

@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -70,11 +72,23 @@ public class WebhookAdminController {
         if (!(cfg.getOrDefault("enabled", Boolean.FALSE) instanceof Boolean b) || !b) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("请先启用 Webhook"));
         }
-        dispatcher.dispatch("webhook.test", Map.of(
+        // 同步投递并把每个目标 的真实响应带回给管理端(飞书 9499/19021 等错误可见)
+        List<Map<String, Object>> results = new ArrayList<>();
+        for (var r : dispatcher.dispatchSync("webhook.test", Map.of(
                 "operator", me == null ? "" : me,
-                "message", "DreamPort Webhook 测试事件"));
+                "message", "DreamPort Webhook 测试事件"))) {
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("url", r.url());
+            item.put("ok", r.ok());
+            item.put("status", r.status());
+            String resp = r.response() == null ? "" : r.response();
+            item.put("response", resp.length() > 300 ? resp.substring(0, 300) : resp);
+            results.add(item);
+        }
         auditService.log("webhook_test", me, null, null);
-        return ResponseEntity.ok(ApiResponse.success("测试事件已发送(查看接收端是否收到)"));
+        boolean allOk = results.stream().allMatch(x -> Boolean.TRUE.equals(x.get("ok")));
+        return ResponseEntity.ok(ApiResponse.success(allOk ? "全部投递成功" : "部分目标投递失败(见详情)",
+                Map.of("results", results)));
     }
 
     private static boolean admin(HttpServletRequest request) {
