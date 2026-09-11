@@ -40,7 +40,8 @@ public class ProfileCustomController {
     public record SocialLink(String label, String url) {
     }
 
-    public record ProfileBody(String bio, String banner, List<SocialLink> socialLinks) {
+    public record ProfileBody(String bio, String banner, List<SocialLink> socialLinks,
+                              String bgImage, String bannerImage, String accent, String css) {
     }
 
     @GetMapping
@@ -80,15 +81,25 @@ public class ProfileCustomController {
                 links.add(new SocialLink(label.length() > 20 ? label.substring(0, 20) : label, url));
             }
         }
+        String bgImage = cleanUrlField(body.bgImage());
+        String bannerImage = cleanUrlField(body.bannerImage());
+        String accent = body.accent() == null ? "" : body.accent().trim();
+        if (!accent.isEmpty() && !accent.matches("#[0-9a-fA-F]{6}")) {
+            return ResponseEntity.badRequest().body(ApiResponse.failure("主题色格式非法,需 #rrggbb"));
+        }
+        String css = cn.xmcraft.dreamport.server.infra.CssSanitizer.sanitize(
+                body.css() == null ? "" : body.css(), "#pc-root", 8000);
         String linksJson = writeJson(links);
         long now = System.currentTimeMillis();
         var exists = jdbc.queryForList("SELECT id FROM dp_user_profile WHERE username = ?", me);
         if (exists.isEmpty()) {
-            jdbc.update("INSERT INTO dp_user_profile (username, bio, banner, social_links, updated_at) VALUES (?, ?, ?, ?, ?)",
-                    me, bio, banner, linksJson, now);
+            jdbc.update("INSERT INTO dp_user_profile (username, bio, banner, social_links, bg_image, banner_image, accent, css, updated_at) "
+                            + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    me, bio, banner, linksJson, bgImage, bannerImage, accent, css, now);
         } else {
-            jdbc.update("UPDATE dp_user_profile SET bio = ?, banner = ?, social_links = ?, updated_at = ? WHERE username = ?",
-                    bio, banner, linksJson, now, me);
+            jdbc.update("UPDATE dp_user_profile SET bio = ?, banner = ?, social_links = ?, bg_image = ?, banner_image = ?, "
+                            + "accent = ?, css = ?, updated_at = ? WHERE username = ?",
+                    bio, banner, linksJson, bgImage, bannerImage, accent, css, now, me);
         }
         return ResponseEntity.ok(ApiResponse.success("主页自定义已保存"));
     }
@@ -101,13 +112,22 @@ public class ProfileCustomController {
         data.put("socialLinks", new ArrayList<>());
         try {
             var rows = jdbc.queryForList(
-                    "SELECT bio, banner, social_links, updated_at FROM dp_user_profile WHERE username = ?", username);
+                    "SELECT bio, banner, social_links, bg_image, banner_image, accent, css, updated_at "
+                            + "FROM dp_user_profile WHERE username = ?", username);
             if (rows.isEmpty()) {
                 return data;
             }
             var r = rows.get(0);
             data.put("bio", r.get("bio") == null ? "" : String.valueOf(r.get("bio")));
             data.put("banner", r.get("banner") == null ? "amber" : String.valueOf(r.get("banner")));
+            data.put("bgImage", r.get("bg_image") == null ? "" : String.valueOf(r.get("bg_image")));
+            data.put("bannerImage", r.get("banner_image") == null ? "" : String.valueOf(r.get("banner_image")));
+            data.put("accent", r.get("accent") == null ? "" : String.valueOf(r.get("accent")));
+            data.put("css", r.get("css") == null ? "" : String.valueOf(r.get("css")));
+            data.put("bgImage", r.get("bg_image") == null ? "" : String.valueOf(r.get("bg_image")));
+            data.put("bannerImage", r.get("banner_image") == null ? "" : String.valueOf(r.get("banner_image")));
+            data.put("accent", r.get("accent") == null ? "" : String.valueOf(r.get("accent")));
+            data.put("css", r.get("css") == null ? "" : String.valueOf(r.get("css")));
             String linksJson = r.get("social_links") == null ? "[]" : String.valueOf(r.get("social_links"));
             ObjectMapper m = new ObjectMapper();
             List<Map<String, Object>> links = new ArrayList<>();
@@ -121,6 +141,13 @@ public class ProfileCustomController {
         } catch (Exception ignored) {
         }
         return data;
+    }
+
+    /** 上传通道返回的 /uploads/ 路径或空 */
+    private String cleanUrlField(String url) {
+        if (url == null || url.isBlank()) return null;
+        String u = url.trim();
+        return u.startsWith("/uploads/") && !u.contains("..") ? u : null;
     }
 
     private String writeJson(List<SocialLink> links) {

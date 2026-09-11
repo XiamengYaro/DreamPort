@@ -307,7 +307,7 @@ public class CommunityController {
         var activeTitle = titleService.activeTitle(u.username());
         profile.put("title", activeTitle == null ? null
                 : Map.of("code", activeTitle.code(), "name", activeTitle.name(), "color", activeTitle.color()));
-        // 个人主页自定义(简介/横幅/社交链接;V16)
+        // 个人主页自定义(简介/横幅/社交链接/背景图/主题色/CSS;V16+V19)
         profile.put("profileCustom", cn.xmcraft.dreamport.server.api.ProfileCustomController
                 .readRow(jdbcTemplate, new com.fasterxml.jackson.databind.ObjectMapper(), u.username()));
         // 统一响应包装:前端按 r.success 判定,裸对象会导致详情页恒显"玩家不存在"

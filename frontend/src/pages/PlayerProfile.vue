@@ -1,5 +1,5 @@
 <template>
-  <div class="p-6 pt-24 pb-20">
+  <div id="pc-root" class="p-6 pt-24 pb-20" :style="bgImageStyle">
     <div class="max-w-4xl mx-auto">
       <!-- 加载状态 -->
       <AppSkeleton v-if="loading" variant="cards" :rows="2" card-height="160" grid-class="grid-cols-1 md:grid-cols-2" />
@@ -14,7 +14,11 @@
       <!-- 玩家资料 -->
       <template v-else>
         <!-- 头部信息 -->
-        <div class="card p-6 mb-6">
+        <div class="card overflow-hidden mb-6">
+          <div v-if="displayBannerImage" class="h-28 w-full bg-cover bg-center"
+            :style="{ backgroundImage: `url('${displayBannerImage}')` }"></div>
+          <div v-else class="h-20 w-full bg-gradient-to-r" :class="bannerGradient"></div>
+          <div class="p-6">
           <div class="flex flex-col sm:flex-row items-start sm:items-start gap-4 sm:gap-6">
             <img :src="`/api/avatar/${encodeURIComponent(profile.minecraftName || profile.username || profile.uuid)}?size=128`"
               :alt="profile.minecraftName || profile.username"
@@ -22,6 +26,8 @@
               @error="handleAvatarError" />
             <div class="flex-1">
               <h1 class="text-3xl font-bold text-white mb-2">{{ profile.username }}
+                <button v-if="isSelf" @click="customOpen = true"
+                  class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">⚙ 自定义主页</button>
                 <button v-if="friendState === 'none' && isLoggedIn" @click="addFriend"
                   class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">+ 好友</button>
                 <span v-else-if="friendState === 'pending'" class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-stone-600/40 text-stone-300">申请已发送</span>
@@ -44,6 +50,7 @@
             </div>
           </div>
         </div>
+        </div>
 
         <!-- 统计卡片 -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
@@ -52,6 +59,18 @@
           <StatCard :value="formatBalance(profile.balance)" label="硬币" tone="orange" />
           <StatCard :value="profile.loginCount || '-'" label="登录次数" tone="orange" />
           <StatCard v-if="myScore != null" :value="myScore.toFixed(1)" label="综合评分" tone="emerald" />
+        </div>
+
+        <!-- 关于我(个人主页自定义展示) -->
+        <div v-if="profileCustom.bio || (profileCustom.socialLinks || []).length" class="card p-6 mb-6">
+          <h2 class="text-lg font-semibold text-white mb-3">关于我</h2>
+          <p v-if="profileCustom.bio" class="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">{{ profileCustom.bio }}</p>
+          <div v-if="(profileCustom.socialLinks || []).length" class="flex flex-wrap gap-2 mt-3">
+            <a v-for="(l, i) in profileCustom.socialLinks" :key="i" :href="l.url" target="_blank" rel="noopener noreferrer nofollow"
+              class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/60 border border-stone-700 text-xs text-stone-300 hover:border-orange-500/40 hover:text-white transition-colors">
+              <AppIcon name="link" class="w-3.5 h-3.5 text-orange-400" />{{ l.label }}
+            </a>
+          </div>
         </div>
 
         <!-- 封禁提示 -->
@@ -93,11 +112,76 @@
         </div>
       </template>
     </div>
+
+    <!-- 主页装修编辑器(本人) -->
+    <AppModal :open="customOpen" title="自定义主页" size="lg" @close="customOpen = false">
+      <div class="space-y-5">
+        <!-- tab 切换 -->
+        <div class="flex gap-2 flex-wrap">
+          <button v-for="t in customTabs" :key="t.key" @click="customTab = t.key"
+            class="tab-btn text-sm" :class="{ active: customTab === t.key }">{{ t.label }}</button>
+        </div>
+
+        <!-- 简介 -->
+        <div v-if="customTab === 'bio'">
+          <label class="block text-xs text-stone-500 mb-1">个人简介(纯文本,≤500 字)</label>
+          <textarea v-model="customForm.bio" maxlength="500" rows="4" class="input text-sm"
+            placeholder="介绍一下你自己…"></textarea>
+        </div>
+
+        <!-- 横幅与背景 -->
+        <div v-else-if="customTab === 'banner'">
+          <label class="block text-xs text-stone-500 mb-1">横幅图(填写图片地址,留空用主题色渐变)</label>
+          <input v-model="customForm.bannerImage" class="input text-sm mb-2" placeholder="/uploads/xxx.png 或 https://…" />
+          <label class="block text-xs text-stone-500 mb-1">主题色(无横幅图时的渐变色)</label>
+          <div class="flex gap-2 flex-wrap mb-2">
+            <button v-for="(grad, key) in BANNERS" :key="key" @click="customForm.banner = key"
+              class="w-12 h-9 rounded-lg bg-gradient-to-r transition-all"
+              :class="[grad, customForm.banner === key ? 'ring-2 ring-orange-400' : 'ring-1 ring-white/10']"
+              :title="key"></button>
+          </div>
+          <label class="block text-xs text-stone-500 mb-1">页面背景图(个人主页专属背景)</label>
+          <div class="flex gap-2">
+            <input v-model="customForm.bgImage" class="input flex-1 text-sm" placeholder="背景图地址(留空用全站背景)" />
+            <button class="btn-secondary text-sm" @click="pickBgImage">上传</button>
+          </div>
+          <input ref="bgInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="uploadBg" />
+        </div>
+
+        <!-- 社交链接 -->
+        <div v-else-if="customTab === 'links'">
+          <div v-for="(l, i) in customForm.socialLinks" :key="i" class="flex gap-2 mb-2">
+            <input v-model="l.label" class="input w-36 text-sm" placeholder="名称(如 B站)" maxlength="20" />
+            <input v-model="l.url" class="input flex-1 text-sm" placeholder="https://…" />
+            <button class="text-rose-400 hover:text-rose-300 text-sm px-1" @click="customForm.socialLinks.splice(i, 1)">×</button>
+          </div>
+          <button v-if="(customForm.socialLinks || []).length < 5" class="btn-secondary text-xs py-1.5 px-3"
+            @click="customForm.socialLinks.push({ label: '', url: '' })">+ 添加链接</button>
+        </div>
+
+        <!-- 自定义 CSS -->
+        <div v-else-if="customTab === 'css'">
+          <p class="text-xs text-stone-500 mb-2">
+            高级:自定义个人主页样式。所有选择器自动限定在 <code class="text-orange-400">#pc-root</code> 内,
+            自动剔除 @import/javascript:/position:fixed 等危险内容,≤8000 字符。
+          </p>
+          <textarea v-model="customForm.css" rows="8" class="input text-xs font-mono"
+            placeholder=".card { border-radius: 16px; }&#10;h1 { color: #fb923c; }"></textarea>
+          <p class="text-xs text-stone-600 mt-1">当前 {{ (customForm.css || '').length }} / 8000 字符</p>
+        </div>
+      </div>
+      <template #footer>
+        <button class="btn-secondary" @click="customOpen = false">取消</button>
+        <button class="btn-primary" :disabled="customSaving" @click="saveCustom">
+          {{ customSaving ? '保存中…' : '保存' }}
+        </button>
+      </template>
+    </AppModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, inject } from 'vue'
+import { ref, computed, onMounted, nextTick, inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getStatusText } from '@/lib/status'
@@ -114,6 +198,9 @@ const isSelf = ref(false)
 
 onMounted(async () => {
   await loadProfile()
+  if (route.query.customize && isSelf.value) {
+    startCustomEdit()
+  }
 })
 
 const loadProfile = async () => {
@@ -142,9 +229,21 @@ const loadProfile = async () => {
 const myScore = ref<number | null>(null)
 const friendState = ref('')
 const profileCustom = ref<any>({ bio: '', banner: 'amber', socialLinks: [] as any[] })
-const customEdit = ref(false)
-const customForm = ref<any>({ bio: '', banner: 'amber', socialLinks: [] as any[] })
+const customOpen = ref(false)
+const customTab = ref('bio')
+const customForm = ref<any>({
+  bio: '', banner: 'amber', socialLinks: [] as any[],
+  bgImage: '', bannerImage: '', accent: '', css: ''
+})
 const customSaving = ref(false)
+const bgInput = ref<HTMLInputElement | null>(null)
+
+const customTabs = [
+  { key: 'bio', label: '简介' },
+  { key: 'banner', label: '横幅与背景' },
+  { key: 'links', label: '社交链接' },
+  { key: 'css', label: '自定义 CSS' }
+]
 
 const loadScore = async () => {
   try {
@@ -165,9 +264,37 @@ const startCustomEdit = () => {
   customForm.value = {
     bio: profileCustom.value.bio || '',
     banner: profileCustom.value.banner || 'amber',
-    socialLinks: (profileCustom.value.socialLinks || []).map((x: any) => ({ ...x }))
+    socialLinks: (profileCustom.value.socialLinks || []).map((x: any) => ({ ...x })),
+    bgImage: profileCustom.value.bgImage || '',
+    bannerImage: profileCustom.value.bannerImage || '',
+    accent: profileCustom.value.accent || '',
+    css: profileCustom.value.css || ''
   }
-  customEdit.value = true
+  customOpen.value = true
+}
+
+const pickBgImage = () => bgInput.value?.click()
+
+const uploadBg = async (e: Event) => {
+  const input = e.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) return
+  if (file.size > 5 * 1024 * 1024) { notify?.error('图片不能超过 5MB'); return }
+  try {
+    const fd = new FormData()
+    fd.append('file', file)
+    const res = await fetch('/api/upload/image', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('token') || ''}` },
+      body: fd
+    })
+    const data = await res.json()
+    if (data.success) {
+      customForm.value.bgImage = data.data.url
+      notify?.success('背景图已上传,保存后生效')
+    } else notify?.error(data.message || '上传失败')
+  } catch (e: any) { notify?.error(e.message || '上传失败') }
 }
 
 const saveCustom = async () => {
@@ -177,12 +304,20 @@ const saveCustom = async () => {
     const r: any = await api.saveProfileCustom({
       bio: customForm.value.bio || '',
       banner: customForm.value.banner || 'amber',
-      socialLinks: links.map((x: any) => ({ label: x.label || '链接', url: x.url.trim() }))
+      socialLinks: links.map((x: any) => ({ label: x.label || '链接', url: x.url.trim() })),
+      bgImage: customForm.value.bgImage || '',
+      bannerImage: customForm.value.bannerImage || '',
+      accent: customForm.value.accent || '',
+      css: customForm.value.css || ''
     })
     if (r.success) {
       notify?.success(r.message || '已保存')
-      customEdit.value = false
-      profileCustom.value = { bio: customForm.value.bio, banner: customForm.value.banner, socialLinks: links }
+      customOpen.value = false
+      profileCustom.value = {
+        bio: customForm.value.bio, banner: customForm.value.banner, socialLinks: links,
+        bgImage: customForm.value.bgImage, bannerImage: customForm.value.bannerImage,
+        accent: customForm.value.accent, css: customForm.value.css
+      }
     } else notify?.error(r.message || '保存失败')
   } catch (e: any) { notify?.error(e.message || '保存失败') }
   customSaving.value = false
@@ -192,6 +327,52 @@ const addLinkRow = () => {
   if ((customForm.value.socialLinks || []).length >= 5) return
   customForm.value.socialLinks.push({ label: '', url: '' })
 }
+
+const bgImageStyle = computed(() => {
+  const img = (customOpen.value ? customForm.value.bgImage : '') || profileCustom.value.bgImage
+  if (!img) return {}
+  return {
+    backgroundImage: `linear-gradient(rgba(28,25,23,0.88), rgba(28,25,23,0.92)), url('${img}')`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center'
+  }
+})
+
+const displayBannerImage = computed(() =>
+  customOpen.value ? customForm.value.bannerImage : (profileCustom.value.bannerImage || ''))
+const bannerGradient = computed(() => {
+  const gradient = customOpen.value ? customForm.value.banner : (profileCustom.value.banner || 'amber')
+  return BANNERS[gradient] || BANNERS.amber
+})
+
+// 自定义 CSS 注入(服务端已消毒+作用域前缀,此处仅插入)
+const cssStyleEl = ref<HTMLStyleElement | null>(null)
+const applyCss = (css: string) => {
+  let el = document.getElementById('pc-style') as HTMLStyleElement | null
+  if (!css) {
+    el?.remove()
+    return
+  }
+  if (!el) {
+    el = document.createElement('style')
+    el.id = 'pc-style'
+    document.head.appendChild(el)
+  }
+  el.textContent = css
+}
+// 装修编辑时实时预览(编辑中的 customForm 直接驱动展示)
+watch(customForm, (f) => {
+  if (!customOpen.value) return
+  profileCustom.value = {
+    ...profileCustom.value,
+    bio: f.bio, banner: f.banner, bgImage: f.bgImage,
+    bannerImage: f.bannerImage, accent: f.accent
+  }
+  applyCss(f.css || '')
+}, { deep: true })
+
+// 保存后以服务端消毒结果覆盖
+watch(() => profileCustom.value?.css, (v) => applyCss(v || ''))
 
 const loadFriendState = async () => {
   if (!isLoggedIn.value || !profile.value?.username) return

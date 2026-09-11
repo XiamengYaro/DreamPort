@@ -73,6 +73,7 @@
                     <router-link to="/dashboard" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="user" class="w-4 h-4" />控制台</router-link>
                     <router-link to="/tasks" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="squares-2x2" class="w-4 h-4" />任务中心</router-link>
                     <router-link :to="`/player/${encodeURIComponent(username)}`" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="user" class="w-4 h-4" />个人主页</router-link>
+                    <router-link :to="`/player/${encodeURIComponent(username)}?customize=1`" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="pencil-square" class="w-4 h-4" />主页设置</router-link>
                     <router-link v-if="isAdmin" to="/admin" @click="userMenuOpen = false" class="user-menu-row"><AppIcon name="cog" class="w-4 h-4" />管理后台</router-link>
                     <button @click="logout" class="user-menu-row w-full text-left text-rose-300"><AppIcon name="x-mark" class="w-4 h-4" />退出登录</button>
                   </div>
@@ -117,6 +118,7 @@
           <router-link to="/dashboard" class="mobile-nav-item" @click="mobileMenuOpen = false">控制台</router-link>
           <router-link to="/tasks" class="mobile-nav-item" @click="mobileMenuOpen = false">任务中心</router-link>
           <router-link :to="`/player/${encodeURIComponent(username)}`" class="mobile-nav-item" @click="mobileMenuOpen = false">个人主页</router-link>
+        <router-link :to="`/player/${encodeURIComponent(username)}?customize=1`" class="mobile-nav-item" @click="mobileMenuOpen = false">主页设置</router-link>
           <router-link v-if="isAdmin" to="/admin" class="mobile-nav-item" @click="mobileMenuOpen = false">管理后台</router-link>
           <button @click="logout" class="mobile-nav-item w-full text-left">退出登录</button>
         </template>
