@@ -1035,23 +1035,6 @@ class ApiService {
     return this.request('/invite/reject', { method: 'POST', body: JSON.stringify({ username }) })
   }
 
-  // Notifications
-  async getNotifications() {
-    return this.request('/notifications')
-  }
-
-  async markNotificationRead(id: number) {
-    return this.request('/notifications/read', { method: 'POST', body: JSON.stringify({ id }) })
-  }
-
-  async markAllNotificationsRead() {
-    return this.request('/notifications/read-all', { method: 'POST' })
-  }
-
-  async deleteNotification(id: number) {
-    return this.request(`/notifications/${id}`, { method: 'DELETE' })
-  }
-
   // Verify
   async checkVerification() {
     return this.request('/verify/check', { method: 'POST' })

@@ -26,7 +26,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['vue', 'vue-router', 'vue-i18n']
+          vendor: ['vue', 'vue-router']
         }
       }
     }

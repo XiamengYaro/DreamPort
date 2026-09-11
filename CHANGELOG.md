@@ -7,6 +7,11 @@
 
 ## [未发布]
 
+### Removed（中英文切换与通知铃铛 · 用户要求）
+- **中英文切换整体移除**:LanguageSwitcher 组件、vue-i18n 依赖与 zh/en 语言包、vite manualChunks 引用全部删除(全站页面本为硬编码中文,i18n 属半接入死代码);站点固定中文
+- **通知铃铛(通知中心)前端整体移除**:NotificationBell 组件与 api.ts 通知方法块删除
+- 后端保持不变:`dp_notification` 记录与 `/api/notifications*` 端点仍在(无消费方,纯休眠);审核/封禁/称号等**邮件通知不受影响**;如需连后端记录一起下线说一声
+
 ### Changed（文档页改版「编辑风 + 搜索/上下篇/TOC」 · 用户反馈）
 - 页头加 `SectionHeader`(DOCS 水印);侧栏加**实时搜索框**(前端过滤标题,含匹配分类自动展开,无匹配空态)
 - 阅读区:选中文档显示**元信息条**(分类 + 标题);正文 **TOC**(h2/h3 锚点,`markdown.ts` 新增 `renderMarkdownWithToc`——marked 渲染→消毒→注入序号锚点,原 renderMarkdown 兼容不动),可折叠目录点击平滑滚动

@@ -41,7 +41,6 @@
 
         <!-- 右侧用户信息 -->
         <div class="flex items-center gap-4">
-          <LanguageSwitcher />
 
           <button @click="mobileMenuOpen = !mobileMenuOpen" class="md:hidden p-2 text-white drop-shadow">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -52,7 +51,6 @@
 
           <!-- 用户区:铃铛 + 头像/ID(hover/点击展开用户卡) -->
           <template v-if="isLoggedIn">
-            <NotificationBell />
             <div class="relative">
               <button @click.stop="userMenuOpen = !userMenuOpen"
                 class="flex items-center gap-2 p-1 rounded-xl hover:bg-white/10 transition-colors">
@@ -133,10 +131,8 @@
 </template>
 
 <script setup lang="ts">
-import LanguageSwitcher from './LanguageSwitcher.vue'
 import AppIcon from './AppIcon.vue'
 import AppAvatar from './ui/AppAvatar.vue'
-import NotificationBell from './NotificationBell.vue'
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'
