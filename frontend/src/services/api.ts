@@ -769,6 +769,68 @@ class ApiService {
     return this.request(`/admin/analytics/overview?days=${days}`)
   }
 
+  // 好友系统
+  async getFriends() {
+    return this.request('/friends')
+  }
+
+  async requestFriend(username: string) {
+    return this.request(`/friends/request/${encodeURIComponent(username)}`, { method: 'POST', body: '{}' })
+  }
+
+  async acceptFriend(id: number) {
+    return this.request(`/friends/${id}/accept`, { method: 'POST', body: '{}' })
+  }
+
+  async rejectFriend(id: number) {
+    return this.request(`/friends/${id}/reject`, { method: 'POST', body: '{}' })
+  }
+
+  async removeFriend(username: string) {
+    return this.request(`/friends/${encodeURIComponent(username)}`, { method: 'DELETE' })
+  }
+
+  async getFriendStatus(username: string) {
+    return this.request(`/friends/status/${encodeURIComponent(username)}`)
+  }
+
+  // 活动日历
+  async getEvents() {
+    return this.request('/events')
+  }
+
+  async signupEvent(id: number) {
+    return this.request(`/events/${id}/signup`, { method: 'POST', body: '{}' })
+  }
+
+  async createEvent(body: { title: string; description?: string; eventAt: number }) {
+    return this.request('/admin/events', { method: 'POST', body: JSON.stringify(body) })
+  }
+
+  async updateEvent(id: number, body: { title: string; description?: string; eventAt: number }) {
+    return this.request(`/admin/events/${id}`, { method: 'PUT', body: JSON.stringify(body) })
+  }
+
+  async deleteEvent(id: number) {
+    return this.request(`/admin/events/${id}`, { method: 'DELETE' })
+  }
+
+  async getEventSignups(id: number) {
+    return this.request(`/admin/events/${id}/signups`)
+  }
+
+  // 个人主页自定义(简介/横幅/社交链接)
+  async getProfileCustom() {
+    return this.request('/user/profile-custom')
+  }
+
+  async saveProfileCustom(body: { bio: string; banner: string; socialLinks: Array<{ label: string; url: string }> }) {
+    return this.request('/user/profile-custom', {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    })
+  }
+
   // 服务器管理(后台:注册表/按服令牌/启停/鉴权模式)
   async getAdminServers() {
     return this.request('/admin/servers')

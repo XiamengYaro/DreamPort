@@ -59,6 +59,7 @@ public class CommunityController {
     private final WlProps props;
     private final SettingService settingService;
     private final cn.xmcraft.dreamport.server.audit.AuditService auditService;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     private final EconomyService economyService;
 
@@ -70,7 +71,8 @@ public class CommunityController {
                                AppealRepository appealRepository, UserRepository userRepository,
                                ReviewService reviewService, WlProps props, SettingService settingService,
                                EconomyService economyService, TitleService titleService,
-                               cn.xmcraft.dreamport.server.audit.AuditService auditService) {
+                               cn.xmcraft.dreamport.server.audit.AuditService auditService,
+                               org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.villageRepository = villageRepository;
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
@@ -83,6 +85,7 @@ public class CommunityController {
         this.settingService = settingService;
         this.titleService = titleService;
         this.auditService = auditService;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     // ---------- 村民族谱 ----------
@@ -304,6 +307,9 @@ public class CommunityController {
         var activeTitle = titleService.activeTitle(u.username());
         profile.put("title", activeTitle == null ? null
                 : Map.of("code", activeTitle.code(), "name", activeTitle.name(), "color", activeTitle.color()));
+        // 个人主页自定义(简介/横幅/社交链接;V16)
+        profile.put("profileCustom", cn.xmcraft.dreamport.server.api.ProfileCustomController
+                .readRow(jdbcTemplate, new com.fasterxml.jackson.databind.ObjectMapper(), u.username()));
         // 统一响应包装:前端按 r.success 判定,裸对象会导致详情页恒显"玩家不存在"
         return ResponseEntity.ok(Map.of("success", true, "data", profile));
     }

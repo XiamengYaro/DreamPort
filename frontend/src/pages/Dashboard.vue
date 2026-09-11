@@ -79,6 +79,11 @@
       </div>
 
 
+      <!-- 好友 -->
+      <div class="mb-6">
+        <FriendsCard />
+      </div>
+
       <!-- 账号安全 -->
       <div class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -414,6 +419,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
+import FriendsCard from '@/components/FriendsCard.vue'
 import SectionHeader from '@/components/SectionHeader.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'

@@ -17,7 +17,8 @@
 
       <ForumPanel v-if="active === 'forum'" />
       <PollsPanel v-else-if="active === 'polls'" />
-      <FeedbackPanel v-else />
+      <FeedbackPanel v-else-if="active === 'feedback'" />
+      <CalendarPanel v-else />
     </div>
   </div>
 </template>
@@ -29,11 +30,13 @@ import SectionHeader from '@/components/SectionHeader.vue'
 import ForumPanel from '@/components/community/ForumPanel.vue'
 import PollsPanel from '@/components/community/PollsPanel.vue'
 import FeedbackPanel from '@/components/community/FeedbackPanel.vue'
+import CalendarPanel from '@/components/community/CalendarPanel.vue'
 
 const tabs = [
   { key: 'forum', icon: 'chat-bubble', label: '论坛' },
   { key: 'polls', icon: 'dot-circle', label: '投票' },
-  { key: 'feedback', icon: 'envelope', label: '反馈工单' }
+  { key: 'feedback', icon: 'envelope', label: '反馈工单' },
+  { key: 'calendar', icon: 'calendar', label: '活动日历' }
 ]
 const active = ref('forum')
 </script>

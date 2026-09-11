@@ -972,6 +972,11 @@
         <FeedbackManageTab />
       </div>
 
+      <!-- 活动管理 Tab -->
+      <div v-if="activeTab === 'events' && !loading">
+        <EventManageTab />
+      </div>
+
       <!-- 操作日志 Tab -->
       <div v-if="activeTab === 'audits' && !loading" class="card p-6">
         <h3 class="text-lg font-semibold text-white mb-4">操作日志</h3>
@@ -1271,6 +1276,7 @@ import ForumManageTab from '@/components/admin/ForumManageTab.vue'
 import PollManageTab from '@/components/admin/PollManageTab.vue'
 import FeedbackManageTab from '@/components/admin/FeedbackManageTab.vue'
 import WebhookSettingsCard from '@/components/admin/WebhookSettingsCard.vue'
+import EventManageTab from '@/components/admin/EventManageTab.vue'
 import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
 
@@ -1292,6 +1298,7 @@ const menuItems = [
   { key: 'forum', icon: 'chat-bubble', label: '论坛管理' },
   { key: 'polls', icon: 'dot-circle', label: '投票管理' },
   { key: 'feedback', icon: 'envelope', label: '反馈工单' },
+  { key: 'events', icon: 'calendar', label: '活动管理' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
   { key: 'rewards', icon: 'sparkles', label: '奖励发放' },
   { key: 'titles', icon: 'shield-check', label: '称号与成就' },

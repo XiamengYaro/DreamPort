@@ -22,6 +22,10 @@
               @error="handleAvatarError" />
             <div class="flex-1">
               <h1 class="text-3xl font-bold text-white mb-2">{{ profile.username }}
+                <button v-if="friendState === 'none' && isLoggedIn" @click="addFriend"
+                  class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">+ 好友</button>
+                <span v-else-if="friendState === 'pending'" class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-stone-600/40 text-stone-300">申请已发送</span>
+                <span v-else-if="friendState === 'friends'" class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-emerald-500/15 text-emerald-400">好友</span>
                 <span class="ml-2 align-middle text-sm px-2.5 py-1 rounded-lg align-middle"
                   :class="profile.status === 'banned' ? 'bg-rose-500/15 text-rose-400' : 'bg-emerald-500/15 text-emerald-400'">
                   {{ getStatusText(profile.status) }}
@@ -102,6 +106,57 @@
           </template>
         </div>
 
+        <!-- 个人主页自定义(简介/横幅/链接) -->
+        <div v-if="isSelf || (profileCustom.bio || (profileCustom.socialLinks || []).length)"
+          class="card overflow-hidden mb-6">
+          <div class="h-14 bg-gradient-to-r" :class="BANNERS[profileCustom.banner] || BANNERS.amber"></div>
+          <div class="p-6">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-lg font-semibold text-white">关于我</h2>
+              <button v-if="isSelf && !customEdit" class="btn-secondary text-xs px-3 py-1.5" @click="startCustomEdit">编辑</button>
+            </div>
+
+            <!-- 展示 -->
+            <template v-if="!customEdit">
+              <p v-if="profileCustom.bio" class="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">{{ profileCustom.bio }}</p>
+              <p v-else class="text-stone-500 text-sm">这位玩家还没有填写简介</p>
+              <div v-if="(profileCustom.socialLinks || []).length" class="flex flex-wrap gap-2 mt-3">
+                <a v-for="(l, i) in profileCustom.socialLinks" :key="i" :href="l.url" target="_blank" rel="noopener noreferrer nofollow"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/60 border border-stone-700 text-xs text-stone-300 hover:border-orange-500/40 hover:text-white transition-colors">
+                  <AppIcon name="link" class="w-3.5 h-3.5 text-orange-400" />{{ l.label }}
+                </a>
+              </div>
+            </template>
+
+            <!-- 编辑表单(本人) -->
+            <template v-else>
+              <label class="block text-xs text-stone-500 mb-1">个人简介(纯文本,≤500 字)</label>
+              <textarea v-model="customForm.bio" maxlength="500" rows="3" class="input text-sm mb-3"
+                placeholder="介绍一下你自己…"></textarea>
+              <label class="block text-xs text-stone-500 mb-1">横幅主题色</label>
+              <div class="flex gap-2 mb-3">
+                <button v-for="(grad, key) in BANNERS" :key="key" @click="customForm.banner = key"
+                  class="w-10 h-8 rounded-lg bg-gradient-to-r transition-all"
+                  :class="[grad, customForm.banner === key ? 'ring-2 ring-orange-400' : 'ring-1 ring-white/10']"
+                  :title="key"></button>
+              </div>
+              <label class="block text-xs text-stone-500 mb-1">社交链接(≤5 条,仅 http/https)</label>
+              <div v-for="(l, i) in customForm.socialLinks" :key="i" class="flex gap-2 mb-2">
+                <input v-model="l.label" class="input w-32 text-sm" placeholder="名称" maxlength="20" />
+                <input v-model="l.url" class="input flex-1 text-sm" placeholder="https://…" />
+                <button class="text-rose-400 hover:text-rose-300 text-sm px-1" @click="customForm.socialLinks.splice(i, 1)">×</button>
+              </div>
+              <button class="btn-secondary text-xs py-1.5 px-3 mb-3" @click="addLinkRow">+ 添加链接</button>
+              <div class="flex gap-2">
+                <button class="btn-primary text-sm" :disabled="customSaving" @click="saveCustom">
+                  {{ customSaving ? '保存中…' : '保存' }}
+                </button>
+                <button class="btn-secondary text-sm" @click="customEdit = false">取消</button>
+              </div>
+            </template>
+          </div>
+        </div>
+
         <!-- 封禁提示 -->
         <div v-if="profile.status === 'banned'" class="card p-6 border-2 border-rose-500/30 bg-rose-500/5">
           <div class="flex items-start gap-3">
@@ -156,6 +211,7 @@ import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 const route = useRoute()
 const loading = ref(false)
 const profile = ref<any>(null)
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const isSelf = ref(false)
 const titlesLoading = ref(false)
 const titlesSection = ref<HTMLElement | null>(null)
@@ -174,7 +230,11 @@ const loadProfile = async () => {
       profile.value = r.data
       const me = localStorage.getItem('username')
       isSelf.value = !!me && me.toLowerCase() === String(r.data.username).toLowerCase()
+      if (profile.value?.profileCustom) {
+        profileCustom.value = profile.value.profileCustom
+      }
       await loadScore()
+      await loadFriendState()
       if (isSelf.value) {
         await loadMyTitles()
         // 导航「我的称号」入口带 ?titles=1,直达称号面板
@@ -191,6 +251,11 @@ const loadProfile = async () => {
 }
 
 const myScore = ref<number | null>(null)
+const friendState = ref('')
+const profileCustom = ref<any>({ bio: '', banner: 'amber', socialLinks: [] as any[] })
+const customEdit = ref(false)
+const customForm = ref<any>({ bio: '', banner: 'amber', socialLinks: [] as any[] })
+const customSaving = ref(false)
 
 const loadScore = async () => {
   try {
@@ -205,6 +270,53 @@ const loadScore = async () => {
       }
     }
   } catch { /* 未公开/未登录:不显示 */ }
+}
+
+const startCustomEdit = () => {
+  customForm.value = {
+    bio: profileCustom.value.bio || '',
+    banner: profileCustom.value.banner || 'amber',
+    socialLinks: (profileCustom.value.socialLinks || []).map((x: any) => ({ ...x }))
+  }
+  customEdit.value = true
+}
+
+const saveCustom = async () => {
+  customSaving.value = true
+  try {
+    const links = (customForm.value.socialLinks || []).filter((x: any) => (x.url || '').trim())
+    const r: any = await api.saveProfileCustom({
+      bio: customForm.value.bio || '',
+      banner: customForm.value.banner || 'amber',
+      socialLinks: links.map((x: any) => ({ label: x.label || '链接', url: x.url.trim() }))
+    })
+    if (r.success) {
+      notify?.success(r.message || '已保存')
+      customEdit.value = false
+      profileCustom.value = { bio: customForm.value.bio, banner: customForm.value.banner, socialLinks: links }
+    } else notify?.error(r.message || '保存失败')
+  } catch (e: any) { notify?.error(e.message || '保存失败') }
+  customSaving.value = false
+}
+
+const addLinkRow = () => {
+  if ((customForm.value.socialLinks || []).length >= 5) return
+  customForm.value.socialLinks.push({ label: '', url: '' })
+}
+
+const loadFriendState = async () => {
+  if (!isLoggedIn.value || !profile.value?.username) return
+  try {
+    const r: any = await api.getFriendStatus(profile.value.username)
+    if (r.success) friendState.value = r.data?.state || 'none'
+  } catch { /* ignore */ }
+}
+
+const addFriend = async () => {
+  try {
+    const r: any = await api.requestFriend(profile.value.username)
+    if (r.success) { notify?.success(r.message || '申请已发送'); friendState.value = 'pending' } else notify?.error(r.message || '发送失败')
+  } catch (e: any) { notify?.error(e.message || '发送失败') }
 }
 
 const loadMyTitles = async () => {
@@ -227,6 +339,15 @@ const toggleEquip = async (code: string) => {
   } catch (e: any) {
     console.error('Failed to toggle title:', e)
   }
+}
+
+const BANNERS: Record<string, string> = {
+  amber: 'from-amber-500/30 to-orange-600/20',
+  rose: 'from-rose-500/30 to-pink-600/20',
+  sky: 'from-sky-500/30 to-blue-600/20',
+  emerald: 'from-emerald-500/30 to-teal-600/20',
+  violet: 'from-violet-500/30 to-purple-600/20',
+  stone: 'from-stone-500/30 to-stone-700/20'
 }
 
 const hexToRgba = (hex: string, alpha: number) => {
