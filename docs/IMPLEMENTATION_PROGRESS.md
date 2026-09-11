@@ -146,7 +146,7 @@
 | 8-3 | 性能压测（wrk 对比旧版，虚拟线程/连接池收益报告） | ⬜ 压测待执行| — |
 | 8-4 | CI：Gitea Actions 构建 + 手动 Release 工作流（版本读 version.yml，双语说明） | ✅（.gitea/workflows/build.yml） | CI 设计 |
 | 8-5 | 部署物：可执行 jar + systemd unit + Dockerfile + 插件 jar | ✅（Dockerfile + systemd unit） | — |
-| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ✅ v1.0.0 已于 2026-09-06 发布（当前 v1.4.1） | — |
+| 8-6 | 打 `v1.0.0` 标签（功能对齐 + 迁移器就绪） | ✅ v1.0.0 已于 2026-09-06 发布（当前 v1.6.0） | — |
 
 ---
 
@@ -191,3 +191,13 @@
 - [x] 阶段 C 2FA:TOTP(RFC 6238 原创实现)+ 8 个一次性恢复码 + 邮箱备用验证码;登录流 needs_2fa 中间态(challenge 非会话凭据);管理员强制 2FA 开关;防爆破锁定
 - [x] 用户反馈两 bug 修复:成就定义删不掉(空列表复活默认+悬空奖励 400 卡保存);「我的称号」导航路径 /players→/player 错误
 - [x] 代码审计修复:SimpleRateLimiter 清理定时化(防内存膨胀);2FA 强制门收紧(绑定中不豁免);反馈/投票/发帖建单 ID 查询竞态改 GeneratedKeyHolder;移除死代码
+
+## v1.6.0 批次(2026-09-12)
+
+- [x] 主页装修编辑器:弹窗版重做为**页内装修模式**(用户反馈「空太小/对不齐/无保存按钮」)——点「自定义主页」进入编辑态,吸顶操作栏(退出装修/保存修改)+ 预览下方同宽对齐的「装修配置」面板(简介/横幅与背景/社交链接/自定义 CSS),实时预览,`?customize=1` 深链直达;横幅图补上传;取消退出还原快照;离开页面清理注入 CSS
+- [x] 全站 sticky 修复:`body{overflow-x:hidden}` 使 body 成为滚动容器导致吸顶全部失效,改 `overflow-x:clip`(Docs 侧栏同愈)
+- [x] 管理后台邮件群发:AdminMailController(/api/admin/mail/targets + /broadcast),目标=dp_user 邮箱非空合法小写去重,异步逐目标投递,审计码 mail_broadcast;MailService.sendBroadcast + 模板 email/broadcast_zh.html
+- [x] 飞书 webhook 卡片中文化:事件中文名标题 + 字段中文标签 + 北京时间格式化,元字段(event/time/action)不再直铺(用户反馈「推送成这样了」)
+- [x] 终端访问日志中文输出:常用接口中文描述 + 未知接口 HTTP 动词中文化(AccessLogFilter)
+- [x] 移除右上角用户菜单「主页设置」入口(页内已有「自定义主页」按钮,入口冗余;已确认)
+- [x] 测试:WebhookCardTest(卡片中文化)+ AdminMailTargetsTest(目标过滤/去重),全量 53 用例通过

@@ -56,6 +56,7 @@
 | `/api/user/qq/{status,bind,unbind}` | GET/POST | QQ 绑定（v1.1，验证码强绑定） | ✅ P4 |
 | `/api/points/{center,signin,claim,shop,redeem}` | GET/POST | 积分任务（v1.4，签到/任务/兑换） | ✅ P4 |
 | `/api/titles/{mine,equip,unequip}` | GET/POST | 称号（v1.4；mine 返回 owned/locked/equipped/achievements） | ✅ P4 |
+| `/api/user/profile-custom` | GET/PUT | 主页自定义（v1.6）：`{bio, banner, socialLinks[], bgImage, bannerImage, accent, css}`；css 服务端消毒+`#pc-root` 作用域，≤8000 字符 | ✅ P4 |
 
 ## 3. 管理端点 👑
 
@@ -78,6 +79,7 @@
 | `/api/admin/settings/{titlesconfig,achievementsconfig}` | PUT | 称号/成就定义（裸数组，v1.4） | ✅ P4 |
 | `/api/admin/titles/{overview,grant,revoke}` | GET/POST | 称号管理（v1.4，grant/revoke 有校验） | ✅ P4 |
 | `/api/admin/rewards/{kits,send}`、`/api/admin/rewards/kits/{id}` | GET/POST/PUT/DELETE | 奖励礼包（v1.4，单人/全员发放） | ✅ P4 |
+| `/api/admin/mail/targets`、`/api/admin/mail/broadcast` | GET/POST | 邮件群发（v1.6）：targets 返回 `{count, configured}`；broadcast `{subject≤200, content≤20000}`，目标=dp_user 邮箱非空合法小写去重，异步投递 | ✅ P4 |
 | `/api/admin/migration/{upload,report}` | POST/GET | 数据迁移（v0.4+） | ✅ P7 |
 | `/api/admin/docs/{create,delete,update,category/create,category/delete,reorder}` | POST | 文档管理 | P7 |
 | `/api/village/admin/{pending,approve/:id,reject/:id}` | GET/POST | 村谱审核 | P4 |
@@ -211,3 +213,13 @@
 | `GET/PUT /api/admin/webhook/config`、`POST /admin/webhook/test` | 管理员 | `{enabled, urls:[{url,secret}], events[]}`;POST JSON 带 `X-DP-Signature: sha256=HMAC(secret, timestamp.body)` + `X-DP-Timestamp`;事件源挂审计骨架(review.*/feedback.*/forum.*/poll.*/questionnaire.submitted/reward.sent/community.*/server.*),异步+2 次退避重试 |
 | `GET/PUT /api/admin/security/config` | 管理员 | `{admin2faRequired, tokenMode}`;强制开关默认关 |
 | WS :18899 事件扩展 | — | 新增 `forum_moderate` / `feedback_new` 管理端推送 |
+
+## 10. v1.6 新增端点 🆕（主页装修 · 邮件群发）
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/user/profile-custom` | JWT 本人 | 读取本人主页自定义（含 css） |
+| `PUT /api/user/profile-custom` | JWT 本人 | 保存主页自定义；css 服务端 CssSanitizer 消毒（剔除 @import/javascript:/position:fixed，选择器加 `#pc-root` 前缀，≤8000 字符），banner/bgImage 支持上传地址或 `/uploads/*` |
+| `GET /api/admin/mail/targets` | 管理员 | 群发目标数 + SMTP 状态 `{count, configured}`（configured=false 时投递走日志模式） |
+| `POST /api/admin/mail/broadcast` | 管理员 | `{subject≤200, content≤20000}`；目标=dp_user 邮箱非空合法小写去重，异步逐目标发送，审计码 `mail_broadcast` |
+| 飞书卡片展示 | — | WebhookDispatcherService 对飞书 hook 自动转 interactive 卡片：事件中文名标题 + 字段中文标签（操作人/对象/详情）+ 北京时间，`event/time/action` 元字段隐藏 |

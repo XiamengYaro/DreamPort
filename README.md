@@ -10,7 +10,7 @@
 
 [快速开始](#-快速开始) · [功能总览](#-功能总览) · [旧版数据迁移](#-旧版数据一键迁移) · [常见问题](#-常见问题)
 
-`v1.4.1` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
+`v1.6.0` · `Paper/Velocity 1.20+` · `Java 21` · `MySQL 8`
 
 </div>
 
@@ -63,6 +63,7 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | ✉️ **游戏内邮件** | 网页/后台奖励下发进服，`/mail` 领取（支持物品直发） |
 | 🗣️ **社区** | 一级「社区」页：论坛（游客可读、点赞、@提及）、投票（结果可见性逐场可配）、反馈工单（多轮对话式） |
 | 🔐 **两步验证** | 验证器 App 扫码绑定 TOTP，一次性恢复码 + 邮箱备用验证码 |
+| 🎨 **主页装修** | 个人主页自定义：简介/横幅图/主题色/背景图/社交链接/自定义 CSS（服务端消毒+作用域隔离），装修模式所见即所得实时预览 |
 
 ### 管理侧
 
@@ -85,8 +86,9 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 | 📦 **奖励发放** | 礼包模板管理 + 单人/全员发放 |
 | 🖥️ **服务器管理** | 资源监控看板（TPS/内存/CPU + TPS 低阈值告警）、按服令牌签发与启停（shared/per_server） |
 | 📣 **论坛/投票/工单管理** | 论坛审核与板块、投票生命周期、反馈工单会话式处理 |
-| 📡 **Webhook 事件推送** | 审核/封禁/问卷/社区等事件多目标推送（HMAC-SHA256 签名、事件过滤、测试按钮） |
+| 📡 **Webhook 事件推送** | 审核/封禁/问卷/社区等事件多目标推送（HMAC-SHA256 签名、事件过滤、测试按钮）；飞书机器人自动转中文卡片（事件中文名+格式化时间） |
 | 🛡 **管理员强制 2FA** | 名单内管理员未绑定两步验证时登录强制引导绑定 |
+| 📧 **邮件群发** | 向所有注册并绑定邮箱的玩家群发邮件（小写去重、发送前确认、异步投递） |
 
 ## 🚀 快速开始
 
@@ -99,11 +101,11 @@ DreamPort 为 Minecraft 服务器提供**一整套面向玩家的网站 + 管理
 mysql -uroot -e "CREATE DATABASE dreamport CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # 首次启动 → 自动生成 config.yml
-java -jar dreamport-server-1.4.1.jar
+java -jar dreamport-server-1.6.0.jar
 # （数据库未配置时启动失败属预期，文件已生成）
 
 # 编辑 config.yml 后再次启动
-nano config.yml && java -jar dreamport-server-1.4.1.jar
+nano config.yml && java -jar dreamport-server-1.6.0.jar
 ```
 
 `config.yml` 中 `[必改]` 项：**数据库连接**、**jwt-secret**、**server-token**（生成随机串：`openssl rand -base64 48`）。所有部署配置集中在这一个文件，无需环境变量。
@@ -123,8 +125,8 @@ nano config.yml && java -jar dreamport-server-1.4.1.jar
 
 | 服务器 | 安装文件 | 说明 |
 |--------|----------|------|
-| **Paper/Folia 子服** | `dreamport-plugin-1.4.1.jar` | 进服拦截、聊天互通、经济采集 |
-| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.4.1.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
+| **Paper/Folia 子服** | `dreamport-plugin-1.6.0.jar` | 进服拦截、聊天互通、经济采集 |
+| **Velocity 代理**（可选） | `dreamport-plugin-proxy-1.6.0.jar` | 代理端统一拦截（用了代理则子服插件设 `role: secondary`） |
 
 插件首次启动自动生成配置，把 `server-token` 改成与后端一致、`backend.url` 指向后端即可。启动控制台会打印**同款字符画 Banner + 中文启动记录**（角色/后端连通/拦截状态一目了然）。
 
@@ -233,9 +235,9 @@ mysqldump -uroot xmc > xmc-backup.sql
 ```bash
 ./scripts/build.sh        # 前端 + 后端 + 两个插件一次构建
 # 产物:
-#   dreamport-server/target/dreamport-server-1.4.1.jar
-#   dreamport-plugin/target/dreamport-plugin-1.4.1.jar
-#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.4.1.jar
+#   dreamport-server/target/dreamport-server-1.6.0.jar
+#   dreamport-plugin/target/dreamport-plugin-1.6.0.jar
+#   dreamport-plugin-proxy/target/dreamport-plugin-proxy-1.6.0.jar
 ```
 
 ## 🗺️ 路线图
@@ -251,6 +253,8 @@ mysqldump -uroot xmc > xmc-backup.sql
 - [x] `v1.2.0` 封禁体系 · 全插件文档库
 - [x] `v1.3.0` 收口纯正版账号(移除 BS 互通/微软绑定)· 头像磁盘缓存+按名查档 · 按 UUID 同步新 ID · 全局移动端适配 · 小字对比度提亮
 - [x] `v1.4.0` 守则门 · 积分任务系统 · 称号系统(游戏内 PAPI/`/titles` GUI/网页展示佩戴/游戏内颜色可定义)· 奖励礼包发放 · 全仓库安全审计修复 · playertitle 旧称号数据迁移
+- [x] `v1.5.0/v1.5.1` 评分看板 · 主页自定义 · 好友 · 活动日历 · 论坛图片/富文本 · 通知后端下线 · 监控多服 · 2FA · 社区(论坛/投票/工单) · Webhook 事件推送
+- [x] `v1.6.0` 主页装修编辑器(页内装修模式) · 管理后台邮件群发 · 飞书卡片中文化 · 终端访问日志中文输出
 
 ## 📚 文档
 
