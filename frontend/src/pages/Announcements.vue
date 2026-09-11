@@ -1,10 +1,10 @@
 <template>
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-4xl mx-auto">
-      <!-- 页头 -->
-      <div class="card p-6 mb-6">
+      <!-- 页头(无玻璃面板,直接落在背景上;下方内容卡保留玻璃) -->
+      <div class="mb-8">
         <SectionHeader compact kicker="ANNOUNCEMENTS" title="公告" subtitle="服务器资讯与版本更新,尽在掌握" />
-        <div class="flex gap-2 mt-4">
+        <div class="flex gap-2">
           <button class="tab-btn" :class="{ active: tab === 'news' }" @click="tab = 'news'">资讯中心</button>
           <button class="tab-btn" :class="{ active: tab === 'changelog' }" @click="tab = 'changelog'">更新日志</button>
         </div>

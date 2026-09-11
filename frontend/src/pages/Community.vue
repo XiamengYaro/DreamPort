@@ -2,9 +2,9 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-4xl mx-auto">
       <!-- 标题 + Tab -->
-      <div class="card p-6 mb-6">
+      <div class="mb-8">
         <SectionHeader compact kicker="COMMUNITY" title="社区" subtitle="论坛 · 投票 · 反馈工单" />
-        <div class="flex gap-2 -mt-4">
+        <div class="flex gap-2">
           <button v-for="t in tabs" :key="t.key" @click="active = t.key"
             class="px-4 py-2 rounded-xl text-sm font-medium transition-colors inline-flex items-center gap-1.5"
             :class="active === t.key
