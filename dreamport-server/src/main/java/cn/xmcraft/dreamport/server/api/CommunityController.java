@@ -9,8 +9,6 @@ import cn.xmcraft.dreamport.server.invite.InviteRepository;
 import cn.xmcraft.dreamport.server.invite.InviteService;
 import cn.xmcraft.dreamport.server.machine.PublicMachineRecord;
 import cn.xmcraft.dreamport.server.machine.PublicMachineRepository;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.review.ReviewService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
@@ -43,7 +41,7 @@ import java.util.Set;
 
 /**
  * 社区端点（契约对齐旧版）：村民族谱 /village、公共机器 /machine、玩家目录 /players、
- * 邀请 /invite、通知 /notifications、问卷申诉 /questionnaire/appeal。
+ * 邀请 /invite、问卷申诉 /questionnaire/appeal。
  */
 @RestController
 @RequestMapping("/api")
@@ -55,7 +53,6 @@ public class CommunityController {
     private final PublicMachineRepository machineRepository;
     private final InviteRepository inviteRepository;
     private final InviteService inviteService;
-    private final NotificationRepository notificationRepository;
     private final AppealRepository appealRepository;
     private final UserRepository userRepository;
     private final ReviewService reviewService;
@@ -70,7 +67,6 @@ public class CommunityController {
     public CommunityController(VillageTradeRepository villageRepository,
                                PublicMachineRepository machineRepository,
                                InviteRepository inviteRepository, InviteService inviteService,
-                               NotificationRepository notificationRepository,
                                AppealRepository appealRepository, UserRepository userRepository,
                                ReviewService reviewService, WlProps props, SettingService settingService,
                                EconomyService economyService, TitleService titleService,
@@ -79,7 +75,6 @@ public class CommunityController {
         this.machineRepository = machineRepository;
         this.inviteRepository = inviteRepository;
         this.inviteService = inviteService;
-        this.notificationRepository = notificationRepository;
         this.appealRepository = appealRepository;
         this.userRepository = userRepository;
         this.reviewService = reviewService;
@@ -147,10 +142,6 @@ public class CommunityController {
         villageRepository.save(new VillageTradeRecord(t.id(), t.playerName(), t.world(), t.x(), t.y(),
                 t.z(), t.itemInput(), t.itemOutput(), t.price(), "approve".equals(action) ? "approved" : "rejected",
                 t.createdAt(), AuthUtil.currentUser(request), System.currentTimeMillis()));
-        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                null, t.playerName(), "village_" + action,
-                "村民族谱投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
-                "你的村民族谱投稿已" + ("approve".equals(action) ? "通过审核,已展示在村谱页" : "被拒绝"), null, null, null));
         // 补审计缺口(此前村谱审核不落审计日志,Webhook 事件源需要)
         auditService.log("village_" + action, AuthUtil.currentUser(request), t.playerName(),
                 "村谱投稿审核 " + t.world() + " " + t.x() + "," + t.y() + "," + t.z());
@@ -205,13 +196,13 @@ public class CommunityController {
         if (file.getSize() > 5 * 1024 * 1024) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("截图不能超过 5MB"));
         }
-        String ext = detectImageExt(file.getOriginalFilename());
+        String ext = cn.xmcraft.dreamport.server.infra.ImageValidator.detectExt(file.getOriginalFilename());
         if (ext == null) {
             return ResponseEntity.badRequest().body(ApiResponse.failure("仅支持 jpg/png/gif/webp"));
         }
         // 修复审计 M3：校验 magic bytes，防止伪装扩展名的任意内容落盘
         try {
-            if (!isImageBytes(file.getBytes(), ext)) {
+            if (!cn.xmcraft.dreamport.server.infra.ImageValidator.isImage(file.getBytes(), ext)) {
                 return ResponseEntity.badRequest().body(ApiResponse.failure("文件内容与扩展名不符"));
             }
         } catch (Exception e) {
@@ -229,32 +220,6 @@ public class CommunityController {
                 Map.of("url", "/uploads/" + filename, "filename", filename)));
     }
 
-    private String detectImageExt(String filename) {
-        if (filename == null) {
-            return null;
-        }
-        String lower = filename.toLowerCase();
-        for (String ext : List.of(".jpg", ".png", ".gif", ".webp")) {
-            if (lower.endsWith(ext)) {
-                return ext;
-            }
-        }
-        return null;
-    }
-
-    private boolean isImageBytes(byte[] b, String ext) {
-        if (b == null || b.length < 12) {
-            return false;
-        }
-        return switch (ext) {
-            case ".png" -> (b[0] & 0xFF) == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47;
-            case ".jpg" -> (b[0] & 0xFF) == 0xFF && (b[1] & 0xFF) == 0xD8 && (b[2] & 0xFF) == 0xFF;
-            case ".gif" -> b[0] == 'G' && b[1] == 'I' && b[2] == 'F' && b[3] == '8';
-            case ".webp" -> b[0] == 'R' && b[1] == 'I' && b[2] == 'F' && b[3] == 'F'
-                    && b[8] == 'W' && b[9] == 'E' && b[10] == 'B' && b[11] == 'P';
-            default -> false;
-        };
-    }
 
     @GetMapping("/machine/admin/pending")
     public ResponseEntity<Object> machinePending(HttpServletRequest request) {
@@ -279,11 +244,6 @@ public class CommunityController {
                 m.z(), m.builder(), m.usageText(), m.screenshotUrl(),
                 "approve".equals(action) ? "approved" : "rejected", m.submitter(), m.createdAt(),
                 AuthUtil.currentUser(request), System.currentTimeMillis()));
-        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                null, m.builder(), "machine_" + action,
-                "公共机器投稿已" + ("approve".equals(action) ? "通过" : "拒绝"),
-                "你提交的公共机器「" + m.name() + "」已" + ("approve".equals(action) ? "通过审核,已展示在公共机器页" : "被拒绝"),
-                null, null, null));
         // 补审计缺口(同村谱审核)
         auditService.log("machine_" + action, AuthUtil.currentUser(request), m.builder(),
                 "公共机器审核: " + m.name());
@@ -453,62 +413,6 @@ public class CommunityController {
             return unauthorized();
         }
         return wrap(inviteService.reject(me, body.get("username")));
-    }
-
-    // ---------- 通知 ----------
-
-    @GetMapping("/notifications")
-    public ResponseEntity<Object> notifications(HttpServletRequest request) {
-        String me = AuthUtil.currentUser(request);
-        if (me == null) {
-            return unauthorized();
-        }
-        var list = notificationRepository.findTop50ByUsernameIgnoreCaseOrderByCreatedAtDesc(me);
-        long unread = notificationRepository.findByUsernameIgnoreCaseAndIsReadFalse(me).size();
-        return ResponseEntity.ok(Map.of("notifications", list, "unreadCount", unread));
-    }
-
-    public record NotificationReadBody(Long id) {
-    }
-
-    @PostMapping("/notifications/read")
-    public ResponseEntity<Object> notificationRead(@RequestBody NotificationReadBody body,
-                                                   HttpServletRequest request) {
-        String me = AuthUtil.currentUser(request);
-        if (me == null) {
-            return unauthorized();
-        }
-        notificationRepository.findById(body.id() == null ? -1 : body.id())
-                .filter(n -> me.equalsIgnoreCase(n.username()))
-                .map(NotificationRecord::markRead)
-                .ifPresent(notificationRepository::save);
-        return ResponseEntity.ok(ApiResponse.success("已读"));
-    }
-
-    @DeleteMapping("/notifications/{id}")
-    public ResponseEntity<Object> deleteNotification(@PathVariable long id, HttpServletRequest request) {
-        String me = AuthUtil.currentUser(request);
-        if (me == null) {
-            return unauthorized();
-        }
-        var list = notificationRepository.findByUsernameIgnoreCase(me);
-        var target = list.stream().filter(n -> n.id() == id).findFirst();
-        if (target.isEmpty()) {
-            return ResponseEntity.badRequest().body(ApiResponse.failure("通知不存在"));
-        }
-        notificationRepository.delete(target.get());
-        return ResponseEntity.ok(ApiResponse.success("已删除"));
-    }
-
-    @PostMapping("/notifications/read-all")
-    public ResponseEntity<Object> notificationReadAll(HttpServletRequest request) {
-        String me = AuthUtil.currentUser(request);
-        if (me == null) {
-            return unauthorized();
-        }
-        notificationRepository.findByUsernameIgnoreCaseAndIsReadFalse(me)
-                .forEach(n -> notificationRepository.save(n.markRead()));
-        return ResponseEntity.ok(ApiResponse.success("全部已读"));
     }
 
     // ---------- 申诉 ----------

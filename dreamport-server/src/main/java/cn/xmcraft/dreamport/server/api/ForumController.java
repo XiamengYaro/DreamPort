@@ -3,8 +3,6 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.infra.SensitiveWordFilter;
 import cn.xmcraft.dreamport.server.infra.SimpleRateLimiter;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
@@ -44,20 +42,17 @@ public class ForumController {
 
     private final JdbcTemplate jdbc;
     private final SettingService settingService;
-    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final AuditService auditService;
     private final ReviewPushService pushService;
     private final SimpleRateLimiter rateLimiter;
     private final SensitiveWordFilter sensitiveWordFilter;
 
-    public ForumController(JdbcTemplate jdbc, SettingService settingService,
-                           NotificationRepository notificationRepository, UserRepository userRepository,
+    public ForumController(JdbcTemplate jdbc, SettingService settingService, UserRepository userRepository,
                            AuditService auditService, ReviewPushService pushService,
                            SimpleRateLimiter rateLimiter, SensitiveWordFilter sensitiveWordFilter) {
         this.jdbc = jdbc;
         this.settingService = settingService;
-        this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.auditService = auditService;
         this.pushService = pushService;
@@ -207,7 +202,6 @@ public class ForumController {
             return ps;
         }, keyHolder);
         Long id = keyHolder.getKey() == null ? -1L : keyHolder.getKey().longValue();
-        notifyMentions(body.content(), me, "帖子「" + body.title().trim() + "」中提到了你", id, 0);
         auditService.log("forum_thread_submit", me, "#" + id,
                 status + " | " + body.title().trim());
         if (moderation) {
@@ -258,11 +252,6 @@ public class ForumController {
             jdbc.update("UPDATE dp_forum_thread SET reply_count = reply_count + 1, last_reply_at = ? WHERE id = ?", now, id);
         }
         String author = String.valueOf(t.get("username"));
-        if (!me.equalsIgnoreCase(author) && !"pending".equals(status)) {
-            notificationRepository.save(new NotificationRecord(null, author, "forum_reply",
-                    "帖子有了新回复", "你的帖子「" + t.get("title") + "」有新回复", null, null, me));
-        }
-        notifyMentions(body.content(), me, "帖子「" + t.get("title") + "」的回复中提到了你", id, 0);
         auditService.log("forum_reply_submit", me, "#" + id, status + " | 回复:" + t.get("title"));
         if (moderation) {
             pushService.pushEvent("forum_moderate", Map.of("kind", "reply", "id", String.valueOf(id), "username", me));
@@ -337,10 +326,6 @@ public class ForumController {
                     type, id, me, System.currentTimeMillis());
             jdbc.update("UPDATE " + table + " SET like_count = like_count + 1 WHERE id = ?", id);
             liked = true;
-            if (!me.equalsIgnoreCase(owner)) {
-                notificationRepository.save(new NotificationRecord(null, owner, "forum_like",
-                        "收到点赞", type.equals("thread") ? "你的帖子收到一个赞" : "你的回复收到一个赞", null, null, me));
-            }
         }
         Integer count = jdbc.queryForObject(
                 "SELECT like_count FROM " + table + " WHERE id = ?", Integer.class, id);
@@ -405,14 +390,10 @@ public class ForumController {
                 if (!"published".equals(String.valueOf(t.get("status")))) {
                     jdbc.update("UPDATE dp_forum_thread SET status = 'published', reviewed_by = ?, reviewed_at = ? WHERE id = ?", me, now, id);
                     jdbc.update("UPDATE dp_forum_thread SET last_reply_at = ? WHERE id = ? AND last_reply_at IS NULL", now, id);
-                    notificationRepository.save(new NotificationRecord(null, author, "forum_thread_approved",
-                            "帖子审核通过", "你的帖子「" + t.get("title") + "」已通过审核并展示", null, null, me));
                 }
             }
             case "reject" -> {
                 jdbc.update("UPDATE dp_forum_thread SET status = 'rejected', reviewed_by = ?, reviewed_at = ? WHERE id = ?", me, now, id);
-                notificationRepository.save(new NotificationRecord(null, author, "forum_thread_rejected",
-                        "帖子未通过审核", "你的帖子「" + t.get("title") + "」未通过审核,如有疑问请联系管理员", null, null, me));
             }
             case "delete" -> jdbc.update("UPDATE dp_forum_thread SET status = 'deleted' WHERE id = ?", id);
             case "pin" -> jdbc.update("UPDATE dp_forum_thread SET pinned = 1 WHERE id = ?", id);
@@ -506,24 +487,6 @@ public class ForumController {
 
     // ---------- 工具 ----------
 
-    private void notifyMentions(String content, String fromUser, String message, long threadId, long replyId) {
-        if (content == null || content.isBlank()) {
-            return;
-        }
-        Matcher m = MENTION.matcher(content);
-        java.util.Set<String> mentioned = new java.util.HashSet<>();
-        while (m.find() && mentioned.size() <= 5) {
-            String name = m.group(1);
-            if (name.equalsIgnoreCase(fromUser) || !mentioned.add(name)) {
-                continue;
-            }
-            if (userRepository.findByUsernameIgnoreCase(name).isEmpty()) {
-                continue;
-            }
-            notificationRepository.save(new NotificationRecord(null, name, "forum_mention",
-                    "收到 @ 提及", message, null, null, fromUser));
-        }
-    }
 
     private Map<String, Object> forumConfig() {
         Map<String, Object> cfg = settingService.getMap("forum.config");

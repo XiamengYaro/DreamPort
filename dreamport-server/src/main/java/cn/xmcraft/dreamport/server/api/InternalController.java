@@ -6,7 +6,6 @@ import cn.xmcraft.dreamport.common.LoginCheckRequest;
 import cn.xmcraft.dreamport.common.ErrorCode;
 import cn.xmcraft.dreamport.server.config.WlProps;
 import cn.xmcraft.dreamport.server.economy.EconomyService;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.qq.BindCodeService;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.qq.QqBindingService;
@@ -49,7 +48,6 @@ public class InternalController {
     private String economyAcceptFrom;
 
     private final SettingService settingService;
-    private final NotificationRepository notificationRepository;
     private final BindCodeService bindCodeService;
     private final QqBindingService qqBindingService;
     private final QqBridgeService qqBridge;
@@ -68,7 +66,6 @@ public class InternalController {
                               cn.xmcraft.dreamport.server.review.ReviewService reviewService,
                               UserRepository userRepository,
                               SettingService settingService,
-                              NotificationRepository notificationRepository,
                               BindCodeService bindCodeService,
                               QqBindingService qqBindingService,
                               QqBridgeService qqBridge,
@@ -87,7 +84,6 @@ public class InternalController {
         this.reviewService = reviewService;
         this.userRepository = userRepository;
         this.settingService = settingService;
-        this.notificationRepository = notificationRepository;
         this.bindCodeService = bindCodeService;
         this.qqBindingService = qqBindingService;
         this.qqBridge = qqBridge;
@@ -172,13 +168,6 @@ public class InternalController {
     private void alertServerOffline(String serverId) {
         try {
             var admins = settingService.get(cn.xmcraft.dreamport.server.settings.SettingService.KEY_ADMINS, java.util.List.class);
-            if (admins != null) {
-                for (Object a : admins) {
-                    notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                            null, String.valueOf(a), "server_offline", "服务器离线告警",
-                            "服务器「" + serverId + "」超过 5 分钟无心跳,已从在线列表移除", null, null, null));
-                }
-            }
             String notifyEmail = settingService.get(cn.xmcraft.dreamport.server.settings.SettingService.KEY_ADMIN_NOTIFY_EMAIL, String.class);
             if (notifyEmail != null && !notifyEmail.isBlank()) {
                 mailService.sendAdminNotification("服务器「" + serverId + "」超过 5 分钟无心跳,已离线。请检查服务器状态。", notifyEmail);

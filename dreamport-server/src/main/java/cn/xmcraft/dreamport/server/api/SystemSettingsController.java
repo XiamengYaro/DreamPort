@@ -3,7 +3,6 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import cn.xmcraft.dreamport.server.user.UserRecord;
@@ -27,14 +26,12 @@ public class SystemSettingsController {
     private final SystemSettingsService settingsService;
     private final AuditService auditService;
     private final UserRepository userRepository;
-    private final NotificationRepository notificationRepository;
 
     public SystemSettingsController(SystemSettingsService settingsService, AuditService auditService,
-                                    UserRepository userRepository, NotificationRepository notificationRepository) {
+                                    UserRepository userRepository) {
         this.settingsService = settingsService;
         this.auditService = auditService;
         this.userRepository = userRepository;
-        this.notificationRepository = notificationRepository;
     }
 
     private String op(HttpServletRequest request) {
@@ -154,13 +151,7 @@ public class SystemSettingsController {
         if (body.get("news") instanceof List<?> newNews) {
             for (Object o : newNews) {
                 if (o instanceof Map<?, ?> m && m.get("id") != null && !oldIds.contains(String.valueOf(m.get("id")))) {
-                    Object t = m.get("title");
-                    String title = t == null ? "无标题" : String.valueOf(t);
-                    for (UserRecord u : userRepository.listAll()) {
-                        if ("banned".equals(u.status())) continue;
-                        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                                null, u.username(), "announcement", "新公告资讯", title, null, null, null));
-                    }
+                    // 通知铃铛已移除:新资讯不再全员广播
                 }
             }
         }

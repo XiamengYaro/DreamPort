@@ -3,8 +3,6 @@ package cn.xmcraft.dreamport.server.api;
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.infra.SensitiveWordFilter;
 import cn.xmcraft.dreamport.server.infra.SimpleRateLimiter;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
@@ -37,7 +35,6 @@ public class FeedbackController {
 
     private final JdbcTemplate jdbc;
     private final SettingService settingService;
-    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final cn.xmcraft.dreamport.server.infra.MailService mailService;
     private final AuditService auditService;
@@ -45,14 +42,12 @@ public class FeedbackController {
     private final SimpleRateLimiter rateLimiter;
     private final SensitiveWordFilter sensitiveWordFilter;
 
-    public FeedbackController(JdbcTemplate jdbc, SettingService settingService,
-                              NotificationRepository notificationRepository, UserRepository userRepository,
+    public FeedbackController(JdbcTemplate jdbc, SettingService settingService, UserRepository userRepository,
                               cn.xmcraft.dreamport.server.infra.MailService mailService,
                               AuditService auditService, ReviewPushService pushService,
                               SimpleRateLimiter rateLimiter, SensitiveWordFilter sensitiveWordFilter) {
         this.jdbc = jdbc;
         this.settingService = settingService;
-        this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.auditService = auditService;
@@ -201,8 +196,6 @@ public class FeedbackController {
                         + "VALUES (?, 'admin', ?, ?, ?)", id, me,
                 sensitiveWordFilter.filter(body.content().trim()), now);
         jdbc.update("UPDATE dp_feedback SET status = 'answered', updated_at = ? WHERE id = ?", now, id);
-        notificationRepository.save(new NotificationRecord(null, owner, "feedback_reply",
-                "工单有了新回复", "你的反馈「" + fb.get("title") + "」有管理员回复,前往社区页查看", null, null, null));
         userRepository.findByUsernameIgnoreCase(owner).ifPresent(u -> {
             String preview = body.content().length() > 200 ? body.content().substring(0, 200) + "…" : body.content();
             mailService.sendFeedbackReply(u.username(), u.email(), String.valueOf(fb.get("title")), preview, "zh");

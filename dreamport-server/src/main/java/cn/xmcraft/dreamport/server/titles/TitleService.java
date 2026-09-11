@@ -1,7 +1,5 @@
 package cn.xmcraft.dreamport.server.titles;
 
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -26,15 +24,12 @@ public class TitleService {
 
     private final SettingService settingService;
     private final JdbcTemplate jdbcTemplate;
-    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public TitleService(SettingService settingService, JdbcTemplate jdbcTemplate,
-                        NotificationRepository notificationRepository, UserRepository userRepository) {
+    public TitleService(SettingService settingService, JdbcTemplate jdbcTemplate, UserRepository userRepository) {
         this.settingService = settingService;
         this.jdbcTemplate = jdbcTemplate;
-        this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
     }
 
@@ -191,7 +186,6 @@ public class TitleService {
                         && defs.stream().anyMatch(t -> t.code().equals(a.reward()));
                 if (rewardExists) {
                     grant(username, a.reward());
-                    notify(username, a.name(), a.reward());
                 }
             }
         }
@@ -240,12 +234,6 @@ public class TitleService {
                 username, code, System.currentTimeMillis());
     }
 
-    private void notify(String username, String achievementName, String titleCode) {
-        String titleName = titleName(titleCode);
-        notificationRepository.save(new NotificationRecord(null, username, "achievement",
-                "获得新称号", "达成成就「" + achievementName + "」,获得称号「" + titleName + "」",
-                null, null, username));
-    }
 
     private String titleName(String code) {
         for (var t : titles()) if (t.code().equals(code)) return t.name();

@@ -1,8 +1,6 @@
 package cn.xmcraft.dreamport.server.stats;
 
 import cn.xmcraft.dreamport.server.infra.MailService;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +23,6 @@ public class MetricsAlertService {
 
     private final ServerStatsService statsService;
     private final SettingService settingService;
-    private final NotificationRepository notificationRepository;
     private final MailService mailService;
 
     /** serverId → 连续低 TPS 计数 */
@@ -33,11 +30,9 @@ public class MetricsAlertService {
     /** serverId → 上次告警时间（冷却） */
     private final Map<String, Long> lastAlert = new ConcurrentHashMap<>();
 
-    public MetricsAlertService(ServerStatsService statsService, SettingService settingService,
-                               NotificationRepository notificationRepository, MailService mailService) {
+    public MetricsAlertService(ServerStatsService statsService, SettingService settingService, MailService mailService) {
         this.statsService = statsService;
         this.settingService = settingService;
-        this.notificationRepository = notificationRepository;
         this.mailService = mailService;
     }
 
@@ -90,13 +85,6 @@ public class MetricsAlertService {
         String text = "服务器「" + serverId + "」TPS 持续偏低（" + String.format("%.1f", tps)
                 + ",阈值 " + threshold + "）,请检查服务器负载";
         try {
-            var admins = settingService.get(SettingService.KEY_ADMINS, java.util.List.class);
-            if (admins != null) {
-                for (Object a : admins) {
-                    notificationRepository.save(new NotificationRecord(
-                            null, String.valueOf(a), "server_tps_low", "TPS 低阈值告警", text, null, null, null));
-                }
-            }
             String notifyEmail = settingService.get(SettingService.KEY_ADMIN_NOTIFY_EMAIL, String.class);
             if (notifyEmail != null && !notifyEmail.isBlank()) {
                 mailService.sendAdminNotification(text, notifyEmail);

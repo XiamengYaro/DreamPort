@@ -581,13 +581,7 @@
               <option v-for="cat in docsData.categories" :key="cat.name" :value="cat.name">{{ cat.displayName || cat.name }}</option>
             </select>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <textarea v-model="docForm.content" class="input text-sm font-mono" rows="18"
-              placeholder="Markdown 内容…"></textarea>
-            <div class="rounded-xl bg-stone-900/60 border border-stone-700 p-4 overflow-y-auto max-h-[60vh]">
-              <div class="prose prose-invert max-w-none text-sm" v-html="docPreview"></div>
-            </div>
-          </div>
+          <RichEditor v-model="docForm.content" :min-height="380" placeholder="文档内容…" />
           <div class="flex gap-2 mt-3">
             <button @click="saveDoc" class="btn-primary text-sm" :disabled="!docForm.title || savingDocs">
               {{ savingDocs ? '保存中...' : (docForm.isNew ? '创建文档' : '保存修改') }}
@@ -1275,7 +1269,6 @@ import FeedbackManageTab from '@/components/admin/FeedbackManageTab.vue'
 import WebhookSettingsCard from '@/components/admin/WebhookSettingsCard.vue'
 import { iconNames } from '@/components/AppIcon.vue'
 import { getStatusText, getStatusClass } from '@/lib/status'
-import { renderMarkdown } from '@/lib/markdown'
 
 const notify = inject('notify') as any
 
@@ -2064,7 +2057,6 @@ const newTimelineId = () => Date.now().toString(36) + Math.random().toString(36)
 const docsData = ref<any>({ categories: [], uncategorized: [] })
 const docForm = ref({ isNew: false, category: '' as string | null, filename: '', title: '', content: '' })
 const savingDocs = ref(false)
-const docPreview = computed(() => renderMarkdown(docForm.value.content || ''))
 
 const loadDocs = async () => {
   try {

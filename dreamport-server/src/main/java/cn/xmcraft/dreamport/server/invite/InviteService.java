@@ -1,8 +1,6 @@
 package cn.xmcraft.dreamport.server.invite;
 
 import cn.xmcraft.dreamport.server.settings.SystemSettingsService;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import org.springframework.stereotype.Service;
@@ -19,16 +17,13 @@ public class InviteService {
 
     private final InviteRepository inviteRepository;
     private final UserRepository userRepository;
-    private final NotificationRepository notificationRepository;
     private final SystemSettingsService systemSettings;
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
 
-    public InviteService(InviteRepository inviteRepository, UserRepository userRepository,
-                         NotificationRepository notificationRepository, SystemSettingsService systemSettings,
+    public InviteService(InviteRepository inviteRepository, UserRepository userRepository, SystemSettingsService systemSettings,
                          org.springframework.jdbc.core.JdbcTemplate jdbc) {
         this.inviteRepository = inviteRepository;
         this.userRepository = userRepository;
-        this.notificationRepository = notificationRepository;
         this.systemSettings = systemSettings;
         this.jdbc = jdbc;
     }
@@ -52,10 +47,6 @@ public class InviteService {
         return Boolean.TRUE.equals(cfg.getOrDefault("enabled", true));
     }
 
-    private void notifyUser(String username, String type, String title, String message, String related) {
-        notificationRepository.save(new NotificationRecord(null, username, type, title, message,
-                null, null, related));
-    }
 
     public Result generate(String inviter) {
         if (!isInviteEnabled()) {
@@ -117,8 +108,6 @@ public class InviteService {
             return Result.fail("邀请码无效或已过期");
         }
         userRepository.save(withStatus(userOpt.get(), "invited_pending", username));
-        notifyUser(invite.inviterUsername(), "invite_received", "收到玩家申请",
-                username + " 使用了你的邀请码，请确认是否认识该玩家", username);
         return Result.ok("申请已提交，等待邀请人确认");
     }
 
@@ -140,8 +129,6 @@ public class InviteService {
         }
         Optional<UserRecord> userOpt = userRepository.findByUsernameIgnoreCase(username);
         userOpt.ifPresent(u -> userRepository.save(withStatus(u, "invited_pending", invite.inviterUsername())));
-        notifyUser(invite.inviterUsername(), "invite_received", "邀请注册",
-                username + " 使用你的邀请码注册，请确认", username);
         return Result.ok("注册成功，等待邀请人确认");
     }
 
@@ -156,8 +143,6 @@ public class InviteService {
             return Result.fail("仅已通过审核的玩家可以确认邀请");
         }
         userRepository.save(withStatus(inviteeOpt.get(), "pending_review", invitee));
-        notifyUser(invitee, "invite_confirmed", "邀请已确认",
-                inviter + " 已确认你的申请，进入管理员审核", inviter);
         return Result.ok("已确认 " + invitee + " 的申请");
     }
 
@@ -168,8 +153,6 @@ public class InviteService {
             return Result.fail("该用户不在你的待确认邀请中");
         }
         userRepository.save(withStatus(inviteeOpt.get(), "rejected", invitee));
-        notifyUser(invitee, "invite_rejected", "邀请被拒绝",
-                inviter + " 拒绝了你的申请", inviter);
         return Result.ok("已拒绝 " + invitee + " 的申请");
     }
 

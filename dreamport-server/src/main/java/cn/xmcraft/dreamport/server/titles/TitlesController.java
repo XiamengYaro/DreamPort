@@ -1,7 +1,5 @@
 package cn.xmcraft.dreamport.server.titles;
 
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.web.ApiResponse;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +23,9 @@ import java.util.Map;
 public class TitlesController {
 
     private final cn.xmcraft.dreamport.server.titles.TitleService titleService;
-    private final cn.xmcraft.dreamport.server.notification.NotificationRepository notificationRepository;
 
-    public TitlesController(cn.xmcraft.dreamport.server.titles.TitleService titleService,
-                            cn.xmcraft.dreamport.server.notification.NotificationRepository notificationRepository) {
+    public TitlesController(cn.xmcraft.dreamport.server.titles.TitleService titleService) {
         this.titleService = titleService;
-        this.notificationRepository = notificationRepository;
     }
 
     private ResponseEntity<Object> unauthorized() {
@@ -206,9 +201,6 @@ public class TitlesController {
             return ResponseEntity.badRequest().body(ApiResponse.failure("用户不存在"));
         }
         titleService.grant(username, code);
-        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                null, username, "achievement", "获得新称号", "管理员授予了你一个称号,可在控制台佩戴",
-                null, null, username));
         return ResponseEntity.ok(ApiResponse.success("已授予"));
     }
 

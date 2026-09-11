@@ -2,7 +2,6 @@ package cn.xmcraft.dreamport.server.review;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
 import cn.xmcraft.dreamport.server.infra.MailService;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRecord;
 import cn.xmcraft.dreamport.server.user.UserRepository;
@@ -30,27 +29,18 @@ public class ReviewService {
     private final SettingService settingService;
     private final cn.xmcraft.dreamport.server.security.PasswordService passwordService;
 
-    private final cn.xmcraft.dreamport.server.notification.NotificationRepository notificationRepository;
-
     public ReviewService(UserRepository userRepository, AuditService auditService,
                          MailService mailService, ReviewPushService pushService,
                          SettingService settingService,
-                         cn.xmcraft.dreamport.server.security.PasswordService passwordService,
-                         NotificationRepository notificationRepository) {
+                         cn.xmcraft.dreamport.server.security.PasswordService passwordService) {
         this.userRepository = userRepository;
         this.auditService = auditService;
         this.mailService = mailService;
         this.pushService = pushService;
         this.settingService = settingService;
         this.passwordService = passwordService;
-        this.notificationRepository = notificationRepository;
     }
 
-    /** 站内通知写入(审核/封禁等系统事件,铃铛中心展示) */
-    private void notifyUser(String username, String type, String title, String message) {
-        notificationRepository.save(new cn.xmcraft.dreamport.server.notification.NotificationRecord(
-                null, username, type, title, message, null, null, null));
-    }
 
     public record Result(boolean success, String message) {
         public static Result ok(String message) {
@@ -77,7 +67,6 @@ public class ReviewService {
         }
         UserRecord user = userRepository.save(withStatus(userOpt.get(), "approved"));
         auditService.log("approve", operator, username, null);
-        notifyUser(username, "whitelist_approved", "白名单申请已通过", "你的白名单申请已通过,欢迎加入!期待在服务器里见到你。");
         if (user.email() != null && !user.email().isBlank()) {
             mailService.sendReviewApproved(username, user.email(), lang);
         }
@@ -93,7 +82,6 @@ public class ReviewService {
         }
         userRepository.save(withStatus(userOpt.get(), "rejected"));
         auditService.log("reject", operator, username, reason);
-        notifyUser(username, "whitelist_rejected", "白名单申请未通过", "你的白名单申请未通过" + (reason == null || reason.isBlank() ? "" : ":" + reason));
         String email = userOpt.get().email();
         if (email != null && !email.isBlank()) {
             mailService.sendReviewRejected(username, reason == null ? "未通过审核" : reason, email, lang);
@@ -130,8 +118,6 @@ public class ReviewService {
         }
         auditService.log("ban", operator, username,
                 (reason == null ? "违规操作" : reason) + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)"));
-        notifyUser(username, "account_banned", "账号已被封禁",
-                "你的账号已被封禁" + (days != null && days > 0 ? "(临时 " + days + " 天)" : "(永久)") + ":" + (reason == null ? "违规操作" : reason));
         notify("user_banned", username);
         return Result.ok("已封禁玩家 " + username);
     }
@@ -166,7 +152,6 @@ public class ReviewService {
                 user.bedrockVerified(), user.bedrockVerifiedAt(), null, 0L, null, user.avatar());
         userRepository.save(updated);
         auditService.log("unban", operator, username, null);
-        notifyUser(username, "account_unbanned", "封禁已解除", "你的账号封禁已解除,欢迎回来!");
         String email = user.email() != null && !user.email().isBlank() ? user.email() : null;
         if (email != null) {
             mailService.sendAccountUnbanned(username, email, "zh");

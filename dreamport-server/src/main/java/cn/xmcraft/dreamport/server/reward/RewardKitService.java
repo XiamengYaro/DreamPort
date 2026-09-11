@@ -1,8 +1,6 @@
 package cn.xmcraft.dreamport.server.reward;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.points.MailService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -36,16 +34,13 @@ public class RewardKitService {
     private final JdbcTemplate jdbc;
     private final MailService mailService;
     private final UserRepository userRepository;
-    private final NotificationRepository notificationRepository;
     private final AuditService auditService;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public RewardKitService(JdbcTemplate jdbc, MailService mailService, UserRepository userRepository,
-                            NotificationRepository notificationRepository, AuditService auditService) {
+    public RewardKitService(JdbcTemplate jdbc, MailService mailService, UserRepository userRepository, AuditService auditService) {
         this.jdbc = jdbc;
         this.mailService = mailService;
         this.userRepository = userRepository;
-        this.notificationRepository = notificationRepository;
         this.auditService = auditService;
     }
 
@@ -247,9 +242,6 @@ public class RewardKitService {
 
         for (String r : recipients) {
             mailService.enqueue(r, mailTitle, commandsJson, mailNote, itemsJson);
-            notificationRepository.save(new NotificationRecord(
-                    null, r, "reward_mail", "收到奖励邮件",
-                    "管理员向你发放了「" + mailTitle + "」，进服输入 /mail 领取", null, null, null));
         }
         String target = all ? "all(" + recipients.size() + ")" : String.join(",", recipients);
         auditService.log("reward_send", operator, target,

@@ -1,8 +1,6 @@
 package cn.xmcraft.dreamport.server.api;
 
 import cn.xmcraft.dreamport.server.audit.AuditService;
-import cn.xmcraft.dreamport.server.notification.NotificationRecord;
-import cn.xmcraft.dreamport.server.notification.NotificationRepository;
 import cn.xmcraft.dreamport.server.security.AuthUtil;
 import cn.xmcraft.dreamport.server.settings.SettingService;
 import cn.xmcraft.dreamport.server.user.UserRepository;
@@ -35,16 +33,13 @@ public class PollController {
 
     private final JdbcTemplate jdbc;
     private final SettingService settingService;
-    private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final AuditService auditService;
 
-    public PollController(JdbcTemplate jdbc, SettingService settingService,
-                          NotificationRepository notificationRepository, UserRepository userRepository,
+    public PollController(JdbcTemplate jdbc, SettingService settingService, UserRepository userRepository,
                           AuditService auditService) {
         this.jdbc = jdbc;
         this.settingService = settingService;
-        this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
         this.auditService = auditService;
     }
@@ -176,11 +171,6 @@ public class PollController {
         }
         auditService.log("poll_" + action, me, "#" + id, String.valueOf(poll.get("title")));
         if ("open".equals(action)) {
-            // 开启投票 → 全员铃铛(复用公告广播模式)
-            for (UserRecordLight u : approvedUsers()) {
-                notificationRepository.save(new NotificationRecord(null, u.username(), "poll_open",
-                        "新投票:" + poll.get("title"), "社区页发起了新投票「" + poll.get("title") + "」,快来参与", null, null, null));
-            }
         }
         return ResponseEntity.ok(ApiResponse.success("已" + switch (action) {
             case "open" -> "开启";

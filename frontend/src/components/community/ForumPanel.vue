@@ -84,7 +84,7 @@
 
       <!-- 回复框 -->
       <div v-if="isLoggedIn && !detail.locked" class="card p-4">
-        <textarea v-model="replyText" class="input min-h-[80px]" placeholder="写下你的回复…(支持 Markdown 与 @提及)"></textarea>
+        <RichEditor v-model="replyText" :min-height="90" placeholder="写下你的回复…(@提及 通知对方)" />
         <button class="btn-primary text-sm mt-2" :disabled="!replyText.trim() || sending" @click="sendReply">
           {{ sending ? '发送中…' : '回复' }}
         </button>
@@ -107,8 +107,8 @@
           <input v-model="composeForm.title" class="input" maxlength="128" />
         </div>
         <div>
-          <label class="block text-xs text-stone-500 mb-1">内容(支持 Markdown,@提及 通知对方)</label>
-          <textarea v-model="composeForm.content" class="input min-h-[160px]"></textarea>
+          <label class="block text-xs text-stone-500 mb-1">内容(支持 @提及 通知对方)</label>
+          <RichEditor v-model="composeForm.content" :min-height="160" placeholder="正文…" />
         </div>
       </div>
       <template #footer>
@@ -129,6 +129,7 @@ import AppModal from '@/components/ui/AppModal.vue'
 import AppPagination from '@/components/ui/AppPagination.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import RichEditor from '@/components/ui/RichEditor.vue'
 
 const notify = inject('notify') as any
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
