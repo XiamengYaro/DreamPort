@@ -84,6 +84,60 @@
         <FriendsCard />
       </div>
 
+      <!-- 我的称号与成就(从资料页合并进控制台;网页端佩戴,游戏内 PAPI 周期同步) -->
+      <div class="card p-6 mb-6">
+        <h2 class="text-lg font-semibold text-white mb-4">我的称号与成就</h2>
+        <div v-if="titlesLoading" class="text-sm text-stone-500">加载中...</div>
+        <template v-else>
+          <div v-if="myTitles.owned.length" class="mb-5">
+            <h3 class="text-xs text-stone-500 mb-2">已拥有 · 点击佩戴/脱下(游戏内约 1 分钟内同步)</h3>
+            <div class="flex flex-wrap gap-2">
+              <button v-for="t in myTitles.owned" :key="t.code" @click="toggleEquip(t.code)"
+                class="px-3 py-1.5 rounded-xl text-sm border transition"
+                :class="t.code === myTitles.equipped
+                  ? 'border-orange-500 bg-orange-500/15 font-semibold'
+                  : 'border-stone-700 bg-stone-800/50 hover:border-orange-400/60'">
+                <span :style="{ color: t.color }">{{ t.name }}</span>
+                <span v-if="t.code === myTitles.equipped" class="ml-1 text-orange-300">✓ 佩戴中</span>
+              </button>
+            </div>
+          </div>
+          <div v-if="myTitles.locked.length" class="mb-5">
+            <h3 class="text-xs text-stone-500 mb-2">未解锁</h3>
+            <div class="flex flex-wrap gap-2">
+              <span v-for="t in myTitles.locked" :key="t.code"
+                class="px-3 py-1.5 rounded-xl text-sm border border-stone-800 bg-stone-900/40 text-stone-600 flex items-center gap-1.5">
+                <AppIcon name="no-symbol" class="w-3.5 h-3.5" />
+                <span :style="{ color: t.color, opacity: 0.55 }">{{ t.name }}</span>
+              </span>
+            </div>
+          </div>
+          <div v-if="myTitles.achievements.length">
+            <h3 class="text-xs text-stone-500 mb-2">成就进度(达标自动授予)</h3>
+            <div class="space-y-3">
+              <div v-for="a in myTitles.achievements" :key="a.id">
+                <div class="flex justify-between text-sm mb-1">
+                  <span class="text-stone-300">{{ a.name }}
+                    <span v-if="a.rewardOwned" class="text-emerald-400 ml-1 text-xs">已获得</span>
+                  </span>
+                  <span class="text-stone-500">{{ a.completed ? '已完成 ✓' : `${a.progress} / ${a.target}` }}</span>
+                </div>
+                <div class="h-1.5 rounded-full bg-stone-800 overflow-hidden">
+                  <div class="h-full rounded-full transition-[width]"
+                    :class="a.completed ? 'bg-emerald-500' : 'bg-orange-400'"
+                    :style="{ width: Math.min(100, Math.round((a.progress / a.target) * 100)) + '%' }"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p v-if="!myTitles.owned.length && !myTitles.locked.length && !myTitles.achievements.length" class="text-sm text-stone-500">
+            暂无称号与成就,达成成就或由管理员授予后即可在这里佩戴。
+          </p>
+        </template>
+      </div>
+
+      <!-- 账号安全 -->
+
       <!-- 账号安全 -->
       <div class="card p-6 mb-6">
         <h2 class="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -614,6 +668,25 @@ const copyRecoveryCodes = async () => {
   }
 }
 
+// 我的称号与成就(从资料页合并进控制台)
+const loadMyTitles = async () => {
+  titlesLoading.value = true
+  try {
+    const r: any = await api.getMyTitles()
+    if (r.success) myTitles.value = r.data || { owned: [], locked: [], achievements: [] }
+  } catch (e) { console.error(e) }
+  titlesLoading.value = false
+}
+
+const toggleEquip = async (code: string) => {
+  try {
+    const equipped = myTitles.value.equipped
+    const r: any = equipped === code ? await api.unequipTitle() : await api.equipTitle(code)
+    if (r.success) await loadMyTitles()
+    else notify?.error(r.message || '操作失败')
+  } catch (e: any) { notify?.error(e.message || '操作失败') }
+}
+
 // QQ 绑定
 const qqStatus = ref<any>({ bound: false, qq: '', boundAt: 0 })
 const qqCode = ref('')
@@ -639,7 +712,8 @@ onMounted(async () => {
     loadBedrockStatus(),
     loadMinecraftStatus(),
     loadQqStatus(),
-    loadTwoFaStatus()
+    loadTwoFaStatus(),
+    loadMyTitles()
   ])
 })
 

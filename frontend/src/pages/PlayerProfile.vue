@@ -54,109 +54,6 @@
           <StatCard v-if="myScore != null" :value="myScore.toFixed(1)" label="综合评分" tone="emerald" />
         </div>
 
-        <!-- 称号与成就(仅本人可见;网页端佩戴,游戏内 PAPI 周期同步) -->
-        <div ref="titlesSection" v-if="isSelf" class="card p-6 mb-6">
-          <h2 class="text-lg font-semibold text-white mb-4">我的称号与成就</h2>
-          <div v-if="titlesLoading" class="text-sm text-stone-500">加载中...</div>
-          <template v-else>
-            <div v-if="myTitles.owned.length" class="mb-5">
-              <h3 class="text-xs text-stone-500 mb-2">已拥有 · 点击佩戴/脱下(游戏内约 1 分钟内同步)</h3>
-              <div class="flex flex-wrap gap-2">
-                <button v-for="t in myTitles.owned" :key="t.code" @click="toggleEquip(t.code)"
-                  class="px-3 py-1.5 rounded-xl text-sm border transition"
-                  :class="t.code === myTitles.equipped
-                    ? 'border-orange-500 bg-orange-500/15 font-semibold'
-                    : 'border-stone-700 bg-stone-800/50 hover:border-orange-400/60'">
-                  <span :style="{ color: t.color }">{{ t.name }}</span>
-                  <span v-if="t.code === myTitles.equipped" class="ml-1 text-orange-300">✓ 佩戴中</span>
-                </button>
-              </div>
-            </div>
-            <div v-if="myTitles.locked.length" class="mb-5">
-              <h3 class="text-xs text-stone-500 mb-2">未解锁</h3>
-              <div class="flex flex-wrap gap-2">
-                <span v-for="t in myTitles.locked" :key="t.code"
-                  class="px-3 py-1.5 rounded-xl text-sm border border-stone-800 bg-stone-900/40 text-stone-600 flex items-center gap-1.5">
-                  <AppIcon name="no-symbol" class="w-3.5 h-3.5" />
-                  <span :style="{ color: t.color, opacity: 0.55 }">{{ t.name }}</span>
-                </span>
-              </div>
-            </div>
-            <div v-if="myTitles.achievements.length">
-              <h3 class="text-xs text-stone-500 mb-2">成就进度(达标自动授予)</h3>
-              <div class="space-y-3">
-                <div v-for="a in myTitles.achievements" :key="a.id">
-                  <div class="flex justify-between text-sm mb-1">
-                    <span class="text-stone-300">{{ a.name }}
-                      <span v-if="a.rewardOwned" class="text-emerald-400 ml-1 text-xs">已获得</span>
-                    </span>
-                    <span class="text-stone-500">{{ a.completed ? '已完成 ✓' : `${a.progress} / ${a.target}` }}</span>
-                  </div>
-                  <div class="h-1.5 rounded-full bg-stone-800 overflow-hidden">
-                    <div class="h-full rounded-full transition-[width]"
-                      :class="a.completed ? 'bg-emerald-500' : 'bg-orange-400'"
-                      :style="{ width: Math.min(100, Math.round((a.progress / a.target) * 100)) + '%' }"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <p v-if="!myTitles.owned.length && !myTitles.locked.length && !myTitles.achievements.length" class="text-sm text-stone-500">
-              暂无称号与成就,达成成就或由管理员授予后即可在这里佩戴。
-            </p>
-          </template>
-        </div>
-
-        <!-- 个人主页自定义(简介/横幅/链接) -->
-        <div v-if="isSelf || (profileCustom.bio || (profileCustom.socialLinks || []).length)"
-          class="card overflow-hidden mb-6">
-          <div class="h-14 bg-gradient-to-r" :class="BANNERS[profileCustom.banner] || BANNERS.amber"></div>
-          <div class="p-6">
-            <div class="flex items-center justify-between mb-3">
-              <h2 class="text-lg font-semibold text-white">关于我</h2>
-              <button v-if="isSelf && !customEdit" class="btn-secondary text-xs px-3 py-1.5" @click="startCustomEdit">编辑</button>
-            </div>
-
-            <!-- 展示 -->
-            <template v-if="!customEdit">
-              <p v-if="profileCustom.bio" class="text-stone-300 text-sm leading-relaxed whitespace-pre-wrap">{{ profileCustom.bio }}</p>
-              <p v-else class="text-stone-500 text-sm">这位玩家还没有填写简介</p>
-              <div v-if="(profileCustom.socialLinks || []).length" class="flex flex-wrap gap-2 mt-3">
-                <a v-for="(l, i) in profileCustom.socialLinks" :key="i" :href="l.url" target="_blank" rel="noopener noreferrer nofollow"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-stone-800/60 border border-stone-700 text-xs text-stone-300 hover:border-orange-500/40 hover:text-white transition-colors">
-                  <AppIcon name="link" class="w-3.5 h-3.5 text-orange-400" />{{ l.label }}
-                </a>
-              </div>
-            </template>
-
-            <!-- 编辑表单(本人) -->
-            <template v-else>
-              <label class="block text-xs text-stone-500 mb-1">个人简介(纯文本,≤500 字)</label>
-              <textarea v-model="customForm.bio" maxlength="500" rows="3" class="input text-sm mb-3"
-                placeholder="介绍一下你自己…"></textarea>
-              <label class="block text-xs text-stone-500 mb-1">横幅主题色</label>
-              <div class="flex gap-2 mb-3">
-                <button v-for="(grad, key) in BANNERS" :key="key" @click="customForm.banner = key"
-                  class="w-10 h-8 rounded-lg bg-gradient-to-r transition-all"
-                  :class="[grad, customForm.banner === key ? 'ring-2 ring-orange-400' : 'ring-1 ring-white/10']"
-                  :title="key"></button>
-              </div>
-              <label class="block text-xs text-stone-500 mb-1">社交链接(≤5 条,仅 http/https)</label>
-              <div v-for="(l, i) in customForm.socialLinks" :key="i" class="flex gap-2 mb-2">
-                <input v-model="l.label" class="input w-32 text-sm" placeholder="名称" maxlength="20" />
-                <input v-model="l.url" class="input flex-1 text-sm" placeholder="https://…" />
-                <button class="text-rose-400 hover:text-rose-300 text-sm px-1" @click="customForm.socialLinks.splice(i, 1)">×</button>
-              </div>
-              <button class="btn-secondary text-xs py-1.5 px-3 mb-3" @click="addLinkRow">+ 添加链接</button>
-              <div class="flex gap-2">
-                <button class="btn-primary text-sm" :disabled="customSaving" @click="saveCustom">
-                  {{ customSaving ? '保存中…' : '保存' }}
-                </button>
-                <button class="btn-secondary text-sm" @click="customEdit = false">取消</button>
-              </div>
-            </template>
-          </div>
-        </div>
-
         <!-- 封禁提示 -->
         <div v-if="profile.status === 'banned'" class="card p-6 border-2 border-rose-500/30 bg-rose-500/5">
           <div class="flex items-start gap-3">
@@ -200,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, computed, onMounted, nextTick, inject } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getStatusText } from '@/lib/status'
@@ -209,13 +106,11 @@ import StatCard from '@/components/ui/StatCard.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 
 const route = useRoute()
+const notify = inject('notify') as any
 const loading = ref(false)
 const profile = ref<any>(null)
 const isLoggedIn = computed(() => !!localStorage.getItem('token'))
 const isSelf = ref(false)
-const titlesLoading = ref(false)
-const titlesSection = ref<HTMLElement | null>(null)
-const myTitles = ref<any>({ owned: [], locked: [], equipped: null, achievements: [] })
 
 onMounted(async () => {
   await loadProfile()
@@ -236,12 +131,6 @@ const loadProfile = async () => {
       await loadScore()
       await loadFriendState()
       if (isSelf.value) {
-        await loadMyTitles()
-        // 导航「我的称号」入口带 ?titles=1,直达称号面板
-        if (route.query.titles) {
-          await nextTick()
-          titlesSection.value?.scrollIntoView({ behavior: 'smooth' })
-        }
       }
     }
   } catch (e) {
@@ -319,27 +208,6 @@ const addFriend = async () => {
   } catch (e: any) { notify?.error(e.message || '发送失败') }
 }
 
-const loadMyTitles = async () => {
-  titlesLoading.value = true
-  try {
-    const r: any = await api.getMyTitles()
-    if (r.success) myTitles.value = r.data
-  } catch (e) {
-    console.error('Failed to load titles:', e)
-  }
-  titlesLoading.value = false
-}
-
-const toggleEquip = async (code: string) => {
-  try {
-    const r: any = myTitles.value.equipped === code
-      ? await api.unequipTitle()
-      : await api.equipTitle(code)
-    if (r.success) await loadMyTitles()
-  } catch (e: any) {
-    console.error('Failed to toggle title:', e)
-  }
-}
 
 const BANNERS: Record<string, string> = {
   amber: 'from-amber-500/30 to-orange-600/20',
