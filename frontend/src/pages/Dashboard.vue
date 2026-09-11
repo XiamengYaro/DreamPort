@@ -669,6 +669,9 @@ const copyRecoveryCodes = async () => {
 }
 
 // 我的称号与成就(从资料页合并进控制台)
+const titlesLoading = ref(false)
+const myTitles = ref<any>({ owned: [], locked: [], equipped: null, achievements: [] })
+
 const loadMyTitles = async () => {
   titlesLoading.value = true
   try {
