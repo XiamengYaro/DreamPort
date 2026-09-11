@@ -7,6 +7,13 @@
 
 ## [未发布]
 
+### Changed（文档页改版「编辑风 + 搜索/上下篇/TOC」 · 用户反馈）
+- 页头加 `SectionHeader`(DOCS 水印);侧栏加**实时搜索框**(前端过滤标题,含匹配分类自动展开,无匹配空态)
+- 阅读区:选中文档显示**元信息条**(分类 + 标题);正文 **TOC**(h2/h3 锚点,`markdown.ts` 新增 `renderMarkdownWithToc`——marked 渲染→消毒→注入序号锚点,原 renderMarkdown 兼容不动),可折叠目录点击平滑滚动
+- **上一篇/下一篇**:全库扁平顺序(分类序→文件序)跨分类导航,底部导航卡,阅读用 push 浏览器可回退
+- **路由合并修孤儿**:`/docs/:slug` 改指 Docs.vue(原 DocDetail.vue 为无入口孤儿且重复一套 prose 样式,已删除);侧栏选文 URL 同步(replace),刷新/直达 `/docs/<中文slug>?category=` 可落地(冒烟验证)
+- 后台文档管理 Tab 为独立模板与状态,不受影响
+
 ### Changed（全局 UI 统一大扫除 + 骨架屏 · 用户反馈）
 - **页面标题统一编辑风节头**:9 个功能页(Dashboard/Tasks/Leaderboard/Community/Announcements/Bans/Players/Chat/Map)顶部换 `SectionHeader`(英文 kicker 水印),组件新增 `compact` 档供卡内嵌 tab 场景;裸标题与标题卡两种写法并存消除
 - **统计数字统一衬线体**:`StatCard` 数值改 `text-3xl font-serif tabular-nums`(Admin×16/Dashboard×4/ServerMetricsPanel×4 自动生效);Leaderboard/PlayerProfile 手写橙字统计块换 StatCard;Tasks 积分数字衬线化

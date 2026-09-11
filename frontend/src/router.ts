@@ -13,8 +13,8 @@ const routes = [
   },
   {
     path: '/docs/:slug',
-    name: 'DocDetail',
-    component: () => import('./pages/DocDetail.vue')
+    name: 'DocsDetail',
+    component: () => import('./pages/Docs.vue')
   },
   {
     path: '/whitelist',
