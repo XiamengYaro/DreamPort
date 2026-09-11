@@ -1021,6 +1021,18 @@ class ApiService {
     return this.request('/admin/webhook/test', { method: 'POST', body: '{}' })
   }
 
+  // ===== 邮件群发(后台) =====
+  async adminGetMailTargets() {
+    return this.request('/admin/mail/targets')
+  }
+
+  async adminBroadcastMail(subject: string, content: string) {
+    return this.request('/admin/mail/broadcast', {
+      method: 'POST',
+      body: JSON.stringify({ subject, content })
+    })
+  }
+
   // ===== 2FA(TOTP + 恢复码 + 邮箱备用) =====
   async get2faStatus() {
     return this.request('/user/2fa/status')

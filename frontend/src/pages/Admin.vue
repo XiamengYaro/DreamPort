@@ -972,6 +972,27 @@
         <FeedbackManageTab />
       </div>
 
+      <!-- 邮件群发 Tab -->
+      <div v-if="activeTab === 'mail' && !loading" class="space-y-6">
+        <div class="card p-6 space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h3 class="text-lg font-semibold text-white">邮件群发</h3>
+            <span class="text-xs px-2.5 py-1 rounded-lg bg-stone-800/60 text-stone-300">
+              目标:{{ mailTargets ?? '-' }} 名已绑定邮箱的玩家
+            </span>
+          </div>
+          <p class="text-xs text-stone-500">向所有注册并绑定邮箱的玩家发送邮件(同一邮箱只发一封)。未配置 SMTP 时进入日志模式,不会真实发送。</p>
+          <div><label class="block text-xs text-stone-500 mb-1">邮件主题(≤200 字)</label>
+            <input v-model="mailForm.subject" class="input text-sm" maxlength="200" placeholder="如: 服务器维护通知" /></div>
+          <div><label class="block text-xs text-stone-500 mb-1">邮件正文(≤20000 字,保留换行)</label>
+            <textarea v-model="mailForm.content" rows="8" class="input text-sm" placeholder="正文内容…"></textarea></div>
+          <div class="flex items-center gap-3">
+            <button @click="doBroadcastMail" :disabled="sendingMail" class="btn-primary text-sm">{{ sendingMail ? '发送中…' : '群发' }}</button>
+            <span v-if="mailResult" class="text-sm" :class="mailResult.ok ? 'text-emerald-400' : 'text-rose-400'">{{ mailResult.text }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- 活动管理 Tab -->
       <div v-if="activeTab === 'events' && !loading">
         <EventManageTab />
@@ -1298,6 +1319,7 @@ const menuItems = [
   { key: 'forum', icon: 'chat-bubble', label: '论坛管理' },
   { key: 'polls', icon: 'dot-circle', label: '投票管理' },
   { key: 'feedback', icon: 'envelope', label: '反馈工单' },
+  { key: 'mail', icon: 'megaphone', label: '邮件群发' },
   { key: 'events', icon: 'calendar', label: '活动管理' },
   { key: 'taskshop', icon: 'squares-2x2', label: '任务与兑换' },
   { key: 'rewards', icon: 'sparkles', label: '奖励发放' },
@@ -1627,6 +1649,38 @@ const doSendReward = async () => {
   } finally { sendingReward.value = false }
 }
 
+// ===== 邮件群发 =====
+const mailForm = ref<any>({ subject: '', content: '' })
+const mailTargets = ref<number | null>(null)
+const sendingMail = ref(false)
+const mailResult = ref<any>(null)
+
+const loadMailTargets = async () => {
+  try {
+    const r: any = await api.adminGetMailTargets()
+    if (r.success) mailTargets.value = r.data?.count ?? 0
+  } catch { /* 非管理员等场景忽略 */ }
+}
+
+const doBroadcastMail = async () => {
+  const subject = mailForm.value.subject.trim()
+  const content = mailForm.value.content.trim()
+  if (!subject) { notify?.error('请填写邮件主题'); return }
+  if (!content) { notify?.error('请填写邮件正文'); return }
+  if (!window.confirm(`确认向 ${mailTargets.value ?? '所有'} 名玩家群发邮件「${subject}」?此操作不可撤销。`)) return
+  sendingMail.value = true
+  mailResult.value = null
+  try {
+    const r: any = await api.adminBroadcastMail(subject, content)
+    mailResult.value = r.success ? { ok: true, text: r.message } : { ok: false, text: r.message || '发送失败' }
+    if (r.success) notify?.success(r.message)
+    else notify?.error(r.message || '发送失败')
+  } catch (e: any) {
+    mailResult.value = { ok: false, text: e.message || '发送失败' }
+    notify?.error(e.message || '发送失败')
+  } finally { sendingMail.value = false }
+}
+
 const loadMaintenance = async () => {
   try { const r: any = await api.getMaintenanceMode(); maintenanceEnabled.value = !!r.data?.enabled } catch (e) {}
 }
@@ -1733,6 +1787,7 @@ const auditActionLabels: Record<string, string> = {
   feedback_create: '提交反馈', feedback_reply: '回复工单', feedback_close: '关闭工单',
   poll_create: '创建投票', poll_open: '开启投票', poll_close: '关闭投票', poll_update: '更新投票',
   webhook_test: 'Webhook 测试', settings_webhook: 'Webhook 设置',
+  mail_broadcast: '邮件群发',
   forum_section_create: '创建板块', forum_section_update: '更新板块', forum_section_delete: '删除板块',
   forum_thread_edit: '编辑帖子',
 }
@@ -1829,7 +1884,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus(), loadRewardKits()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus(), loadRewardKits(), loadMailTargets()])
   loading.value = false
 })
 

@@ -7,6 +7,11 @@
 
 ## [未发布]
 
+### Added（管理后台邮件群发）
+- **邮件群发(mail)**:向所有注册并绑定邮箱的玩家发邮件(目标 = dp_user 邮箱非空合法,小写去重,同一邮箱只发一封);后台「邮件群发」页填主题(≤200 字)/正文(≤20000 字,保留换行),发送前弹确认,投递异步逐目标执行;未配置 SMTP 走日志模式
+- 后端:AdminMailController(/api/admin/mail/targets + /broadcast,管理员鉴权+审计码 mail_broadcast);MailService.sendBroadcast + 新模板 email/broadcast_zh.html(品牌页眉,外置 ./email/ 可覆盖)
+- 测试:AdminMailTargetsTest 目标过滤/去重 2 用例(全量 53/0/0)
+
 ### Fixed（飞书卡片中文化 + 访问日志中文输出 · 用户反馈）
 - **飞书推送卡片「成这样了」**:原实现把事件 payload 的原始字段全量铺进卡片(event/time/action/operator/target/detail 英文键 + 毫秒时间戳),可读性差。现卡片中文化:标题「DreamPort · 事件中文名」,正文按中文标签(操作人/对象/详情)展示业务字段,时间按北京时间格式化(yyyy-MM-dd HH:mm:ss),event/time/action 元字段不再直铺;未收录事件保留原事件名兜底
 - **终端访问日志中文输出**:常用接口改为中文描述输出(`[访问] 玩家资料 Xia_Meng_ 200 13ms 127.0.0.1 @Xia_Meng_`),未知接口把 HTTP 动词中文化(读取/提交/更新/删除);插件高频轮询接口(待处理消息/白名单指令/AstrBot 消息流)统一短标签,控制台刷屏更易读

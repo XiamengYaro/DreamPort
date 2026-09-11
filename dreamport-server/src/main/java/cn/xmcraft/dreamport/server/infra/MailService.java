@@ -134,6 +134,11 @@ public class MailService {
         send(to, subject, render("verify_code", l, "code", code));
     }
 
+    /** 管理后台群发:内容为管理员撰写,统一中文壳模板,正文保留换行 */
+    public void sendBroadcast(String to, String subject, String content) {
+        send(to, subject, render("broadcast", "zh", "subject", subject, "content", content));
+    }
+
     public void sendReviewApproved(String username, String to, String lang) {
         String l = lang(lang);
         send(to, "zh".equals(l) ? "白名单申请已通过" : "Whitelist application approved",
