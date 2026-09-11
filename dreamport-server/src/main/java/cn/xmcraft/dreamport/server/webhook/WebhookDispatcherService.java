@@ -15,6 +15,9 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -37,6 +40,41 @@ public class WebhookDispatcherService {
     public static final String KEY_WEBHOOK_CONFIG = "webhook.config";
     private static final Duration TIMEOUT = Duration.ofSeconds(5);
     private static final String FEISHU_HOOK_MARKER = "/open-apis/bot/v2/hook";
+    private static final DateTimeFormatter TS_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final ZoneId CN_ZONE = ZoneId.of("Asia/Shanghai");
+
+    /** 事件 → 飞书卡片中文标题 */
+    private static final Map<String, String> EVENT_TITLES = Map.ofEntries(
+            Map.entry("review.approved", "白名单审核通过"),
+            Map.entry("review.rejected", "白名单审核驳回"),
+            Map.entry("review.banned", "玩家封禁"),
+            Map.entry("review.unbanned", "玩家解封"),
+            Map.entry("review.deleted", "白名单删除"),
+            Map.entry("appeal.approved", "申诉通过"),
+            Map.entry("appeal.rejected", "申诉驳回"),
+            Map.entry("questionnaire.submitted", "问卷提交"),
+            Map.entry("reward.sent", "奖励发放"),
+            Map.entry("feedback.created", "工单创建"),
+            Map.entry("feedback.replied", "工单回复"),
+            Map.entry("feedback.closed", "工单关闭"),
+            Map.entry("poll.created", "投票创建"),
+            Map.entry("poll.opened", "投票开启"),
+            Map.entry("poll.closed", "投票关闭"));
+
+    /** 通用字段 → 中文标签(飞书卡片正文) */
+    private static final Map<String, String> FIELD_LABELS = Map.of(
+            "operator", "操作人",
+            "target", "对象",
+            "detail", "详情",
+            "username", "玩家",
+            "name", "名称",
+            "id", "编号",
+            "title", "标题");
+
+    private static final Map<String, String> FIELD_ICONS = Map.of(
+            "operator", "👤",
+            "target", "🎯",
+            "detail", "💬");
 
     private final SettingService settingService;
     private final ObjectMapper mapper = new ObjectMapper();
@@ -171,26 +209,20 @@ public class WebhookDispatcherService {
         }
     }
 
-    /** 飞书 hook:转成飞书 interactive 卡片 */
+    /** 飞书 hook:转成飞书 interactive 卡片(事件名/字段中文展示,时间格式化) */
     private DeliveryResult postFeishu(Target target, String genericBody, long tsSec, int attempt) {
         try {
             JsonNode generic = mapper.readTree(genericBody);
-            String event = generic.path("event").asText("event");
-            StringBuilder md = new StringBuilder();
-            var fields = generic.fields();
-            while (fields.hasNext()) {
-                var f = fields.next();
-                md.append("**").append(f.getKey()).append("**: ")
-                        .append(f.getValue().asText("").replace("\n", " ")).append("\n");
-            }
+            String event = generic.path("event").asText("");
+            String title = EVENT_TITLES.getOrDefault(event, event.isBlank() ? "事件通知" : event);
             Map<String, Object> card = new LinkedHashMap<>();
             card.put("config", Map.of("wide_screen_mode", true));
             card.put("header", Map.of(
-                    "title", Map.of("tag", "plain_text", "content", "DreamPort · " + event),
+                    "title", Map.of("tag", "plain_text", "content", "DreamPort · " + title),
                     "template", "orange"));
             card.put("elements", List.of(Map.of(
                     "tag", "div",
-                    "text", Map.of("tag", "lark_md", "content", md.toString()))));
+                    "text", Map.of("tag", "lark_md", "content", buildCardContent(generic)))));
             Map<String, Object> body = new LinkedHashMap<>();
             body.put("msg_type", "interactive");
             body.put("card", card);
@@ -219,6 +251,35 @@ public class WebhookDispatcherService {
             log.warn("飞书推送异常 (attempt {}): {}", attempt + 1, e.getMessage());
             return new DeliveryResult(target.url(), false, attempt, e.getMessage() == null ? "error" : e.getMessage());
         }
+    }
+
+    /** 卡片正文:类型行 + 业务字段(中文标签)+ 格式化时间;跳过 event/time/action 等元字段 */
+    static String buildCardContent(JsonNode generic) {
+        String event = generic.path("event").asText("");
+        String title = EVENT_TITLES.getOrDefault(event, event);
+        StringBuilder md = new StringBuilder("📋 **类型**: ").append(title);
+        if (!event.isBlank() && !event.equals(title)) {
+            md.append(" (`").append(event).append("`)");
+        }
+        if (generic.isObject()) {
+            var fields = generic.fields();
+            while (fields.hasNext()) {
+                var f = fields.next();
+                String key = f.getKey();
+                if ("event".equals(key) || "time".equals(key) || "action".equals(key)) {
+                    continue;
+                }
+                String value = f.getValue().asText("").replace("\n", " ");
+                md.append('\n').append(FIELD_ICONS.getOrDefault(key, "•")).append(" **")
+                        .append(FIELD_LABELS.getOrDefault(key, key)).append("**: ").append(value);
+            }
+        }
+        long ts = generic.path("time").asLong(0);
+        if (ts > 0) {
+            md.append('\n').append("🕐 **时间**: ")
+                    .append(TS_FMT.format(Instant.ofEpochMilli(ts).atZone(CN_ZONE)));
+        }
+        return md.toString();
     }
 
     /** 飞书签名:HMAC-SHA256,密钥 = ts + "\n" + secret,内容为空字节 */
