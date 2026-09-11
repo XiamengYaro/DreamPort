@@ -3,9 +3,8 @@
     <div class="max-w-4xl mx-auto">
       <!-- 标题 + Tab -->
       <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">社区</h1>
-        <p class="text-stone-400">论坛 · 投票 · 反馈工单</p>
-        <div class="flex gap-2 mt-4">
+        <SectionHeader compact kicker="COMMUNITY" title="社区" subtitle="论坛 · 投票 · 反馈工单" />
+        <div class="flex gap-2 -mt-4">
           <button v-for="t in tabs" :key="t.key" @click="active = t.key"
             class="px-4 py-2 rounded-xl text-sm font-medium transition-colors inline-flex items-center gap-1.5"
             :class="active === t.key
@@ -26,6 +25,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import AppIcon from '@/components/AppIcon.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 import ForumPanel from '@/components/community/ForumPanel.vue'
 import PollsPanel from '@/components/community/PollsPanel.vue'
 import FeedbackPanel from '@/components/community/FeedbackPanel.vue'

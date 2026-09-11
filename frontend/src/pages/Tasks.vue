@@ -1,18 +1,15 @@
 <template>
-  <div class="min-h-screen p-4 pt-24 pb-20">
+  <div class="p-6 pt-24 pb-20">
     <div class="max-w-5xl mx-auto">
-      <div class="text-center mb-6">
-        <h1 class="text-3xl font-bold tracking-tight text-white">任务中心</h1>
-        <p class="mt-1 text-stone-400">完成任务赚积分,积分兑换游戏内奖励</p>
-      </div>
+      <SectionHeader kicker="TASKS" title="任务中心" subtitle="完成任务赚积分,积分兑换游戏内奖励" />
 
-      <div v-if="loading" class="card p-12 text-center text-stone-400">加载中...</div>
+      <AppSkeleton v-if="loading" variant="pulse" label="加载中..." />
 
       <template v-else>
         <!-- 余额 + 签到 -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div class="card p-6 text-center">
-            <div class="text-3xl font-bold text-orange-400">{{ center.balance }}</div>
+            <div class="text-3xl font-serif tabular-nums text-orange-400">{{ center.balance }}</div>
             <div class="text-xs text-stone-400 mt-1">我的积分</div>
           </div>
           <div class="card p-6">
@@ -92,6 +89,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
 import api from '@/services/api'
+import SectionHeader from '@/components/SectionHeader.vue'
+import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 
 const notify = inject('notify') as any
 const loading = ref(true)

@@ -1,7 +1,7 @@
 <template>
   <div class="rounded-xl p-3 text-center" :class="boxClass">
-    <div class="text-2xl font-bold" :class="valueClass">{{ value }}</div>
-    <div class="text-xs text-stone-400">{{ label }}</div>
+    <div class="text-3xl font-serif tabular-nums" :class="valueClass">{{ value }}</div>
+    <div class="text-xs text-stone-400 mt-0.5">{{ label }}</div>
   </div>
 </template>
 

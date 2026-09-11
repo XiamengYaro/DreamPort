@@ -2,10 +2,7 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-7xl mx-auto">
       <!-- 页头 -->
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">聊天广场</h1>
-        <p class="text-stone-400">游戏 / QQ / 网页三端实时互通 · 保留近 7 天历史 · 点击右侧玩家可查看档案</p>
-      </div>
+      <SectionHeader kicker="CHAT" title="聊天广场" subtitle="游戏 / QQ / 网页三端实时互通 · 保留近 7 天历史 · 点击右侧玩家可查看档案" />
 
       <div class="flex flex-col lg:flex-row gap-6 items-start">
         <!-- 左:聊天 -->
@@ -38,6 +35,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import SectionHeader from '@/components/SectionHeader.vue'
 import ChatBox from '@/components/ChatBox.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 

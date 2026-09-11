@@ -2,10 +2,7 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-6xl mx-auto">
       <!-- 标题 -->
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">玩家目录</h1>
-        <p class="text-stone-400">浏览服务器所有注册玩家</p>
-      </div>
+      <SectionHeader kicker="PLAYERS" title="玩家目录" subtitle="浏览服务器所有注册玩家" />
 
       <!-- 搜索框 -->
       <div class="mb-6">
@@ -18,13 +15,7 @@
       </div>
 
       <!-- 加载状态 -->
-      <div v-if="loading" class="text-center py-12 text-stone-500">
-        <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        加载中...
-      </div>
+      <AppSkeleton v-if="loading" variant="cards" :rows="5" card-height="140" grid-class="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5" />
 
       <!-- 空状态 -->
       <div v-else-if="filteredPlayers.length === 0" class="text-center py-12 text-stone-500">
@@ -54,6 +45,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import AppSkeleton from '@/components/ui/AppSkeleton.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 import { getStatusText } from '@/lib/status'
 
 const statusColorClass = (status: string) => ({

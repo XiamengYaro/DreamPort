@@ -2,10 +2,7 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-4xl mx-auto">
       <!-- 页头 -->
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">封禁名单</h1>
-        <p class="text-stone-400 mt-1">当前处于封禁状态的玩家公示 · 违规零容忍,共建绿色服务器</p>
-      </div>
+      <SectionHeader kicker="BANS" title="封禁名单" subtitle="当前处于封禁状态的玩家公示 · 违规零容忍,共建绿色服务器" />
 
       <div v-if="loading" class="text-center py-12 text-stone-500">加载中...</div>
 
@@ -52,6 +49,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
+import SectionHeader from '@/components/SectionHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 const loading = ref(true)

@@ -3,8 +3,7 @@
     <div class="max-w-4xl mx-auto">
       <!-- 页头 -->
       <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">公告</h1>
-        <p class="text-stone-400 mt-1">服务器资讯与版本更新,尽在掌握</p>
+        <SectionHeader compact kicker="ANNOUNCEMENTS" title="公告" subtitle="服务器资讯与版本更新,尽在掌握" />
         <div class="flex gap-2 mt-4">
           <button class="tab-btn" :class="{ active: tab === 'news' }" @click="tab = 'news'">资讯中心</button>
           <button class="tab-btn" :class="{ active: tab === 'changelog' }" @click="tab = 'changelog'">更新日志</button>
@@ -51,6 +50,7 @@ import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
 import { renderMarkdown } from '@/lib/markdown'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 
 const tab = ref<'news' | 'changelog'>('news')
 const loading = ref(true)

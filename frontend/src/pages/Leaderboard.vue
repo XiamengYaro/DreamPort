@@ -1,21 +1,12 @@
 <template>
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-6xl mx-auto">
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">排行榜</h1>
-        <p class="text-stone-400">服务器财富榜、在线时间榜和活跃天数榜</p>
-      </div>
+      <SectionHeader kicker="LEADERBOARD" title="排行榜" subtitle="服务器财富榜、在线时间榜和活跃天数榜" />
 
       <!-- 统计卡片 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div class="card p-4 text-center">
-          <div class="text-3xl font-bold text-orange-400">{{ extendedStats.activePlayers || 0 }}</div>
-          <div class="text-sm text-stone-400">活跃玩家</div>
-        </div>
-        <div class="card p-4 text-center">
-          <div class="text-3xl font-bold text-orange-400">{{ extendedStats.chatCount || 0 }}</div>
-          <div class="text-sm text-stone-400">全服聊天统计</div>
-        </div>
+        <StatCard :value="extendedStats.activePlayers || 0" label="活跃玩家" tone="orange" />
+        <StatCard :value="extendedStats.chatCount || 0" label="全服聊天统计" tone="orange" />
       </div>
 
       <!-- Tab 按钮 -->
@@ -54,13 +45,7 @@
           </svg>
           财富排行榜
         </h2>
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="table" :rows="6" />
         <div v-else-if="error" class="text-center py-8 text-red-400">{{ error }}</div>
         <div v-else-if="wealthLeaderboard.length === 0" class="text-center py-8">
           <p class="text-stone-500 mb-4">暂无数据</p>
@@ -98,13 +83,7 @@
           </svg>
           在线时间排行榜
         </h2>
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="table" :rows="6" />
         <div v-else-if="error" class="text-center py-8 text-red-400">{{ error }}</div>
         <div v-else-if="playtimeLeaderboard.length === 0" class="text-center py-8">
           <p class="text-stone-500 mb-4">暂无数据</p>
@@ -143,13 +122,7 @@
           </svg>
           活跃天数排行榜
         </h2>
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="table" :rows="6" />
         <div v-else-if="activeDaysLeaderboard.length === 0" class="text-center py-8 text-stone-500">暂无数据</div>
         <div v-else class="space-y-2">
           <div v-for="(player, index) in activeDaysLeaderboard" :key="player.name"
@@ -176,13 +149,7 @@
           </svg>
           封禁玩家列表
         </h2>
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="pulse" label="统计数据加载中..." />
         <div v-else-if="bannedPlayers.length === 0" class="text-center py-8 text-stone-500">暂无封禁玩家</div>
         <div v-else class="space-y-2">
           <div v-for="player in bannedPlayers" :key="player.name"
@@ -203,6 +170,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, inject } from 'vue'
 import api from '@/services/api'
+import StatCard from '@/components/ui/StatCard.vue'
+import AppSkeleton from '@/components/ui/AppSkeleton.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 
 const notify = inject('notify') as any
 

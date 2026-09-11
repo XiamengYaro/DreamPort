@@ -34,13 +34,7 @@
 
       <!-- 机器列表 -->
       <div class="card p-6">
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="cards" :rows="3" card-height="200" grid-class="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" />
         <EmptyState v-else-if="filteredList.length === 0" icon="wrench" text="暂无公共机器,快来提交第一台吧" />
         <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div v-for="machine in filteredList" :key="machine.id" class="card card-hover overflow-hidden">
@@ -146,6 +140,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick } from 'vue'
 import api from '@/services/api'
+import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import AppModal from '@/components/ui/AppModal.vue'
 

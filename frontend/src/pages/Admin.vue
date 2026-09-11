@@ -25,13 +25,13 @@
         </nav>
         <!-- 内容区 -->
         <div class="flex-1 min-w-0 w-full">
-      <div v-if="loading" class="card p-12 text-center">
-        <div class="inline-flex items-center gap-3 text-stone-400">
-          <svg class="w-6 h-6 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.641z"></path>
-          </svg>
-          <span>加载中...</span>
+      <div v-if="loading" class="card p-6 space-y-4">
+        <div class="h-10 w-64 rounded-xl bg-stone-700/40 animate-pulse"></div>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div v-for="i in 4" :key="i" class="h-24 rounded-xl bg-stone-700/40 animate-pulse"></div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div v-for="i in 2" :key="i" class="h-48 rounded-xl bg-stone-700/40 animate-pulse"></div>
         </div>
       </div>
 
@@ -1083,7 +1083,7 @@
                    file:bg-orange-500/15 file:text-orange-400 hover:file:bg-orange-500/25 file:cursor-pointer"
             @change="onMigrationFileChange" />
           <button @click="uploadMigration" :disabled="!migrationFile || migrationLoading"
-            class="px-5 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-medium hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed transition">
+            class="btn-primary text-sm">
             {{ migrationLoading ? '导入中…' : '开始导入' }}
           </button>
         </div>

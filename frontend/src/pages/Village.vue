@@ -32,16 +32,10 @@
 
       <!-- 交易列表 -->
       <div class="card p-6">
-        <div v-if="loading" class="text-center py-8 text-stone-500">
-          <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-orange-400" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          加载中...
-        </div>
+        <AppSkeleton v-if="loading" variant="table" :rows="5" />
         <div v-else-if="filteredList.length === 0" class="text-center py-8 text-stone-500">暂无数据</div>
         <div v-else class="overflow-x-auto">
-          <table class="w-full">
+          <table class="table w-full">
             <thead>
               <tr class="text-left text-stone-400 text-sm border-b border-stone-700">
                 <th class="pb-3 pr-4">世界</th>
@@ -127,6 +121,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import api from '@/services/api'
+import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 
 const loading = ref(false)
 const trades = ref<any[]>([])

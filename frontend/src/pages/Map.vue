@@ -2,10 +2,7 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-7xl mx-auto">
       <!-- 标题 -->
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">世界地图</h1>
-        <p class="text-stone-400">{{ serverName }} - 实时地图</p>
-      </div>
+      <SectionHeader kicker="MAP" title="世界地图" :subtitle="`${serverName} - 实时地图`" />
 
       <!-- 地图选择 -->
       <div v-if="mapOptions.length > 1" class="card p-4 mb-6">
@@ -142,6 +139,7 @@
 import { ref, computed, onMounted, onUnmounted, inject } from 'vue'
 import api from '@/services/api'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 
 const config = inject('config') as any

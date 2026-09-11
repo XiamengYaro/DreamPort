@@ -2,10 +2,7 @@
   <div class="p-6 pt-24 pb-20">
     <div class="max-w-6xl mx-auto">
       <!-- 标题卡片 -->
-      <div class="card p-6 mb-6">
-        <h1 class="text-2xl font-bold text-white">控制台</h1>
-        <p class="text-stone-400">欢迎回来，{{ username }}</p>
-      </div>
+      <SectionHeader kicker="DASHBOARD" title="控制台" :subtitle="'欢迎回来，' + username" />
 
       <!-- 公告 -->
       <div v-if="announcement" class="card p-4 mb-6 border border-orange-500/30">
@@ -417,6 +414,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import api from '@/services/api'
 import AppIcon from '@/components/AppIcon.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 import InviteManager from '@/components/InviteManager.vue'
 import PlayerChart from '@/components/PlayerChart.vue'
 import AppModal from '@/components/ui/AppModal.vue'

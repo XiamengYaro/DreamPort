@@ -1,5 +1,5 @@
 <template>
-  <div class="relative text-center mb-12">
+  <div class="relative text-center" :class="compact ? 'mb-4' : 'mb-12'">
     <span v-if="kicker"
       class="hidden md:block absolute left-1/2 -translate-x-1/2 -top-9 text-[6.5rem] leading-none font-serif italic text-white/5 select-none pointer-events-none whitespace-nowrap"
       aria-hidden="true">{{ kicker }}</span>
@@ -21,5 +21,7 @@ defineProps<{
   kicker?: string
   title: string
   subtitle?: string
+  /** 紧凑档(标题卡内嵌 tab 条等场景,收窄下边距) */
+  compact?: boolean
 }>()
 </script>
