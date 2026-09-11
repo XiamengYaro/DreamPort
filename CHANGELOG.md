@@ -7,6 +7,15 @@
 
 ## [未发布]
 
+### Changed（全局 UI 统一大扫除 + 骨架屏 · 用户反馈）
+- **页面标题统一编辑风节头**:9 个功能页(Dashboard/Tasks/Leaderboard/Community/Announcements/Bans/Players/Chat/Map)顶部换 `SectionHeader`(英文 kicker 水印),组件新增 `compact` 档供卡内嵌 tab 场景;裸标题与标题卡两种写法并存消除
+- **统计数字统一衬线体**:`StatCard` 数值改 `text-3xl font-serif tabular-nums`(Admin×16/Dashboard×4/ServerMetricsPanel×4 自动生效);Leaderboard/PlayerProfile 手写橙字统计块换 StatCard;Tasks 积分数字衬线化
+- **组件规范清理**:Admin 迁移导入手写橙色按钮改 `.btn-primary`;Village 手写表格套 `.table`;Status 失效色阶 `primary-500/accent-500`(不存在的 token)换品牌橙渐变;AppFooter 手写复制的玻璃配方改用全局 `.card` 类;Docs/DocDetail/Tasks 根容器 padding 对齐
+- **骨架屏**:新增 `AppSkeleton` 组件(table/cards/pulse 三变体,交错脉冲),替换 12 处转圈 spinner(保留 Map 刷新按钮与 PlayerChart 内部功能性小转圈)
+
+### Fixed（SPA 路由白名单缺路由 · 存量 bug）
+- `WebStaticConfig` 的 SPA 回退白名单缺 `/tasks`——任务中心页自 v1.4.0 起**刷新/直达一直 404**(侧栏链接能进是因 SPA 内部导航不走回退);`/community`(v1.5 新增)同样遗漏;两条路由已补入白名单
+
 ### Changed（门户「杂志编辑风」统一 · 用户反馈）
 - 新增 `SectionHeader` 统一节头组件(小字 kicker 橙点+衬线斜体英文水印垫底),时光照片墙/服务器介绍/团队/特色/CTA 五区块共用,视觉语言归一
 - 服务器介绍区:状态卡改**横向统计带**(hairline 上下边线+竖线分隔,数字改衬线大字 tabular-nums,标签宽字距小字),IP/Wiki 信息随排版下移
