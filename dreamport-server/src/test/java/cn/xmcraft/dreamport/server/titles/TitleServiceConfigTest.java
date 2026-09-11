@@ -26,7 +26,7 @@ class TitleServiceConfigTest {
                 return raw == null ? List.of() : List.of(value);
             }
         };
-        return new TitleService(new SettingService(stub), stub, null, null);
+        return new TitleService(new SettingService(stub), stub, null);
     }
 
     @Test

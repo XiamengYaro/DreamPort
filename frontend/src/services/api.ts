@@ -756,6 +756,19 @@ class ApiService {
     return this.request('/user/locations')
   }
 
+  // 行为分析与评分
+  async getScoreLeaderboard() {
+    return this.request('/leaderboard/score')
+  }
+
+  async getMyScore() {
+    return this.request('/user/score')
+  }
+
+  async getAnalyticsOverview(days: number) {
+    return this.request(`/admin/analytics/overview?days=${days}`)
+  }
+
   // 服务器管理(后台:注册表/按服令牌/启停/鉴权模式)
   async getAdminServers() {
     return this.request('/admin/servers')

@@ -43,6 +43,8 @@ public class SettingService {
     public static final String KEY_SECURITY_CONFIG = "security.config";
     /** 资源监控配置:{tpsAlertEnabled: bool, tpsThreshold: number} */
     public static final String KEY_METRICS_CONFIG = "metrics.config";
+    /** 行为分析配置:{publicScore: bool, 各项权重与封顶值} */
+    public static final String KEY_ANALYTICS_CONFIG = "analytics.config";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

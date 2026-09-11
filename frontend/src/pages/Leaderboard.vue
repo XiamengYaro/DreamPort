@@ -11,6 +11,12 @@
 
       <!-- Tab 按钮 -->
       <div class="flex gap-2 mb-6 flex-wrap">
+        <button v-if="scoreVisible" @click="activeTab = 'score'" class="tab-btn" :class="{ active: activeTab === 'score' }">
+          <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          综合评分
+        </button>
         <button @click="activeTab = 'wealth'" class="tab-btn" :class="{ active: activeTab === 'wealth' }">
           <svg class="w-4 h-4 inline-block mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -38,6 +44,24 @@
       </div>
 
       <!-- 财富榜 -->
+      <!-- 综合评分榜 -->
+      <div v-if="activeTab === 'score'" class="card p-6">
+        <div class="text-sm text-stone-400 mb-4">综合评分 = 活跃天数 + 在线时长 + 累计积分 + 注册天数 + 社区参与,按封顶归一加权(满分 100)</div>
+        <EmptyState v-if="scoreLeaderboard.length === 0" icon="chart-bar" text="暂无评分数据(或评分榜未公开)" />
+        <div v-else class="space-y-2">
+          <div v-for="(p, index) in scoreLeaderboard" :key="p.username"
+            class="flex items-center gap-3 p-3 rounded-xl bg-stone-900/40 border border-stone-800">
+            <span class="w-8 text-center font-serif tabular-nums text-lg"
+              :class="index === 0 ? 'text-amber-300' : index === 1 ? 'text-stone-300' : index === 2 ? 'text-orange-400' : 'text-stone-500'">{{ index + 1 }}</span>
+            <router-link :to="`/player/${encodeURIComponent(p.username)}`" class="flex-1 min-w-0 group">
+              <div class="text-white text-sm font-medium truncate group-hover:text-orange-300 transition-colors">{{ p.username }}</div>
+              <div class="text-[11px] text-stone-500">活跃 {{ p.activeDays }} 天 · 在线 {{ p.playtimeHours }}h · 积分 {{ p.pointsTotal }}</div>
+            </router-link>
+            <span class="font-serif tabular-nums text-xl text-orange-400">{{ p.score }}</span>
+          </div>
+        </div>
+      </div>
+
       <div v-if="activeTab === 'wealth'" class="card p-6">
         <h2 class="text-lg font-semibold mb-4 text-white flex items-center gap-2">
           <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -173,10 +197,13 @@ import api from '@/services/api'
 import StatCard from '@/components/ui/StatCard.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import SectionHeader from '@/components/SectionHeader.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 
 const notify = inject('notify') as any
 
 const activeTab = ref('wealth')
+const scoreLeaderboard = ref<any[]>([])
+const scoreVisible = ref(false)
 const isAdmin = computed(() => localStorage.getItem('isAdmin') === 'true')
 
 const wealthLeaderboard = ref<any[]>([])
@@ -193,7 +220,18 @@ const extendedStats = ref<any>({})
 onMounted(async () => {
   await loadLeaderboards()
   await loadOnlinePlayers()
+  await loadScoreLeaderboard()
 })
+
+const loadScoreLeaderboard = async () => {
+  try {
+    const r: any = await api.getScoreLeaderboard()
+    if (r.success) {
+      scoreVisible.value = true
+      scoreLeaderboard.value = r.data?.list || []
+    }
+  } catch { /* 403=未公开,tab 隐藏 */ }
+}
 
 const loadLeaderboards = async () => {
   loading.value = true

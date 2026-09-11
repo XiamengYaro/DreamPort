@@ -947,6 +947,9 @@
 
         <!-- 服务器资源监控 -->
         <ServerMetricsPanel />
+
+        <!-- 行为分析 -->
+        <AnalyticsPanel />
       </div>
 
       <!-- 服务器管理 Tab -->
@@ -1263,6 +1266,7 @@ import StatCard from '@/components/ui/StatCard.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import ServerManageTab from '@/components/admin/ServerManageTab.vue'
 import ServerMetricsPanel from '@/components/admin/ServerMetricsPanel.vue'
+import AnalyticsPanel from '@/components/admin/AnalyticsPanel.vue'
 import ForumManageTab from '@/components/admin/ForumManageTab.vue'
 import PollManageTab from '@/components/admin/PollManageTab.vue'
 import FeedbackManageTab from '@/components/admin/FeedbackManageTab.vue'

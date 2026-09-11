@@ -42,11 +42,12 @@
         </div>
 
         <!-- 统计卡片 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <StatCard :value="formatPlaytime(profile.timePlayed)" label="总游戏时长" tone="orange" />
           <StatCard :value="(profile.activeDaysLast30 || 0) + ' 天'" label="近30天活跃" tone="orange" />
           <StatCard :value="formatBalance(profile.balance)" label="硬币" tone="orange" />
           <StatCard :value="profile.loginCount || '-'" label="登录次数" tone="orange" />
+          <StatCard v-if="myScore != null" :value="myScore.toFixed(1)" label="综合评分" tone="emerald" />
         </div>
 
         <!-- 称号与成就(仅本人可见;网页端佩戴,游戏内 PAPI 周期同步) -->
@@ -173,6 +174,7 @@ const loadProfile = async () => {
       profile.value = r.data
       const me = localStorage.getItem('username')
       isSelf.value = !!me && me.toLowerCase() === String(r.data.username).toLowerCase()
+      await loadScore()
       if (isSelf.value) {
         await loadMyTitles()
         // 导航「我的称号」入口带 ?titles=1,直达称号面板
@@ -186,6 +188,23 @@ const loadProfile = async () => {
     console.error('Failed to load player profile:', e)
   }
   loading.value = false
+}
+
+const myScore = ref<number | null>(null)
+
+const loadScore = async () => {
+  try {
+    if (isSelf.value) {
+      const r: any = await api.getMyScore()
+      if (r.success) myScore.value = r.data?.score ?? null
+    } else {
+      const r: any = await api.getScoreLeaderboard()
+      if (r.success) {
+        const row = (r.data?.list || []).find((x: any) => x.username === profile.value?.username)
+        myScore.value = row ? row.score : null
+      }
+    }
+  } catch { /* 未公开/未登录:不显示 */ }
 }
 
 const loadMyTitles = async () => {
