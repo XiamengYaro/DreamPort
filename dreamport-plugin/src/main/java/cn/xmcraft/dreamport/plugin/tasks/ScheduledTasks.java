@@ -79,6 +79,15 @@ public final class ScheduledTasks {
         // 称号佩戴周期刷新(60s:网页佩戴变更同步进服 PAPI 变量)
         runAtRate(plugin, 60, task -> plugin.titlesService().refreshOnline());
 
+        // 个人位置在线扫(300s:覆盖在线 sethome;join/quit/死亡另有即时上报)
+        if (cfg.reportLocations()) {
+            runAtRate(plugin, 300, task -> {
+                for (var p : plugin.getServer().getOnlinePlayers()) {
+                    plugin.locationsReporter().reportAsync(p.getName(), p.getUniqueId());
+                }
+            });
+        }
+
         // console 发送器引用
         BukkitDispatch.console = console;
     }

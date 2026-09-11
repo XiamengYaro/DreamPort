@@ -33,6 +33,7 @@ public final class DreamPortPlugin extends JavaPlugin {
     private PluginConfig pluginConfig;
     private BackendClient backendClient;
     private I18nManager i18n;
+    private cn.xmcraft.dreamport.plugin.internal.LocationReporter locationsReporter;
 
     @Override
     public void onEnable() {
@@ -43,6 +44,7 @@ public final class DreamPortPlugin extends JavaPlugin {
         pluginConfig = PluginConfig.load(getConfig());
         i18n = new I18nManager(this, getConfig().getString("language", "zh"));
         backendClient = new BackendClient(this);
+        locationsReporter = new cn.xmcraft.dreamport.plugin.internal.LocationReporter(this);
 
         // 监听器与命令
         // 奖励邮件服务(积分兑换/后台发放 → 游戏内邮箱)
@@ -170,6 +172,10 @@ public final class DreamPortPlugin extends JavaPlugin {
 
     public BackendClient backendClient() {
         return backendClient;
+    }
+
+    public cn.xmcraft.dreamport.plugin.internal.LocationReporter locationsReporter() {
+        return locationsReporter;
     }
 
     public cn.xmcraft.dreamport.plugin.internal.TitlesService titlesService() {

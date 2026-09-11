@@ -239,6 +239,13 @@ public final class BackendClient {
                 "sessionSeconds", sessionSeconds, "loginCount", loginCount));
     }
 
+    /** 个人位置上报(家+上次死亡;death 为 null 时 Gson 省略字段,后端保留旧值) */
+    public void reportLocations(String username, String uuid,
+                                java.util.List<LocationReporter.HomeSpot> homes,
+                                LocationReporter.DeathSpot death) {
+        postAsync(Protocol.LOCATIONS, new LocationReporter.LocationsReport(username, uuid, homes, death));
+    }
+
     /** 游戏内签到;@return 后端原始响应体(含 success/first/message) */
     public String gameSignin(String player) {
         return post(Protocol.SIGNIN, java.util.Map.of("username", player));

@@ -57,6 +57,7 @@ public class InternalController {
     private final cn.xmcraft.dreamport.server.points.MailService rewardMailService;
     private final cn.xmcraft.dreamport.server.titles.TitleService titleService;
     private final cn.xmcraft.dreamport.server.reward.RewardKitService rewardKitService;
+    private final cn.xmcraft.dreamport.server.security.ServerTokenVerifier serverTokenVerifier;
 
     public InternalController(UserService userService, WlProps props,
                               ServerStatsService statsService,
@@ -74,7 +75,8 @@ public class InternalController {
                               cn.xmcraft.dreamport.server.points.TaskService taskService,
                               cn.xmcraft.dreamport.server.points.MailService rewardMailService,
                               cn.xmcraft.dreamport.server.titles.TitleService titleService,
-                              cn.xmcraft.dreamport.server.reward.RewardKitService rewardKitService) {
+                              cn.xmcraft.dreamport.server.reward.RewardKitService rewardKitService,
+                              cn.xmcraft.dreamport.server.security.ServerTokenVerifier serverTokenVerifier) {
         this.userService = userService;
         this.props = props;
         this.statsService = statsService;
@@ -93,14 +95,14 @@ public class InternalController {
         this.rewardMailService = rewardMailService;
         this.titleService = titleService;
         this.rewardKitService = rewardKitService;
+        this.serverTokenVerifier = serverTokenVerifier;
     }
 
     @PostMapping("/login-check")
     public ResponseEntity<Object> loginCheck(@RequestBody LoginCheckRequest req,
                                              HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (req == null || req.username() == null || req.username().isBlank()) {
             return badRequest("username 必填");
@@ -123,9 +125,8 @@ public class InternalController {
     @PostMapping("/heartbeat")
     public ResponseEntity<Object> heartbeat(@RequestBody HeartbeatRequest req,
                                             HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (req == null || req.serverId() == null || req.serverId().isBlank()) {
             return badRequest("serverId 必填");
@@ -196,9 +197,8 @@ public class InternalController {
 
     @PostMapping("/qq/bind")
     public ResponseEntity<Object> qqBind(@RequestBody QqBindBody body, HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null || body.player() == null || body.code() == null || body.code().isBlank()) {
             return badRequest("player/code 必填");
@@ -227,9 +227,8 @@ public class InternalController {
     @PostMapping("/login-record")
     public ResponseEntity<Object> loginRecord(@RequestBody LoginRecordBody body,
                                               HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         minecraftVerifyService.recordLogin(body.name(), body.uuid(), body.ip());
         return ResponseEntity.ok(Map.of("ok", true));
@@ -240,9 +239,8 @@ public class InternalController {
 
     @PostMapping("/events")
     public ResponseEntity<Object> events(@RequestBody EventBody body, HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         switch (body.type() == null ? "" : body.type()) {
             case "chat" -> {
@@ -270,9 +268,8 @@ public class InternalController {
     @PostMapping("/economy/snapshot")
     public ResponseEntity<Object> economySnapshot(@RequestBody EconomySnapshotBody body,
                                                   HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         economyService.saveSnapshot(body.players() == null ? List.of() : body.players());
         return ResponseEntity.ok(Map.of("ok", true, "count",
@@ -285,9 +282,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.PostMapping("/activity")
     public ResponseEntity<Object> activity(@org.springframework.web.bind.annotation.RequestBody ActivityBody body,
                                            HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null || body.username() == null || body.username().isBlank()) {
             return badRequest("username 必填");
@@ -303,9 +299,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.PostMapping("/signin")
     public ResponseEntity<Object> signin(@org.springframework.web.bind.annotation.RequestBody SigninBody body,
                                          HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null || body.username() == null || body.username().isBlank()) {
             return badRequest("username 必填");
@@ -320,9 +315,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.GetMapping("/mail/pending")
     public ResponseEntity<Object> mailPending(@org.springframework.web.bind.annotation.RequestParam String username,
                                               HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (username == null || username.isBlank()) {
             return badRequest("username 必填");
@@ -335,9 +329,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.PostMapping("/mail/claimed")
     public ResponseEntity<Object> mailClaimed(@org.springframework.web.bind.annotation.RequestBody ClaimedBody body,
                                               HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null) {
             return badRequest("请求体必填");
@@ -350,9 +343,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.GetMapping("/title/active")
     public ResponseEntity<Object> titleActive(@org.springframework.web.bind.annotation.RequestParam String username,
                                               HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (username == null || username.isBlank()) {
             return badRequest("username 必填");
@@ -368,9 +360,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.GetMapping("/title/mine")
     public ResponseEntity<Object> titleMine(@org.springframework.web.bind.annotation.RequestParam String username,
                                             HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (username == null || username.isBlank()) {
             return badRequest("username 必填");
@@ -393,9 +384,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.PostMapping("/title/equip")
     public ResponseEntity<Object> titleEquip(@org.springframework.web.bind.annotation.RequestBody TitleEquipBody body,
                                              HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null || body.username() == null || body.username().isBlank()) {
             return badRequest("username 必填");
@@ -421,9 +411,8 @@ public class InternalController {
     @org.springframework.web.bind.annotation.PostMapping("/kit/save")
     public ResponseEntity<Object> kitSave(@org.springframework.web.bind.annotation.RequestBody KitSaveBody body,
                                           HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         if (body == null || body.kitName() == null || body.kitName().isBlank()
                 || body.player() == null || body.player().isBlank()) {
@@ -439,9 +428,8 @@ public class InternalController {
     /** 礼包模板列表(/xmw kit list 用) */
     @org.springframework.web.bind.annotation.GetMapping("/kit/list")
     public ResponseEntity<Object> kitList(HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         return ResponseEntity.ok(java.util.Map.of("success", true, "kits", rewardKitService.list()));
     }
@@ -460,9 +448,8 @@ public class InternalController {
 
     @GetMapping("/commands/whitelist")
     public ResponseEntity<Object> whitelistCommands(HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         String serverId = request.getParameter("serverId");
         return ResponseEntity.ok(Map.of("commands",
@@ -472,9 +459,8 @@ public class InternalController {
     /** 游戏收件箱轮询：网页/QQ 消息下行进服（插件定时拉取后 broadcastMessage，docs/ASTRBOT_PLAN.md §5.3） */
     @GetMapping("/messages/pending")
     public ResponseEntity<Object> pendingMessages(HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         long since;
         try {
@@ -498,9 +484,8 @@ public class InternalController {
     public ResponseEntity<Object> adminOp(@PathVariable String action,
                                           @RequestBody AdminOpBody body,
                                           HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         String operator = "console@" + request.getHeader(
                 cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID);
@@ -524,9 +509,8 @@ public class InternalController {
 
     @GetMapping("/admin-ops/list")
     public ResponseEntity<Object> adminList(HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         return ResponseEntity.ok(userService.pendingUsers());
     }
@@ -534,67 +518,15 @@ public class InternalController {
     @GetMapping("/admin-ops/info/{username}")
     public ResponseEntity<Object> adminInfo(@PathVariable String username,
                                             HttpServletRequest request) {
-        ResponseEntity<Object> auth = requireServerToken(request);
-        if (auth != null) {
-            return auth;
+        if (!serverTokenVerifier.verify(request)) {
+            return unauthorized();
         }
         return ResponseEntity.ok(userService.userInfo(username));
     }
 
-    /**
-     * 服务器通道鉴权：
-     * - shared 模式（默认）：全局 wl.internal.server-token 单令牌
-     * - per_server 模式：按 X-Server-Id 查 dp_server.token_hash（SHA-256）比对且 enabled=TRUE；
-     *   全局令牌保留为应急通道（break-glass，命中记 warn 便于审计）
-     */
+    /** 服务器通道鉴权已抽至 {@link cn.xmcraft.dreamport.server.security.ServerTokenVerifier}(shared/per_server 双模式,多控制器共用) */
     private ResponseEntity<Object> requireServerToken(HttpServletRequest request) {
-        String token = request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_TOKEN);
-        if (token == null || token.isBlank()) {
-            return unauthorized();
-        }
-        String global = props.internal().serverToken();
-        if (global != null && !global.isBlank() && global.equals(token)) {
-            if ("per_server".equals(tokenMode())) {
-                LOG.warn("[鉴权] {} 使用全局共享令牌（per_server 模式应急通道）",
-                        request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID));
-            }
-            return null;
-        }
-        if (!"per_server".equals(tokenMode())) {
-            return unauthorized();
-        }
-        String serverId = request.getHeader(cn.xmcraft.dreamport.common.Protocol.HEADER_SERVER_ID);
-        if (serverId == null || serverId.isBlank()) {
-            return unauthorized();
-        }
-        String expected = statsService.tokenHashOf(serverId);
-        if (expected == null || !sha256Matches(token, expected)) {
-            return unauthorized();
-        }
-        return null;
-    }
-
-    private String tokenMode() {
-        var cfg = settingService.get(SettingService.KEY_SECURITY_CONFIG, java.util.Map.class);
-        Object mode = cfg == null ? null : cfg.get("tokenMode");
-        return mode == null ? "shared" : String.valueOf(mode);
-    }
-
-    /** 恒时比较 SHA-256(令牌) 与库中哈希 */
-    private static boolean sha256Matches(String token, String expectedHex) {
-        try {
-            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
-                    .digest(token.getBytes(java.nio.charset.StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(digest.length * 2);
-            for (byte b : digest) {
-                hex.append(Character.forDigit((b >> 4) & 0xF, 16)).append(Character.forDigit(b & 0xF, 16));
-            }
-            return java.security.MessageDigest.isEqual(
-                    hex.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8),
-                    expectedHex.toLowerCase().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        } catch (Exception e) {
-            return false;
-        }
+        return serverTokenVerifier.verify(request) ? null : unauthorized();
     }
 
     private ResponseEntity<Object> unauthorized() {

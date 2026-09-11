@@ -28,7 +28,7 @@
         </div>
       </div>
 
-      <div v-if="currentUrl" class="grid gap-6" :class="showSidebar ? 'lg:grid-cols-[1fr_280px]' : ''">
+      <div v-if="currentUrl" class="grid gap-6" :class="sidebarColumn ? 'lg:grid-cols-[1fr_280px]' : ''">
         <!-- 地图 iframe -->
         <div class="card overflow-hidden" style="height: calc(100vh - 280px);">
           <iframe
@@ -40,41 +40,100 @@
           </iframe>
         </div>
 
-        <!-- 在线位置侧栏(BlueMap/Dynmap) -->
-        <div v-if="showSidebar" class="card p-4 flex flex-col overflow-hidden" style="height: calc(100vh - 280px);">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold text-white">在线位置</h3>
-            <button @click="loadLive" class="text-xs text-stone-400 hover:text-white" title="刷新">
-              <svg class="w-4 h-4" :class="liveLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          </div>
-          <EmptyState v-if="livePlayers.length === 0 && !liveLoading" text="暂无玩家位置数据" />
-          <div class="flex-1 overflow-y-auto space-y-1.5 -mx-1 px-1">
-            <button v-for="(p, i) in livePlayers" :key="i"
-              @click="locate(p)"
-              class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/40 hover:bg-white/5 transition-colors text-left">
-              <AppAvatar :name="p.name" size-class="w-8 h-8 shrink-0" />
-              <div class="flex-1 min-w-0">
-                <div class="text-sm text-white truncate">{{ p.name }}</div>
-                <div class="text-xs text-stone-500 truncate">{{ p.world }} · {{ Math.round(p.x) }}, {{ Math.round(p.y) }}, {{ Math.round(p.z) }}</div>
+        <!-- 右侧栏:我的位置 + 在线位置 -->
+        <div v-if="sidebarColumn" class="space-y-6">
+          <!-- 我的位置(仅本人可见;家+上次死亡,来自插件上报) -->
+          <div v-if="myLocationsVisible" class="card p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-white">我的位置</h3>
+              <span class="text-[10px] text-stone-600">仅自己可见</span>
+            </div>
+            <div class="space-y-1.5">
+              <button v-for="h in myLocations.homes" :key="h.name"
+                @click="locate(h)"
+                class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/40 hover:bg-white/5 transition-colors text-left">
+                <AppIcon name="home" class="w-4 h-4 text-orange-400 shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-white truncate">{{ h.name }}</div>
+                  <div class="text-xs text-stone-500 truncate">{{ h.world }} · {{ Math.round(h.x) }}, {{ Math.round(h.y) }}, {{ Math.round(h.z) }}</div>
+                </div>
+              </button>
+              <div v-if="myLocations.death"
+                class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-rose-500/5 border border-rose-500/20 text-left">
+                <AppIcon name="no-symbol" class="w-4 h-4 text-rose-400 shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-white">上次死亡</div>
+                  <div class="text-xs text-stone-500 truncate">{{ myLocations.death.world }} · {{ Math.round(myLocations.death.x) }}, {{ Math.round(myLocations.death.y) }}, {{ Math.round(myLocations.death.z) }}</div>
+                </div>
               </div>
-            </button>
+            </div>
+            <p class="text-[11px] text-stone-600 mt-2">点击可跳转地图定位 · 进服 /sethome 设置家</p>
           </div>
-          <p class="text-[11px] text-stone-600 mt-2">点击玩家可跳转地图定位</p>
+
+          <!-- 在线位置侧栏(BlueMap/Dynmap) -->
+          <div v-if="showSidebar" class="card p-4 flex flex-col overflow-hidden" :style="myLocationsVisible ? 'height: calc(100vh - 500px)' : 'height: calc(100vh - 280px)'">
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-sm font-semibold text-white">在线位置</h3>
+              <button @click="loadLive" class="text-xs text-stone-400 hover:text-white" title="刷新">
+                <svg class="w-4 h-4" :class="liveLoading ? 'animate-spin' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </button>
+            </div>
+            <EmptyState v-if="livePlayers.length === 0 && !liveLoading" text="暂无玩家位置数据" />
+            <div class="flex-1 overflow-y-auto space-y-1.5 -mx-1 px-1">
+              <button v-for="(p, i) in livePlayers" :key="i"
+                @click="locate(p)"
+                class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-stone-900/40 border border-stone-800 hover:border-orange-500/40 hover:bg-white/5 transition-colors text-left">
+                <AppAvatar :name="p.name" size-class="w-8 h-8 shrink-0" />
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm text-white truncate">{{ p.name }}</div>
+                  <div class="text-xs text-stone-500 truncate">{{ p.world }} · {{ Math.round(p.x) }}, {{ Math.round(p.y) }}, {{ Math.round(p.z) }}</div>
+                </div>
+              </button>
+            </div>
+            <p class="text-[11px] text-stone-600 mt-2">点击玩家可跳转地图定位</p>
+          </div>
         </div>
       </div>
 
-      <!-- 未配置提示 -->
-      <div v-else class="card p-12 text-center">
-        <svg class="w-16 h-16 text-stone-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-        </svg>
-        <h2 class="text-xl font-semibold text-white mb-2">世界地图未配置</h2>
-        <p class="text-stone-400">管理员尚未配置地图地址</p>
-      </div>
+      <template v-else>
+        <!-- 地图未配置时:我的位置仍可独立查看(纯信息) -->
+        <div v-if="myLocationsVisible" class="card p-4 mb-6">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold text-white">我的位置</h3>
+            <span class="text-[10px] text-stone-600">仅自己可见</span>
+          </div>
+          <div class="space-y-1.5">
+            <div v-for="h in myLocations.homes" :key="h.name"
+              class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-stone-900/40 border border-stone-800 text-left">
+              <AppIcon name="home" class="w-4 h-4 text-orange-400 shrink-0" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm text-white truncate">{{ h.name }}</div>
+                <div class="text-xs text-stone-500 truncate">{{ h.world }} · {{ Math.round(h.x) }}, {{ Math.round(h.y) }}, {{ Math.round(h.z) }}</div>
+              </div>
+            </div>
+            <div v-if="myLocations.death"
+              class="w-full flex items-center gap-2.5 p-2 rounded-xl bg-rose-500/5 border border-rose-500/20 text-left">
+              <AppIcon name="no-symbol" class="w-4 h-4 text-rose-400 shrink-0" />
+              <div class="flex-1 min-w-0">
+                <div class="text-sm text-white">上次死亡</div>
+                <div class="text-xs text-stone-500 truncate">{{ myLocations.death.world }} · {{ Math.round(myLocations.death.x) }}, {{ Math.round(myLocations.death.y) }}, {{ Math.round(myLocations.death.z) }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 未配置提示 -->
+        <div class="card p-12 text-center">
+          <svg class="w-16 h-16 text-stone-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          <h2 class="text-xl font-semibold text-white mb-2">世界地图未配置</h2>
+          <p class="text-stone-400">管理员尚未配置地图地址</p>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -100,10 +159,18 @@ const livePlayers = ref<Array<{ name: string; world: string; x: number; y: numbe
 const liveMapId = ref<string | null>(null)
 const liveLoading = ref(false)
 let pollTimer: number | undefined
+let myLocTimer: number | undefined
+
+const isLoggedIn = computed(() => !!localStorage.getItem('token'))
+
+// 我的位置(家+上次死亡;插件上报,仅本人可见)
+const myLocations = ref<{ homes: any[]; death: any | null }>({ homes: [], death: null })
+const myLocationsVisible = computed(() => isLoggedIn.value && (myLocations.value.homes.length > 0 || !!myLocations.value.death))
 
 const current = computed(() => mapOptions.value[selectedMap.value])
 const currentUrl = computed(() => current.value?.url || '')
 const showSidebar = computed(() => !!currentUrl.value && current.value?.type !== 'generic')
+const sidebarColumn = computed(() => showSidebar.value || myLocationsVisible.value)
 
 function selectMap(i: number) {
   selectedMap.value = i
@@ -135,11 +202,26 @@ onMounted(async () => {
     }
   } catch (e) {}
   scheduleLive()
+  if (isLoggedIn.value) {
+    loadMyLocations()
+    myLocTimer = window.setInterval(loadMyLocations, 60_000)
+  }
 })
 
 onUnmounted(() => {
   if (pollTimer) window.clearInterval(pollTimer)
+  if (myLocTimer) window.clearInterval(myLocTimer)
 })
+
+/** 我的位置:60s 静默刷新(数据与所选地图无关,深链跟随当前地图类型) */
+async function loadMyLocations() {
+  try {
+    const r: any = await api.getMyLocations()
+    if (r.success) {
+      myLocations.value = { homes: r.data?.homes || [], death: r.data?.death || null }
+    }
+  } catch (e) { console.error(e) }
+}
 
 function scheduleLive() {
   if (pollTimer) window.clearInterval(pollTimer)

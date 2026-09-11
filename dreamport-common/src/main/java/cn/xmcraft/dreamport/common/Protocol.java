@@ -28,6 +28,8 @@ public final class Protocol {
     public static final String QQ_BIND = "/internal/v1/qq/bind";
     public static final String ACTIVITY = "/internal/v1/activity";
     public static final String SIGNIN = "/internal/v1/signin";
+    /** 个人位置上报(家+上次死亡,网页地图「我的位置」数据源) */
+    public static final String LOCATIONS = "/internal/v1/locations";
     public static final String MAIL_PENDING = "/internal/v1/mail/pending";
     public static final String MAIL_CLAIMED = "/internal/v1/mail/claimed";
     /** 礼包采集上传(/xmw kit save,管理员服内采集背包存为礼包模板) */

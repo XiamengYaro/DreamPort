@@ -2,6 +2,12 @@
 
 后台「数据统计」资源看板 + 「服务器管理」Tab + 地图页在线位置侧栏的使用说明。三者数据源均为**插件心跳**（60s 周期，Paper 插件 `features.report-metrics: true` 默认开启）。
 
+## 地图「我的位置」（家 + 上次死亡）
+
+- 数据源：Paper 插件读取 **Essentials userdata** 的家（EssentialsX JSON 格式）+ `PlayerDeathEvent` 记录上次死亡；join/quit/死亡即报 + 300s 在线扫描（`features.report-locations: true` 默认开，Essentials 未装时优雅降级、死亡记录不受影响）
+- 地图页侧栏「我的位置」**仅登录者本人可见**（JWT 严格按账号过滤，无公开/管理员通道）：家列表（名称/世界/坐标）+ 上次死亡行；BlueMap/Dynmap 类型下每条带**深链定位**按钮（跟随当前所选地图），地图未配置时仍可独立查看坐标
+- 存储 `dp_player_locations`（V14，按账号唯一）；多服按 username 最后写入为准——**单 Essentials 服为预期形态**，多 Essentials 服的家会互相覆盖（后续版本按服分组）
+
 ## 服务器资源监控
 
 - 插件每次心跳附带：TPS（1/5/15 分钟）、平均 tick 耗时、JVM 内存、进程 CPU 占用、运行时长；Velocity 代理无 tick 循环，仅报内存/CPU

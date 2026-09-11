@@ -751,6 +751,11 @@ class ApiService {
     return this.request(`/map/live?i=${index}`)
   }
 
+  // 我的位置(家+上次死亡,仅本人可见;插件上报数据源)
+  async getMyLocations() {
+    return this.request('/user/locations')
+  }
+
   // 服务器管理(后台:注册表/按服令牌/启停/鉴权模式)
   async getAdminServers() {
     return this.request('/admin/servers')

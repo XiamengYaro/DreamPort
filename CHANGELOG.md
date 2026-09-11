@@ -5,6 +5,14 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### Added（玩家个人位置上网页地图 · 家/死亡）
+- **数据采集(插件)**:读 Essentials userdata 的家(EssentialsX JSON 格式,模式同经济快照)+ 新增死亡监听记录上次死亡;join/quit/死亡即报 + 300s 在线扫描;`features.report-locations` 开关(默认开),Essentials 缺失优雅降级
+- **后端**:`dp_player_locations` 表(V14,username 唯一);`POST /internal/v1/locations`(server-token,homes/death 缺省字段互不覆盖——插件重启不误清已存死亡);`GET /api/user/locations`(JWT 仅本人,死亡位置属个人敏感数据无公开通道);**鉴权重构**:InternalController 私有 requireServerToken/sha256/tokenMode 抽为 `security/ServerTokenVerifier` 组件,多 internal 控制器共用
+- **网页地图**:Map.vue 侧栏新增「我的位置」(家列表+上次死亡,60s 静默刷新,仅本人可见;BlueMap/Dynmap 深链定位跟随当前地图类型;地图未配置时仍可独立查看坐标);新增 `getMyLocations` API
+- 测试:LocationReporterTest 3 例(Essentials JSON 解析/畸形容错/文件缺失),共 45 测试全绿;冒烟:上报→落库→局部更新保留家→本人读取→未登录 401→他人隔离
+
 ## [1.5.1] - 2026-09-11
 
 **体验热修发版：头像偶发默认脸(两根因)+ 首页刷新闪烁 + 时光照片墙「杂志瀑布流」改版。**
