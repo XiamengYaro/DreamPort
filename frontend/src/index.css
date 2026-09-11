@@ -50,8 +50,14 @@
   box-sizing: border-box;
 }
 
-html, body {
+html {
   overflow-x: hidden;
+}
+
+/* body 必须用 clip 而非 hidden:hidden 会把 body 变成滚动容器,破坏子元素 position:sticky
+   (个人主页装修操作栏、文档页侧栏等吸顶元素) */
+body {
+  overflow-x: clip;
 }
 
 body {

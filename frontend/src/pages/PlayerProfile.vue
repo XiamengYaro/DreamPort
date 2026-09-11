@@ -13,6 +13,25 @@
 
       <!-- 玩家资料 -->
       <template v-else>
+        <!-- 装修模式:吸顶操作栏(保存按钮常驻可见) -->
+        <div v-if="customEditing" class="sticky top-20 z-40 mb-6">
+          <div class="card p-4 flex flex-col sm:flex-row sm:items-center gap-3 border border-orange-500/40">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 text-sm font-semibold text-white">
+                <AppIcon name="pencil-square" class="w-4 h-4 text-orange-400 shrink-0" />
+                主页装修模式
+              </div>
+              <p class="text-xs text-stone-400 mt-0.5">在下方「装修配置」里修改,改动即时预览;保存后对外生效</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <button class="btn-secondary text-sm" :disabled="customSaving" @click="cancelCustom">退出装修</button>
+              <button class="btn-primary text-sm" :disabled="customSaving" @click="saveCustom">
+                {{ customSaving ? '保存中…' : '保存修改' }}
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 头部信息 -->
         <div class="card overflow-hidden mb-6">
           <div v-if="displayBannerImage" class="h-28 w-full bg-cover bg-center"
@@ -26,8 +45,10 @@
               @error="handleAvatarError" />
             <div class="flex-1">
               <h1 class="text-3xl font-bold text-white mb-2">{{ profile.username }}
-                <button v-if="isSelf" @click="customOpen = true"
-                  class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">⚙ 自定义主页</button>
+                <button v-if="isSelf && !customEditing" @click="startCustomEdit"
+                  class="ml-2 align-middle inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">
+                  <AppIcon name="pencil-square" class="w-3 h-3" />自定义主页
+                </button>
                 <button v-if="friendState === 'none' && isLoggedIn" @click="addFriend"
                   class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-orange-500/15 text-orange-400 border border-orange-500/30 hover:bg-orange-500/25 transition-colors">+ 好友</button>
                 <span v-else-if="friendState === 'pending'" class="ml-2 align-middle text-xs px-3 py-1.5 rounded-lg bg-stone-600/40 text-stone-300">申请已发送</span>
@@ -110,78 +131,90 @@
             </div>
           </div>
         </div>
+
+        <!-- 装修配置(仅装修模式出现,与上方内容同宽对齐) -->
+        <div v-if="customEditing" class="card p-6">
+          <h2 class="text-lg font-semibold text-white mb-4">装修配置</h2>
+          <div class="flex gap-2 flex-wrap mb-5">
+            <button v-for="t in customTabs" :key="t.key" @click="customTab = t.key"
+              class="tab-btn text-sm" :class="{ active: customTab === t.key }">{{ t.label }}</button>
+          </div>
+
+          <!-- 简介 -->
+          <div v-if="customTab === 'bio'">
+            <label class="block text-sm text-stone-400 mb-2">个人简介
+              <span class="text-stone-600">(纯文本,{{ (customForm.bio || '').length }}/500 字)</span></label>
+            <textarea v-model="customForm.bio" maxlength="500" rows="6" class="input text-sm"
+              placeholder="介绍一下你自己…"></textarea>
+          </div>
+
+          <!-- 横幅与背景 -->
+          <div v-else-if="customTab === 'banner'" class="space-y-6">
+            <div>
+              <label class="block text-sm text-stone-400 mb-2">横幅图
+                <span class="text-stone-600">(页面顶部大图,填写地址或上传,留空用主题色渐变)</span></label>
+              <div class="flex gap-2">
+                <input v-model="customForm.bannerImage" class="input flex-1 text-sm" placeholder="/uploads/xxx.png 或 https://…" />
+                <button class="btn-secondary text-sm shrink-0" @click="pickImage('bannerImage')">上传图片</button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-stone-400 mb-2">主题色
+                <span class="text-stone-600">(无横幅图时的渐变色)</span></label>
+              <div class="flex gap-3 flex-wrap">
+                <button v-for="(grad, key) in BANNERS" :key="key" @click="customForm.banner = key"
+                  class="w-16 h-10 rounded-lg bg-gradient-to-r transition-all"
+                  :class="[grad, customForm.banner === key ? 'ring-2 ring-orange-400' : 'ring-1 ring-white/10']"
+                  :title="key"></button>
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm text-stone-400 mb-2">页面背景图
+                <span class="text-stone-600">(仅本人主页背景,留空跟随全站)</span></label>
+              <div class="flex gap-2">
+                <input v-model="customForm.bgImage" class="input flex-1 text-sm" placeholder="背景图地址(留空用全站背景)" />
+                <button class="btn-secondary text-sm shrink-0" @click="pickImage('bgImage')">上传图片</button>
+              </div>
+            </div>
+            <input ref="imgInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="uploadImage" />
+          </div>
+
+          <!-- 社交链接 -->
+          <div v-else-if="customTab === 'links'">
+            <label class="block text-sm text-stone-400 mb-2">社交链接
+              <span class="text-stone-600">(最多 5 条,展示在「关于我」卡片)</span></label>
+            <div class="space-y-2.5">
+              <div v-for="(l, i) in customForm.socialLinks" :key="i" class="flex items-center gap-2">
+                <input v-model="l.label" class="input !w-40 text-sm" placeholder="名称(如 B站)" maxlength="20" />
+                <input v-model="l.url" class="input flex-1 text-sm" placeholder="https://…" />
+                <button class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-stone-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  title="删除此链接" @click="customForm.socialLinks.splice(i, 1)">
+                  <AppIcon name="x-mark" class="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <button v-if="(customForm.socialLinks || []).length < 5" class="btn-secondary text-sm mt-3"
+              @click="customForm.socialLinks.push({ label: '', url: '' })">+ 添加链接</button>
+          </div>
+
+          <!-- 自定义 CSS -->
+          <div v-else-if="customTab === 'css'">
+            <p class="text-xs text-stone-500 mb-2">
+              高级:自定义个人主页样式。所有选择器自动限定在 <code class="text-orange-400">#pc-root</code> 内,
+              自动剔除 @import/javascript:/position:fixed 等危险内容,≤8000 字符。
+            </p>
+            <textarea v-model="customForm.css" rows="12" class="input text-xs font-mono"
+              placeholder=".card { border-radius: 16px; }&#10;h1 { color: #fb923c; }"></textarea>
+            <p class="text-xs text-stone-600 mt-2">当前 {{ (customForm.css || '').length }} / 8000 字符</p>
+          </div>
+        </div>
       </template>
     </div>
-
-    <!-- 主页装修编辑器(本人) -->
-    <AppModal :open="customOpen" title="自定义主页" size="lg" @close="customOpen = false">
-      <div class="space-y-5">
-        <!-- tab 切换 -->
-        <div class="flex gap-2 flex-wrap">
-          <button v-for="t in customTabs" :key="t.key" @click="customTab = t.key"
-            class="tab-btn text-sm" :class="{ active: customTab === t.key }">{{ t.label }}</button>
-        </div>
-
-        <!-- 简介 -->
-        <div v-if="customTab === 'bio'">
-          <label class="block text-xs text-stone-500 mb-1">个人简介(纯文本,≤500 字)</label>
-          <textarea v-model="customForm.bio" maxlength="500" rows="4" class="input text-sm"
-            placeholder="介绍一下你自己…"></textarea>
-        </div>
-
-        <!-- 横幅与背景 -->
-        <div v-else-if="customTab === 'banner'">
-          <label class="block text-xs text-stone-500 mb-1">横幅图(填写图片地址,留空用主题色渐变)</label>
-          <input v-model="customForm.bannerImage" class="input text-sm mb-2" placeholder="/uploads/xxx.png 或 https://…" />
-          <label class="block text-xs text-stone-500 mb-1">主题色(无横幅图时的渐变色)</label>
-          <div class="flex gap-2 flex-wrap mb-2">
-            <button v-for="(grad, key) in BANNERS" :key="key" @click="customForm.banner = key"
-              class="w-12 h-9 rounded-lg bg-gradient-to-r transition-all"
-              :class="[grad, customForm.banner === key ? 'ring-2 ring-orange-400' : 'ring-1 ring-white/10']"
-              :title="key"></button>
-          </div>
-          <label class="block text-xs text-stone-500 mb-1">页面背景图(个人主页专属背景)</label>
-          <div class="flex gap-2">
-            <input v-model="customForm.bgImage" class="input flex-1 text-sm" placeholder="背景图地址(留空用全站背景)" />
-            <button class="btn-secondary text-sm" @click="pickBgImage">上传</button>
-          </div>
-          <input ref="bgInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="uploadBg" />
-        </div>
-
-        <!-- 社交链接 -->
-        <div v-else-if="customTab === 'links'">
-          <div v-for="(l, i) in customForm.socialLinks" :key="i" class="flex gap-2 mb-2">
-            <input v-model="l.label" class="input w-36 text-sm" placeholder="名称(如 B站)" maxlength="20" />
-            <input v-model="l.url" class="input flex-1 text-sm" placeholder="https://…" />
-            <button class="text-rose-400 hover:text-rose-300 text-sm px-1" @click="customForm.socialLinks.splice(i, 1)">×</button>
-          </div>
-          <button v-if="(customForm.socialLinks || []).length < 5" class="btn-secondary text-xs py-1.5 px-3"
-            @click="customForm.socialLinks.push({ label: '', url: '' })">+ 添加链接</button>
-        </div>
-
-        <!-- 自定义 CSS -->
-        <div v-else-if="customTab === 'css'">
-          <p class="text-xs text-stone-500 mb-2">
-            高级:自定义个人主页样式。所有选择器自动限定在 <code class="text-orange-400">#pc-root</code> 内,
-            自动剔除 @import/javascript:/position:fixed 等危险内容,≤8000 字符。
-          </p>
-          <textarea v-model="customForm.css" rows="8" class="input text-xs font-mono"
-            placeholder=".card { border-radius: 16px; }&#10;h1 { color: #fb923c; }"></textarea>
-          <p class="text-xs text-stone-600 mt-1">当前 {{ (customForm.css || '').length }} / 8000 字符</p>
-        </div>
-      </div>
-      <template #footer>
-        <button class="btn-secondary" @click="customOpen = false">取消</button>
-        <button class="btn-primary" :disabled="customSaving" @click="saveCustom">
-          {{ customSaving ? '保存中…' : '保存' }}
-        </button>
-      </template>
-    </AppModal>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, nextTick, inject, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getStatusText } from '@/lib/status'
@@ -229,14 +262,17 @@ const loadProfile = async () => {
 const myScore = ref<number | null>(null)
 const friendState = ref('')
 const profileCustom = ref<any>({ bio: '', banner: 'amber', socialLinks: [] as any[] })
-const customOpen = ref(false)
+// 装修模式:进入后才显示配置面板;进入时留存快照,退出未保存则还原
+const customEditing = ref(false)
 const customTab = ref('bio')
 const customForm = ref<any>({
   bio: '', banner: 'amber', socialLinks: [] as any[],
   bgImage: '', bannerImage: '', accent: '', css: ''
 })
 const customSaving = ref(false)
-const bgInput = ref<HTMLInputElement | null>(null)
+const savedSnapshot = ref<any>(null)
+const imgInput = ref<HTMLInputElement | null>(null)
+const uploadTarget = ref<'bgImage' | 'bannerImage'>('bgImage')
 
 const customTabs = [
   { key: 'bio', label: '简介' },
@@ -261,6 +297,7 @@ const loadScore = async () => {
 }
 
 const startCustomEdit = () => {
+  savedSnapshot.value = JSON.parse(JSON.stringify(profileCustom.value))
   customForm.value = {
     bio: profileCustom.value.bio || '',
     banner: profileCustom.value.banner || 'amber',
@@ -270,12 +307,23 @@ const startCustomEdit = () => {
     accent: profileCustom.value.accent || '',
     css: profileCustom.value.css || ''
   }
-  customOpen.value = true
+  customEditing.value = true
 }
 
-const pickBgImage = () => bgInput.value?.click()
+const cancelCustom = () => {
+  if (savedSnapshot.value) {
+    profileCustom.value = savedSnapshot.value
+    applyCss(savedSnapshot.value.css || '')
+  }
+  customEditing.value = false
+}
 
-const uploadBg = async (e: Event) => {
+const pickImage = (target: 'bgImage' | 'bannerImage') => {
+  uploadTarget.value = target
+  imgInput.value?.click()
+}
+
+const uploadImage = async (e: Event) => {
   const input = e.target as HTMLInputElement
   const file = input.files?.[0]
   input.value = ''
@@ -291,8 +339,8 @@ const uploadBg = async (e: Event) => {
     })
     const data = await res.json()
     if (data.success) {
-      customForm.value.bgImage = data.data.url
-      notify?.success('背景图已上传,保存后生效')
+      customForm.value[uploadTarget.value] = data.data.url
+      notify?.success('图片已上传,保存后生效')
     } else notify?.error(data.message || '上传失败')
   } catch (e: any) { notify?.error(e.message || '上传失败') }
 }
@@ -312,7 +360,7 @@ const saveCustom = async () => {
     })
     if (r.success) {
       notify?.success(r.message || '已保存')
-      customOpen.value = false
+      customEditing.value = false
       profileCustom.value = {
         bio: customForm.value.bio, banner: customForm.value.banner, socialLinks: links,
         bgImage: customForm.value.bgImage, bannerImage: customForm.value.bannerImage,
@@ -323,13 +371,8 @@ const saveCustom = async () => {
   customSaving.value = false
 }
 
-const addLinkRow = () => {
-  if ((customForm.value.socialLinks || []).length >= 5) return
-  customForm.value.socialLinks.push({ label: '', url: '' })
-}
-
 const bgImageStyle = computed(() => {
-  const img = (customOpen.value ? customForm.value.bgImage : '') || profileCustom.value.bgImage
+  const img = (customEditing.value ? customForm.value.bgImage : '') || profileCustom.value.bgImage
   if (!img) return {}
   return {
     backgroundImage: `linear-gradient(rgba(28,25,23,0.88), rgba(28,25,23,0.92)), url('${img}')`,
@@ -339,14 +382,13 @@ const bgImageStyle = computed(() => {
 })
 
 const displayBannerImage = computed(() =>
-  customOpen.value ? customForm.value.bannerImage : (profileCustom.value.bannerImage || ''))
+  customEditing.value ? customForm.value.bannerImage : (profileCustom.value.bannerImage || ''))
 const bannerGradient = computed(() => {
-  const gradient = customOpen.value ? customForm.value.banner : (profileCustom.value.banner || 'amber')
+  const gradient = customEditing.value ? customForm.value.banner : (profileCustom.value.banner || 'amber')
   return BANNERS[gradient] || BANNERS.amber
 })
 
 // 自定义 CSS 注入(服务端已消毒+作用域前缀,此处仅插入)
-const cssStyleEl = ref<HTMLStyleElement | null>(null)
 const applyCss = (css: string) => {
   let el = document.getElementById('pc-style') as HTMLStyleElement | null
   if (!css) {
@@ -362,14 +404,17 @@ const applyCss = (css: string) => {
 }
 // 装修编辑时实时预览(编辑中的 customForm 直接驱动展示)
 watch(customForm, (f) => {
-  if (!customOpen.value) return
+  if (!customEditing.value) return
   profileCustom.value = {
     ...profileCustom.value,
     bio: f.bio, banner: f.banner, bgImage: f.bgImage,
-    bannerImage: f.bannerImage, accent: f.accent
+    bannerImage: f.bannerImage, accent: f.accent, socialLinks: f.socialLinks
   }
   applyCss(f.css || '')
 }, { deep: true })
+
+// 离开页面时清掉注入的全局样式,避免未保存的 CSS 泄漏到其它页面
+onUnmounted(() => document.getElementById('pc-style')?.remove())
 
 // 保存后以服务端消毒结果覆盖
 watch(() => profileCustom.value?.css, (v) => applyCss(v || ''))

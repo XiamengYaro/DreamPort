@@ -819,12 +819,15 @@ class ApiService {
     return this.request(`/admin/events/${id}/signups`)
   }
 
-  // 个人主页自定义(简介/横幅/社交链接)
+  // 个人主页自定义(简介/横幅/社交链接/背景/CSS)
   async getProfileCustom() {
     return this.request('/user/profile-custom')
   }
 
-  async saveProfileCustom(body: { bio: string; banner: string; socialLinks: Array<{ label: string; url: string }> }) {
+  async saveProfileCustom(body: {
+    bio: string; banner: string; socialLinks: Array<{ label: string; url: string }>;
+    bgImage: string; bannerImage: string; accent: string; css: string
+  }) {
     return this.request('/user/profile-custom', {
       method: 'PUT',
       body: JSON.stringify(body)
