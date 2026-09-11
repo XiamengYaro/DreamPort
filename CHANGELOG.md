@@ -7,6 +7,14 @@
 
 ## [未发布]
 
+### Changed（门户「杂志编辑风」统一 · 用户反馈）
+- 新增 `SectionHeader` 统一节头组件(小字 kicker 橙点+衬线斜体英文水印垫底),时光照片墙/服务器介绍/团队/特色/CTA 五区块共用,视觉语言归一
+- 服务器介绍区:状态卡改**横向统计带**(hairline 上下边线+竖线分隔,数字改衬线大字 tabular-nums,标签宽字距小字),IP/Wiki 信息随排版下移
+- 特色区改 **bento 不等宽网格**(首卡跨两列),卡片去旧底框改 ring 圆角+图标左置小方框,hover ring 转橙/图标底加深/标题转橙
+- 团队卡:ring 圆角+头像 hover 微放大+职位 kicker 化(橙点+宽字距小字)
+- 底部 CTA:JOIN US kicker+衬线水印,主按钮加橙色光晕;区块背景与特色区形成节奏
+- 后台配置(轮播/团队/特色/照片墙条目)全部不变,纯呈现层改版
+
 ### Added（玩家个人位置上网页地图 · 家/死亡）
 - **数据采集(插件)**:读 Essentials userdata 的家(EssentialsX JSON 格式,模式同经济快照)+ 新增死亡监听记录上次死亡;join/quit/死亡即报 + 300s 在线扫描;`features.report-locations` 开关(默认开),Essentials 缺失优雅降级
 - **后端**:`dp_player_locations` 表(V14,username 唯一);`POST /internal/v1/locations`(server-token,homes/death 缺省字段互不覆盖——插件重启不误清已存死亡);`GET /api/user/locations`(JWT 仅本人,死亡位置属个人敏感数据无公开通道);**鉴权重构**:InternalController 私有 requireServerToken/sha256/tokenMode 抽为 `security/ServerTokenVerifier` 组件,多 internal 控制器共用

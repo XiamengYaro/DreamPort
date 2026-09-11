@@ -1,12 +1,8 @@
 <template>
   <section class="py-16 px-4">
     <div class="max-w-6xl mx-auto">
-      <!-- 刊头:衬线斜体水印 + 杂志式标题 -->
-      <div class="relative text-center mb-10">
-        <span class="hidden md:block absolute left-1/2 -translate-x-1/2 -top-10 text-[7rem] leading-none font-serif italic text-white/5 select-none pointer-events-none" aria-hidden="true">Moments</span>
-        <h2 class="relative text-3xl font-bold text-white mb-3">时光照片墙 · <span class="font-serif italic">Moments</span></h2>
-        <p class="relative text-stone-400 text-sm tracking-wide">记录服务器的点点滴滴 · 点击照片可放大查看与留言</p>
-      </div>
+      <!-- 刊头:统一编辑风节头(kicker=MOMENTS 即衬线水印文案) -->
+      <SectionHeader kicker="MOMENTS" title="时光照片墙 · Moments" subtitle="记录服务器的点点滴滴 · 点击照片可放大查看与留言" />
 
       <!-- 分类筛选(杂志 kicker 风格:下划线指示器) -->
       <div class="flex gap-6 justify-center mb-10 flex-wrap">
@@ -111,6 +107,7 @@ import EmptyState from './ui/EmptyState.vue'
 import AppAvatar from './ui/AppAvatar.vue'
 import AppModal from './ui/AppModal.vue'
 import AppIcon from './AppIcon.vue'
+import SectionHeader from './SectionHeader.vue'
 
 interface TimelineEntry {
   id?: string

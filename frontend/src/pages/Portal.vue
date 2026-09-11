@@ -3,40 +3,35 @@
     <!-- Hero 轮播 -->
     <HeroBanner :slides="portalConfig.carousel" :logoUrl="logoUrl" />
 
-    <!-- 服务器介绍 -->
-    <section class="py-10 px-4 sm:py-16">
-      <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-6">{{ portalConfig.server_name }}</h2>
-        <p class="text-lg text-stone-400 mb-8">{{ portalConfig.description }}</p>
+    <!-- 服务器介绍(编辑风:节头 + 横向统计带) -->
+    <section class="py-12 px-4 sm:py-16">
+      <div class="max-w-4xl mx-auto">
+        <SectionHeader kicker="ABOUT" :title="portalConfig.server_name" :subtitle="portalConfig.description" />
 
-        <!-- 服务器状态 -->
-        <div class="card p-6 inline-block">
-          <div class="flex items-center gap-8">
-            <div class="text-center">
-              <div class="text-3xl font-bold text-white">{{ serverStatus.totalOnline || serverStatus.onlinePlayers || 0 }}</div>
-              <div class="text-sm text-stone-400">在线玩家</div>
-            </div>
-            <div class="w-px h-12 bg-stone-700"></div>
-            <div class="text-center">
-              <div class="text-3xl font-bold text-white">{{ serverStatus.maxPlayers || 0 }}</div>
-              <div class="text-sm text-stone-400">最大人数</div>
-            </div>
-            <div class="w-px h-12 bg-stone-700"></div>
-            <div class="text-center">
-              <div class="text-3xl font-bold text-orange-400">{{ portalConfig.version }}</div>
-              <div class="text-sm text-stone-400">游戏版本</div>
-            </div>
+        <!-- 统计带:hairline 上下边线 + 衬线大数字 -->
+        <div class="grid grid-cols-3 border-y border-white/10 py-6 mb-8">
+          <div class="text-center">
+            <div class="text-4xl font-serif tabular-nums text-white">{{ serverStatus.totalOnline || serverStatus.onlinePlayers || 0 }}</div>
+            <div class="text-[11px] tracking-[0.25em] uppercase text-stone-500 mt-1.5">在线玩家</div>
+          </div>
+          <div class="text-center border-x border-white/10">
+            <div class="text-4xl font-serif tabular-nums text-white">{{ serverStatus.maxPlayers || 0 }}</div>
+            <div class="text-[11px] tracking-[0.25em] uppercase text-stone-500 mt-1.5">最大人数</div>
+          </div>
+          <div class="text-center">
+            <div class="text-4xl font-serif tabular-nums text-orange-400">{{ portalConfig.version }}</div>
+            <div class="text-[11px] tracking-[0.25em] uppercase text-stone-500 mt-1.5">游戏版本</div>
           </div>
         </div>
 
         <!-- 快速信息 -->
-        <div class="mt-8 flex flex-wrap justify-center gap-4 text-sm">
+        <div class="flex flex-wrap justify-center gap-6 text-sm">
           <div class="flex items-center gap-2 text-stone-400">
             <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
-            <span>{{ portalConfig.server_ip }}:{{ portalConfig.server_port }}</span>
+            <span class="font-mono">{{ portalConfig.server_ip }}:{{ portalConfig.server_port }}</span>
           </div>
           <div v-if="portalConfig.social?.wiki" class="flex items-center gap-2 text-stone-400">
             <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,12 +52,16 @@
     <!-- 历史时刻（垂直时间轴） -->
     <TimelineSection :timeline="portalConfig.timeline" :types="portalConfig.photo_types" />
 
-    <!-- 底部 CTA -->
-    <section class="py-10 px-4 bg-stone-800/30 sm:py-16">
-      <div class="max-w-4xl mx-auto text-center">
-        <h2 class="text-2xl sm:text-3xl font-bold text-white mb-4">准备好加入我们了吗？</h2>
-        <p class="text-stone-400 mb-8">申请白名单，开始你在 {{ portalConfig.server_name }} 的冒险之旅</p>
-        <router-link to="/whitelist" class="btn-primary text-lg px-8 py-4">
+    <!-- 底部 CTA(编辑风:水印+kicker+光晕按钮) -->
+    <section class="py-14 px-4 bg-stone-900/30 sm:py-16">
+      <div class="max-w-4xl mx-auto text-center relative">
+        <span class="hidden md:block absolute left-1/2 -translate-x-1/2 -top-8 text-[6.5rem] leading-none font-serif italic text-white/5 select-none pointer-events-none" aria-hidden="true">Join</span>
+        <p class="relative flex items-center justify-center gap-2 text-[11px] tracking-[0.25em] uppercase text-orange-300/90 mb-2">
+          <span class="inline-block w-1.5 h-1.5 rounded-full bg-orange-400"></span>JOIN US
+        </p>
+        <h2 class="relative text-2xl sm:text-3xl font-bold text-white mb-4">准备好加入我们了吗？</h2>
+        <p class="relative text-stone-400 mb-8">申请白名单，开始你在 {{ portalConfig.server_name }} 的冒险之旅</p>
+        <router-link to="/whitelist" class="relative btn-primary text-lg px-10 py-4 shadow-[0_0_32px_-6px_rgba(249,115,22,0.55)] hover:shadow-[0_0_44px_-4px_rgba(249,115,22,0.75)] transition-shadow">
           立即申请白名单
         </router-link>
       </div>
@@ -76,6 +75,7 @@ import HeroBanner from '@/components/HeroBanner.vue'
 import TeamSection from '@/components/TeamSection.vue'
 import FeaturesSection from '@/components/FeaturesSection.vue'
 import TimelineSection from '@/components/TimelineSection.vue'
+import SectionHeader from '@/components/SectionHeader.vue'
 
 const serverStatus = ref<any>({})
 const logoUrl = ref('/Logo111.png')
