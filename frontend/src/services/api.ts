@@ -1033,6 +1033,21 @@ class ApiService {
     })
   }
 
+  // ===== SEO 配置(后台) =====
+  async adminGetSeoConfig() {
+    return this.request('/admin/seo/config')
+  }
+
+  async adminSaveSeoConfig(body: {
+    titleTemplate: string; description: string; keywords: string;
+    ogImage: string; robots: string; extraHead: string
+  }) {
+    return this.request('/admin/seo/config', {
+      method: 'PUT',
+      body: JSON.stringify(body)
+    })
+  }
+
   // ===== 2FA(TOTP + 恢复码 + 邮箱备用) =====
   async get2faStatus() {
     return this.request('/user/2fa/status')

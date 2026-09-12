@@ -180,6 +180,7 @@ const brand = useBrand()
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { renderMarkdownWithToc } from '@/lib/markdown'
+import { applySeo } from '@/lib/seo'
 import api from '@/services/api'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import SectionHeader from '@/components/SectionHeader.vue'
@@ -280,6 +281,7 @@ const loadDoc = async (slug: string) => {
     if (res.success) {
       content.value = res.data.content || ''
       currentDocTitle.value = res.data.title || slug
+      applySeo(res.data.title || slug)
       // 分类名:接口返回 dirName → 映射 displayName
       const cat = categories.value.find(c => c.dirName === res.data.category || c.name === res.data.category)
       currentCategoryName.value = cat ? (cat.displayName || cat.name) : (res.data.category || '')

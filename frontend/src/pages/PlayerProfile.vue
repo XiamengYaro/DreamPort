@@ -218,6 +218,7 @@ import { ref, computed, onMounted, onUnmounted, inject, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import api from '@/services/api'
 import { getStatusText } from '@/lib/status'
+import { applySeo } from '@/lib/seo'
 import AppIcon from '@/components/AppIcon.vue'
 import StatCard from '@/components/ui/StatCard.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
@@ -243,6 +244,7 @@ const loadProfile = async () => {
     const r: any = await api.getPlayerProfile(username)
     if (r.success) {
       profile.value = r.data
+      applySeo(`${r.data.username} 的个人主页`)
       const me = localStorage.getItem('username')
       isSelf.value = !!me && me.toLowerCase() === String(r.data.username).toLowerCase()
       if (profile.value?.profileCustom) {

@@ -5,6 +5,16 @@
 格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本管理遵循 [语义化版本 2.0.0](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### Added（SEO 搜索优化 · 后台可自定义）
+- **服务端 meta 注入**:SPA 的 index.html 由后端直出时按请求路径注入 `<title>`(按页面映射,如 /announcements→公告中心)、description/keywords/Open Graph;私有页(后台/控制台/验证/答题)自动 noindex——爬虫不执行 JS 也能拿到正确元信息
+- **后台「门户管理 → SEO 搜索优化」自定义**:标题模板({page}/{site} 占位)、站点描述、关键词、分享图(og:image)、收录开关(robots=index|noindex)、自定义 head 注入(百度/Google 站点验证、统计脚本等,原样输出,≤8000 字符)
+- **/robots.txt 与 /sitemap.xml**:收录开关联动(Disallow 或 Allow+Sitemap);sitemap 含公开静态路由与全部文档详情页(/docs/{filename}),根 URL 优先取反向代理头
+- **前端动态 SEO**:路由切换即更新 title/meta(lib/seo.ts,路径→页面名映射与后端同源);文档详情页标题带文档名、玩家主页带玩家名
+- /api/config 新增 seo 块;新端点 GET/PUT /api/admin/seo/config(审计码 settings_seo)
+- 测试:SeoSupportTest 4 用例(标题渲染/页面映射/注入转义/robots+sitemap),全量 57/0/0
+
 ## [1.6.0] - 2026-09-12
 
 ### Added（管理后台邮件群发）

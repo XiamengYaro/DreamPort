@@ -300,6 +300,47 @@
           <button @click="savePortalConfig" class="btn-primary mt-4" :disabled="saving">保存照片墙</button>
         </div>
 
+        <!-- SEO 搜索优化 -->
+        <div class="card p-6 space-y-4">
+          <h3 class="text-lg font-semibold text-white">SEO 搜索优化</h3>
+          <p class="text-xs text-stone-500">搜索引擎收录配置:标题/描述/关键词/分享图即时应用到全站页面与 sitemap;站名取自门户配置的「服务器名」。</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-stone-500 mb-1">标题模板({{ '{page}' }} = 页面名,{{ '{site}' }} = 站名)</label>
+              <input v-model="seoCfg.titleTemplate" class="input text-sm" maxlength="120" placeholder="{page} - {site}" />
+            </div>
+            <div>
+              <label class="block text-xs text-stone-500 mb-1">收录开关</label>
+              <select v-model="seoCfg.robots" class="input text-sm">
+                <option value="index">允许搜索引擎收录(默认)</option>
+                <option value="noindex">全站禁止收录(robots.txt Disallow)</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">站点描述(meta description,≤500 字)</label>
+            <textarea v-model="seoCfg.description" rows="2" class="input text-sm" maxlength="500"
+              placeholder="一个有趣、友好的 Minecraft 生存服务器,欢迎每一位玩家加入!"></textarea>
+          </div>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">关键词(meta keywords,英文逗号分隔)</label>
+            <input v-model="seoCfg.keywords" class="input text-sm" maxlength="500" placeholder="Minecraft,生存服,白名单,社区" />
+          </div>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">分享图(Open Graph og:image,留空不输出)</label>
+            <input v-model="seoCfg.ogImage" class="input text-sm" maxlength="500" placeholder="/Logo111.png 或 https://…" />
+          </div>
+          <div>
+            <label class="block text-xs text-stone-500 mb-1">自定义 head 注入(原样输出到每页 &lt;head&gt;,可放百度/Google 站点验证、统计脚本等,≤8000 字符)</label>
+            <textarea v-model="seoCfg.extraHead" rows="3" class="input text-sm font-mono"
+              placeholder='&lt;meta name="baidu-site-verification" content="xxx" /&gt;'></textarea>
+          </div>
+          <div class="flex items-center gap-3">
+            <button @click="saveSeoConfig" class="btn-primary text-sm" :disabled="savingSeo">{{ savingSeo ? '保存中…' : '保存 SEO 设置' }}</button>
+            <span v-if="seoResult" class="text-sm" :class="seoResult.ok ? 'text-emerald-400' : 'text-rose-400'">{{ seoResult.text }}</span>
+          </div>
+        </div>
+
       <!-- 外观设置 Tab -->
       <div v-if="activeTab === 'settings' && !loading" class="card p-6 space-y-4">
         <h3 class="text-lg font-semibold text-white mb-4">外观设置</h3>
@@ -1681,6 +1722,41 @@ const doBroadcastMail = async () => {
   } finally { sendingMail.value = false }
 }
 
+// ===== SEO 搜索优化 =====
+const seoCfg = ref<any>({ titleTemplate: '{page} - {site}', description: '', keywords: '', ogImage: '', robots: 'index', extraHead: '' })
+const savingSeo = ref(false)
+const seoResult = ref<any>(null)
+
+const loadSeoConfig = async () => {
+  try {
+    const r: any = await api.adminGetSeoConfig()
+    if (r.success && r.data) {
+      seoCfg.value = { ...seoCfg.value, ...r.data }
+    }
+  } catch { /* 非管理员等场景忽略 */ }
+}
+
+const saveSeoConfig = async () => {
+  savingSeo.value = true
+  seoResult.value = null
+  try {
+    const r: any = await api.adminSaveSeoConfig({
+      titleTemplate: String(seoCfg.value.titleTemplate || '').trim(),
+      description: String(seoCfg.value.description || '').trim(),
+      keywords: String(seoCfg.value.keywords || '').trim(),
+      ogImage: String(seoCfg.value.ogImage || '').trim(),
+      robots: seoCfg.value.robots === 'noindex' ? 'noindex' : 'index',
+      extraHead: String(seoCfg.value.extraHead || '')
+    })
+    seoResult.value = r.success ? { ok: true, text: r.message || '已保存' } : { ok: false, text: r.message || '保存失败' }
+    if (r.success) notify?.success(r.message || 'SEO 设置已保存')
+    else notify?.error(r.message || '保存失败')
+  } catch (e: any) {
+    seoResult.value = { ok: false, text: e.message || '保存失败' }
+    notify?.error(e.message || '保存失败')
+  } finally { savingSeo.value = false }
+}
+
 const loadMaintenance = async () => {
   try { const r: any = await api.getMaintenanceMode(); maintenanceEnabled.value = !!r.data?.enabled } catch (e) {}
 }
@@ -1787,6 +1863,7 @@ const auditActionLabels: Record<string, string> = {
   feedback_create: '提交反馈', feedback_reply: '回复工单', feedback_close: '关闭工单',
   poll_create: '创建投票', poll_open: '开启投票', poll_close: '关闭投票', poll_update: '更新投票',
   webhook_test: 'Webhook 测试', settings_webhook: 'Webhook 设置',
+  settings_seo: 'SEO 设置',
   mail_broadcast: '邮件群发',
   forum_section_create: '创建板块', forum_section_update: '更新板块', forum_section_delete: '删除板块',
   forum_thread_edit: '编辑帖子',
@@ -1884,7 +1961,7 @@ watch([searchQuery, statusFilter], () => { playerPage.value = 1 })
 
 onMounted(async () => {
   loading.value = true
-  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus(), loadRewardKits(), loadMailTargets()])
+  await Promise.all([loadUsers(), loadSettings(), loadPortalConfig(), loadBedrockConfig(), loadStats(), loadAudits(), loadAppeals(), loadVerifyConfig(), loadQuestionnaires(), loadDocs(), loadAdmins(), loadMaintenance(), loadSystemSettings(), loadServerStatus(), loadRewardKits(), loadMailTargets(), loadSeoConfig()])
   loading.value = false
 })
 

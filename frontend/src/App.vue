@@ -56,6 +56,7 @@ import TopNavigation from './components/TopNavigation.vue'
 import AppFooter from './components/AppFooter.vue'
 import { api } from './services/api'
 import { initBrand, applyBrandFromConfig } from './lib/brand'
+import { setSeoConfig } from './lib/seo'
 
 const route = useRoute()
 const router = useRouter()
@@ -87,6 +88,7 @@ onMounted(async () => {
       if (data) {
         config.value = data
         applyBrandFromConfig(data.portal || {})
+        setSeoConfig(data.seo, typeof data.serverName === 'string' ? data.serverName : undefined)
         if (data.portal?.icp) {
           icp.value = data.portal.icp
         }
@@ -125,6 +127,7 @@ onMounted(async () => {
       config.value = data.data
       try { localStorage.setItem('portal.config.cache', JSON.stringify(data.data)) } catch { /* 存储满忽略 */ }
       applyBrandFromConfig(data.data.portal || {})
+      setSeoConfig(data.data.seo, typeof data.data.serverName === 'string' ? data.data.serverName : undefined)
       if (data.data.portal?.icp) {
         icp.value = data.data.portal.icp
       }

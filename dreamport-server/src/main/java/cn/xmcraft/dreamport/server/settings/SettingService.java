@@ -45,6 +45,8 @@ public class SettingService {
     public static final String KEY_METRICS_CONFIG = "metrics.config";
     /** 行为分析配置:{publicScore: bool, 各项权重与封顶值} */
     public static final String KEY_ANALYTICS_CONFIG = "analytics.config";
+    /** 站点 SEO 配置:{titleTemplate, description, keywords, ogImage, robots: index|noindex, extraHead} */
+    public static final String KEY_SEO_CONFIG = "seo.config";
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper = new ObjectMapper();

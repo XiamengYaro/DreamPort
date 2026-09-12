@@ -223,3 +223,14 @@
 | `GET /api/admin/mail/targets` | 管理员 | 群发目标数 + SMTP 状态 `{count, configured}`（configured=false 时投递走日志模式） |
 | `POST /api/admin/mail/broadcast` | 管理员 | `{subject≤200, content≤20000}`；目标=dp_user 邮箱非空合法小写去重，异步逐目标发送，审计码 `mail_broadcast` |
 | 飞书卡片展示 | — | WebhookDispatcherService 对飞书 hook 自动转 interactive 卡片：事件中文名标题 + 字段中文标签（操作人/对象/详情）+ 北京时间，`event/time/action` 元字段隐藏 |
+
+## 11. 未发布新增端点 🆕（SEO 搜索优化）
+
+| 端点 | 鉴权 | 说明 |
+|------|------|------|
+| `GET /api/admin/seo/config` | 管理员 | 读取 SEO 配置 `{titleTemplate, description, keywords, ogImage, robots, extraHead}` |
+| `PUT /api/admin/seo/config` | 管理员 | 保存(标题模板≤120/描述≤500/关键词≤500/ogImage≤500/extraHead≤8000);审计码 `settings_seo` |
+| `GET /api/config` | 公开 | 响应新增 `seo` 块(前端路由切换据此更新 title/meta) |
+| `GET /robots.txt` | 公开 | robots=index 时 Allow+附 Sitemap;noindex 时全站 Disallow |
+| `GET /sitemap.xml` | 公开 | 公开静态路由 + 文档详情页(/docs/{filename});根 URL 优先 X-Forwarded-Proto/Host |
+| SPA HTML 直出 | 公开 | SeoMetaInjectionFilter 按 URI 注入 title/description/keywords/OG,私有页自动 noindex |

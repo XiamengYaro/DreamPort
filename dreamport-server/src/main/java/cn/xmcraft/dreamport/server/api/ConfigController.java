@@ -54,6 +54,11 @@ public class ConfigController {
         data.put("verifyPage", settingService.getMap("verify.config"));
         // 注册守则(doc=守则文档路径,空=未启用;seconds=强制阅读秒数)——Verify 页公开消费
         data.put("rules", systemSettings.rulesConfig());
+        // SEO 配置(标题模板/描述/关键词/OG 图;前端路由切换据此更新 title/meta)
+        data.put("seo", cn.xmcraft.dreamport.server.seo.SeoSupport.withDefaults(
+                settingService.getMap(SettingService.KEY_SEO_CONFIG),
+                String.valueOf(portal.getOrDefault("server_name", "夏日小镇★XMCraft")),
+                String.valueOf(portal.getOrDefault("description", ""))));
         var qnCfg = systemSettings.questionnaireConfig();
         data.put("questionnaireEnabled", qnCfg.getOrDefault("enabled", true));
         data.put("questionnairePassScore", qnCfg.getOrDefault("passScore", 60));

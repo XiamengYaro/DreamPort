@@ -1,3 +1,4 @@
+import { applySeo, pageNameForPath } from './lib/seo'
 import { createRouter, createWebHistory } from 'vue-router'
 
 const routes = [
@@ -148,6 +149,12 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// SEO:路由切换即更新标题与 meta(配置由 App.vue 从 /api/config 注入,详情页可再覆盖)
+router.afterEach((to) => {
+  const page = (to.meta.title as string) ?? pageNameForPath(to.path)
+  applySeo(page)
 })
 
 router.beforeEach((to, from, next) => {

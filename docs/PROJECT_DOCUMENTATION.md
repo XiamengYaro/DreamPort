@@ -141,6 +141,8 @@ frontend/          Vue 3 SPA（18 页面，见进度表 P6）
 
 **v1.5 新增 dp_setting 键**：`security.config`（tokenMode/admin2faRequired）、`metrics.config`（TPS 告警阈值）、`forum.config`（moderation/likeEnabled）、`webhook.config`（urls/events）。
 
+**未发布新增 dp_setting 键**：`seo.config`（titleTemplate/description/keywords/ogImage/robots/extraHead，后台「门户管理 → SEO 搜索优化」可配；/robots.txt、/sitemap.xml 与 SPA 直出 meta 联动）。
+
 **v1.6 新增表**（V19，Flyway 自动迁移）：
 
 | 表 | 用途 |
